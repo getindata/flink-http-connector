@@ -11,11 +11,10 @@ Connector supports only STRING types.
 * Maven 3
 * Flink 14+
 
-## Structure and further work
-The main code can be found under `com.getindata.connectors.http.table` package plus additional classes directly from `com.getindata.connectors.http`
-
-The `com.getindata.connectors.http.stream` package is pure PoC and currently not meant to be use. The purpose of this package was to test out the new Unified Source design for Flink Source Connector
-[2]. Currently, the implementation is purely PoC, and requires further development.
+## Implementation
+Implementation is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  
+To be more specific we are using a `LookupTableSource`. Unfortunately Flink's new unified source interface [2] cannot be used for this type of source.
+Issue was discussed on Flink's user mailing list - https://lists.apache.org/thread/tx2w1m15zt5qnvt924mmbvr7s8rlyjmw
 
 ## Usage
 Flink SQL table definition:
@@ -67,11 +66,67 @@ For example `'field.isActive.path' = '$.details.isActive'` - the value for table
 | root | optional | Sets the json root node for entire table. The value should be presented as Json Path [3], for example `$.details`.|
 | field.#.path | optional | The Json Path from response model that should be use for given `#` field. If `root` option was defined it will be added to field path. The value must be presented in Json Path format [3], for example `$.details.nestedDetails.balance` |
 
+## Build and deployment
+Currently, we are not publishing this artifact to any repository. The CI/CD configuration is also next thing to do. 
+To 
+
+To build the project locally you need to have `maven 3` and Java 11+. </br>
+
+Project build command: `mvn package`. </br>
+Detailed test report can be found under `target/site/jacoco/index.xml`.
+
+## Demo application
+You can test this connector using simple mock http server provided with this repository and Flink SQL-client. 
+The mock server can be started from IDE (currently only this way) by running `HttpStubApp::main` method. 
+It will start HTTP server listening on `http://localhost:8080/client`
+
+Steps to follow:
+- Run Mock HTTP server from `HttpStubApp::main` method.
+- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.14/docs/try-flink/local_installation/
+- Start Flink SQL Client [4] by calling: `./bin/sql-client.sh -j flink-http-connector-1.0-SNAPSHOT.jar`
+- Execute SQL statements:
+Create Data Stream source Table:
+```roomsql
+CREATE TABLE Orders (id STRING, id2 STRING, proc_time AS PROCTIME()
+) WITH (
+'connector' = 'datagen', 
+'rows-per-second' = '1', 
+'fields.id.kind' = 'sequence', 
+'fields.id.start' = '1', 
+'fields.id.end' = '120', 
+'fields.id2.kind' = 'sequence', 
+'fields.id2.start' = '2', 
+'fields.id2.end' = '120'
+);
+```
+
+Create Http Connector Lookup Table:
+```roomsql
+CREATE TABLE Customers (id STRING, id2 STRING, msg STRING, uuid STRING, isActive STRING, balance STRING
+) WITH (
+'connector' = 'rest-lookup', 
+'url' = 'http://localhost:8080/client', 
+'asyncPolling' = 'true', 
+'field.isActive.path' = '$.details.isActive', 
+'field.balance.path' = '$.details.nestedDetails.balance'
+);
+```
+
+Submit SQL Select query to join both tables:
+```roomsql
+SELECT o.id, o.id2, c.msg, c.uuid, c.isActive, c.balance FROM Orders AS o JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c ON o.id = c.id AND o.id2 = c.id2;
+```
+
+As a result, you should see a table with joined records like so:
+![join-result](docs/JoinTable.PNG)
+
+The `msg` column shows parameters used with REST call for given JOIN record.
+
 ## TODO
 - Implement caches.
 - Add support for other Flink types. Currently, STRING type is only fully supported.
 - Think about Retry Policy for Http Request
-- Use Flink Format [4] to parse Json response 
+- Use Flink Format [5] to parse Json response 
 - Add Configurable Timeout value
 - Check other `//TODO`'s.
 
@@ -82,4 +137,6 @@ For example `'field.isActive.path' = '$.details.isActive'` - the value for table
 </br>
 [3] https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html
 </br>
-[4] https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/
+[4] https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sqlclient/
+</br>
+[5] https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/
