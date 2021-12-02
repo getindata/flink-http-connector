@@ -1,0 +1,51 @@
+{
+  "id": "COUNTER",
+  "uuid": "UUID",
+  "picture": "http://placehold.it/32x32",
+  "msg": "Returned HTTP message for parameter PARAM, COUNTER",
+  "age": 30,
+  "eyeColor": "green",
+  "name": "Marva Fischer",
+  "gender": "female",
+  "company": "SILODYNE",
+  "email": "marvafischer@silodyne.com",
+  "phone": "+1 (990) 562-2120",
+  "address": "601 Auburn Place, Bynum, New York, 7057",
+  "about": "Proident Lorem et duis nisi tempor elit occaecat laboris dolore magna Lorem consequat. Deserunt velit minim nisi consectetur duis amet labore cupidatat. Pariatur sunt occaecat qui reprehenderit ipsum ex culpa ullamco ex duis adipisicing commodo sunt. Ad cupidatat magna ad in officia irure aute duis culpa et. Magna esse adipisicing consequat occaecat. Excepteur amet dolore occaecat sit officia dolore elit in cupidatat non anim.",
+  "registered": "2020-07-11T11:13:32 -02:00",
+  "latitude": -35.237843,
+  "longitude": 60.386104,
+  "tags": [
+    "officia",
+    "eiusmod",
+    "labore",
+    "ex",
+    "aliqua",
+    "consectetur",
+    "excepteur"
+  ],
+  "friends": [
+    {
+      "id": 0,
+      "name": "Kemp Newman"
+    },
+    {
+      "id": 1,
+      "name": "Sears Blackburn"
+    },
+    {
+      "id": 2,
+      "name": "Lula Rogers"
+    }
+  ],
+  "details": {
+    "isActive": true,
+    "nestedDetails": {
+      "index": 0,
+      "guid": "d81fc542-6b49-4d59-8fb9-d57430d4871d",
+      "balance": "$1,729.34"
+    }
+  },
+  "greeting": "Hello, Marva Fischer! You have 7 unread messages.",
+  "favoriteFruit": "banana"
+}

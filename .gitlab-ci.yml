@@ -1,0 +1,49 @@
+image: maven:3.6.3-jdk-11
+
+stages:
+  - pre
+  - build
+  - test
+  - visualize
+  - deploy
+  - .post
+
+variables:
+  MAVEN_CLI_OPTS: "--batch-mode"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  JAVA_ADDITIONAL_OPTS: "-Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS"
+  FF_USE_FASTZIP: "true"
+
+cache:
+  paths:
+    - .m2/repository/
+    - target/
+
+build:
+  stage: build
+  script:
+    - mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS compile
+
+test:
+  stage: test
+  script:
+    - mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS $JAVA_DOCKER_OPTS test integration-test
+    - cat target/site/jacoco/index.html | grep -o 'Total[^%]*%'
+  artifacts:
+    paths:
+      - target/site/jacoco/jacoco.xml
+      - target/site/jacoco/jacoco.html
+
+coverage:
+  # Must be in a stage later than test-jdk11's stage.
+  # The `visualize` stage does not exist by default.
+  # Please define it first, or choose an existing stage like `deploy`.
+  stage: visualize
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.7
+  script:
+    # convert report from jacoco to cobertura, using relative project path
+    - python /opt/cover2cover.py target/site/jacoco/jacoco.xml $CI_PROJECT_DIR/src/main/java/ > target/site/cobertura.xml
+  needs: ["test"]
+  artifacts:
+    reports:
+      cobertura: target/site/cobertura.xml
