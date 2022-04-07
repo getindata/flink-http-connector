@@ -123,6 +123,7 @@ As a result, you should see a table with joined records like so:
 The `msg` column shows parameters used with REST call for given JOIN record.
 
 ## TODO
+- Setup CI/CD and relese first version.
 - Implement caches.
 - Add support for other Flink types. Currently, STRING type is only fully supported.
 - Think about Retry Policy for Http Request
