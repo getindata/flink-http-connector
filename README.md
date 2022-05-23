@@ -9,7 +9,7 @@ Connector supports only STRING types.
 ## Prerequisites
 * Java 11
 * Maven 3
-* Flink 15+
+* Flink 1.15+
 
 ## Implementation
 Implementation is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  
