@@ -9,7 +9,7 @@ Connector supports only STRING types.
 ## Prerequisites
 * Java 11
 * Maven 3
-* Flink 14+
+* Flink 15+
 
 ## Implementation
 Implementation is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  
@@ -82,7 +82,7 @@ It will start HTTP server listening on `http://localhost:8080/client`
 
 Steps to follow:
 - Run Mock HTTP server from `HttpStubApp::main` method.
-- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.14/docs/try-flink/local_installation/
+- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/try-flink/local_installation/
 - Start Flink SQL Client [4] by calling: `./bin/sql-client.sh -j flink-http-connector-1.0-SNAPSHOT.jar`
 - Execute SQL statements:
 Create Data Stream source Table:
@@ -132,9 +132,9 @@ The `msg` column shows parameters used with REST call for given JOIN record.
 - Check other `//TODO`'s.
 
 ### 
-[1] https://nightlies.apache.org/flink/flink-docs-release-1.14/docs/dev/table/sql/queries/joins/#lookup-join
+[1] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/table/sql/queries/joins/#lookup-join
 </br>
-[2] https://nightlies.apache.org/flink/flink-docs-release-1.14/docs/dev/datastream/sources/
+[2] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/datastream/sources/
 </br>
 [3] https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html
 </br>
