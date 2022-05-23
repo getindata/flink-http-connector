@@ -175,7 +175,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-java</artifactId>
-      <version>1.14.0</version>
+      <version>1.15.0</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -191,6 +191,10 @@
           <groupId>org.apache.commons</groupId>
         </exclusion>
         <exclusion>
+          <artifactId>chill-java</artifactId>
+          <groupId>com.twitter</groupId>
+        </exclusion>
+        <exclusion>
           <artifactId>jsr305</artifactId>
           <groupId>com.google.code.findbugs</groupId>
         </exclusion>
@@ -202,8 +206,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-clients_2.11</artifactId>
-      <version>1.14.0</version>
+      <artifactId>flink-clients</artifactId>
+      <version>1.15.0</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -248,12 +252,16 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-api-java-bridge_2.11</artifactId>
-      <version>1.14.0</version>
+      <artifactId>flink-table-api-java-bridge</artifactId>
+      <version>1.15.0</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>flink-table-api-java</artifactId>
+          <groupId>org.apache.flink</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>flink-table-api-bridge-base</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
@@ -275,17 +283,17 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-common</artifactId>
-      <version>1.14.0</version>
+      <version>1.15.0</version>
       <type>test-jar</type>
       <scope>test</scope>
       <exclusions>
         <exclusion>
-          <artifactId>flink-connector-files</artifactId>
+          <artifactId>flink-shaded-asm-9</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>flink-shaded-asm-7</artifactId>
-          <groupId>org.apache.flink</groupId>
+          <artifactId>icu4j</artifactId>
+          <groupId>com.ibm.icu</groupId>
         </exclusion>
         <exclusion>
           <artifactId>flink-core</artifactId>
@@ -303,28 +311,24 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-planner_2.11</artifactId>
-      <version>1.14.0</version>
+      <artifactId>flink-table-planner_2.12</artifactId>
+      <version>1.15.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
-          <artifactId>flink-table-common</artifactId>
+          <artifactId>commons-compiler</artifactId>
+          <groupId>org.codehaus.janino</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>janino</artifactId>
+          <groupId>org.codehaus.janino</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>flink-scala_2.12</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>flink-table-api-scala_2.11</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-table-api-scala-bridge_2.11</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-table-runtime_2.11</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-table-api-java</artifactId>
+          <artifactId>flink-table-runtime</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
@@ -339,8 +343,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-test-utils_2.12</artifactId>
-      <version>1.14.0</version>
+      <artifactId>flink-test-utils</artifactId>
+      <version>1.15.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -352,11 +356,11 @@
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>flink-clients_2.12</artifactId>
+          <artifactId>flink-core</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>flink-streaming-java_2.12</artifactId>
+          <artifactId>flink-rpc-akka-loader</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
@@ -383,16 +387,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-streaming-java_2.11</artifactId>
-      <version>1.14.0</version>
+      <artifactId>flink-streaming-java</artifactId>
+      <version>1.15.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
           <artifactId>flink-file-sink-common</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-scala_2.11</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
         <exclusion>
@@ -420,7 +420,7 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-runtime</artifactId>
-      <version>1.14.0</version>
+      <version>1.15.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -495,8 +495,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-runtime-web_2.11</artifactId>
-      <version>1.14.0</version>
+      <artifactId>flink-runtime-web</artifactId>
+      <version>1.15.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -660,14 +660,14 @@
     </repository>
   </distributionManagement>
   <properties>
-    <scala.binary.version>2.11</scala.binary.version>
+    <scala.binary.version>2.12</scala.binary.version>
     <json.path.version>2.6.0</json.path.version>
     <wiremock.version>2.27.2</wiremock.version>
     <jacoco.plugin.version>0.8.7</jacoco.plugin.version>
     <maven.compiler.source>${target.java.version}</maven.compiler.source>
     <mockito.version>4.0.0</mockito.version>
     <junit.jupiter.version>5.8.1</junit.jupiter.version>
-    <flink.version>1.14.0</flink.version>
+    <flink.version>1.15.0</flink.version>
     <maven.shade.plugin.version>3.1.1</maven.shade.plugin.version>
     <lombok.version>1.18.22</lombok.version>
     <maven.compiler.target>${target.java.version}</maven.compiler.target>
