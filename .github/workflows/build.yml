@@ -3,8 +3,8 @@ name: Build
 on:
   push:
     branches:
-      - main
-      - develop
+      - 'main'
+      - 'release/**'
   pull_request:
 
 env:
@@ -37,6 +37,7 @@ jobs:
       - name: Add coverage to PR
         id: jacoco
         uses: madrapps/jacoco-report@v1.2
+        if: github.event_name == 'pull_request'
         with:
           paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
