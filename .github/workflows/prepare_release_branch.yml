@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_part:
-        description: The part of the version to update (patch, minor or major)
+        description: The part of the version to update (Patch, Minor or Major)
         required: true
+        type: choice
         options:
           - Patch
           - Minor
@@ -53,5 +54,5 @@ jobs:
         run: |
           git checkout main
           mvn validate -D 'bump${{ github.event.inputs.version_part }}' -DgenerateBackupPoms=false
-          git commit -m "Bump development version to $(mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          git commit -am "Bump development version to $(mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout)"
           git push origin main
