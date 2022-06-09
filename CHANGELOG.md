@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Implement [HttpSink](src/main/java/com/getindata/connectors/http/sink/HttpSink.java) deriving from [AsyncSinkBase](https://cwiki.apache.org/confluence/display/FLINK/FLIP-171%3A+Async+Sink) introduced in Flink 1.15.
+
 ## [0.1.0] - 2022-05-26
 
 -   Implement baisc support for Http connector for Flink SQL
