@@ -214,6 +214,15 @@ under the License.
       <scope>test</scope>
     </dependency>
 
+    <!-- Serializers for tests -->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-json</artifactId>
+      <version>${flink.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- ***** -->
+
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-runtime-web</artifactId>
