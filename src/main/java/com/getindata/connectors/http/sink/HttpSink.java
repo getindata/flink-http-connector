@@ -5,11 +5,38 @@ import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
+/**
+ * An HTTP Sink that performs async requests against a specified HTTP endpoint using the buffering
+ * protocol specified in {@link AsyncSinkBase}.
+ *
+ * <p>The behaviour of the buffering may be specified by providing configuration during the sink build time.
+ *
+ * <ul>
+ *   <li>{@code maxBatchSize}: the maximum size of a batch of entries that may be sent to the HTTP
+ *       endpoint;</li>
+ *   <li>{@code maxInFlightRequests}: the maximum number of in flight requests that may exist, if
+ *       any more in flight requests need to be initiated once the maximum has been reached, then it
+ *       will be blocked until some have completed;</li>
+ *   <li>{@code maxBufferedRequests}: the maximum number of elements held in the buffer, requests to
+ *       add elements will be blocked while the number of elements in the buffer is at the
+ *       maximum;</li>
+ *   <li>{@code maxBatchSizeInBytes}: the maximum size of a batch of entries that may be sent to
+ *       the HTTP endpoint measured in bytes;</li>
+ *   <li>{@code maxTimeInBufferMS}: the maximum amount of time an entry is allowed to live in the
+ *       buffer, if any element reaches this age, the entire buffer will be flushed
+ *       immediately;</li>
+ *   <li>{@code maxRecordSizeInBytes}: the maximum size of a record the sink will accept into the
+ *       buffer, a record of size larger than this will be rejected when passed to the sink.</li>
+ * </ul>
+ *
+ * @param <InputT> type of the elements that should be sent through HTTP request.
+ */
 public class HttpSink<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry> {
   private final String endpointUrl;
 
@@ -26,11 +53,16 @@ public class HttpSink<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry
     super(elementConverter, maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBatchSizeInBytes,
           maxTimeInBufferMS, maxRecordSizeInBytes
     );
-    this.endpointUrl =
-        Preconditions.checkNotNull(endpointUrl, "The endpoint URL must not be null when initializing HTTP Sink.");
-    Preconditions.checkArgument(!endpointUrl.isEmpty(), "The endpoint URL must be set when initializing HTTP Sink.");
+    Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl), "The endpoint URL must be set when initializing HTTP Sink.");
+    this.endpointUrl = endpointUrl;
   }
 
+  /**
+   * Create a {@link HttpSinkBuilder} constructing a new {@link HttpSink}.
+   *
+   * @param <InputT> type of the elements that should be sent through HTTP request
+   * @return {@link HttpSinkBuilder}
+   */
   public static <InputT> HttpSinkBuilder<InputT> builder() {
     return new HttpSinkBuilder<>();
   }

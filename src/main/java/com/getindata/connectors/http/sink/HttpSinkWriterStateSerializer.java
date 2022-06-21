@@ -6,6 +6,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+/**
+ * An implementation of {@link AsyncSinkWriterStateSerializer} for {@link HttpSink} and its {@link HttpSinkWriter}.
+ */
 public class HttpSinkWriterStateSerializer extends AsyncSinkWriterStateSerializer<HttpSinkRequestEntry> {
   @Override
   protected void serializeRequestToStream(HttpSinkRequestEntry s, DataOutputStream out) throws IOException {

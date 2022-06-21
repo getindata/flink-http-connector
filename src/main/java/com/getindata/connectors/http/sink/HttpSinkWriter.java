@@ -19,8 +19,15 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+/**
+ * Sink writer created by {@link HttpSink} to write to an HTTP endpoint.
+ *
+ * <p>More details on the internals of this sink writer may be found in {@link AsyncSinkWriter}
+ * documentation.
+ *
+ * @param <InputT> type of the elements that should be sent through HTTP request.
+ */
 @Slf4j
 public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequestEntry> {
   private final String endpointUrl;
@@ -49,10 +56,25 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     this.httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
   }
 
+  /**
+   * A wrapper structure around an arbitrary element, keeping a reference to a particular
+   * {@link HttpSinkRequestEntry}. Used internally by the {@code HttpSinkWriter} to pass
+   * {@code HttpSinkRequestEntry} along some other element that is logically connected with it
+   * (e.g., full HTTP request built from the {@code HttpSinkRequestEntry}).
+   *
+   * @param <T>
+   */
   @RequiredArgsConstructor
   @EqualsAndHashCode
-  private static class HttpSinkRequestEntryPair<T> {
+  private static class HttpSinkRequestEntryWrapper<T> {
+    /**
+     * An element logically connected with the {@link HttpSinkRequestEntry}.
+     */
     public final T element;
+
+    /**
+     * A representation of a single {@link HttpSink} request.
+     */
     public final HttpSinkRequestEntry sinkRequestEntry;
   }
 
@@ -60,9 +82,9 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
   protected void submitRequestEntries(
       List<HttpSinkRequestEntry> requestEntries, Consumer<List<HttpSinkRequestEntry>> requestResult
   ) {
-    List<HttpSinkRequestEntryPair<HttpRequest>> requests = requestEntries
+    List<HttpSinkRequestEntryWrapper<HttpRequest>> requests = requestEntries
         .stream()
-        .map(requestEntry -> new HttpSinkRequestEntryPair<>(buildHttpRequest(requestEntry), requestEntry))
+        .map(requestEntry -> new HttpSinkRequestEntryWrapper<>(buildHttpRequest(requestEntry), requestEntry))
         .collect(Collectors.toList());
 
     var completedFutures = getCompletedFutures(requests);
@@ -86,15 +108,15 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
         .build();
   }
 
-  private List<HttpSinkRequestEntryPair<Optional<HttpResponse<String>>>> getCompletedFutures(
-      List<HttpSinkRequestEntryPair<HttpRequest>> requests
+  private List<HttpSinkRequestEntryWrapper<Optional<HttpResponse<String>>>> getCompletedFutures(
+      List<HttpSinkRequestEntryWrapper<HttpRequest>> requests
   ) {
     var futures = requests
         .stream()
         .map(req -> httpClient
             .sendAsync(req.element, HttpResponse.BodyHandlers.ofString())
             .exceptionally(ex -> null)
-            .thenApply(res -> new HttpSinkRequestEntryPair<>(Optional.ofNullable(res), req.sinkRequestEntry))
+            .thenApply(res -> new HttpSinkRequestEntryWrapper<>(Optional.ofNullable(res), req.sinkRequestEntry))
         )
         .collect(Collectors.toList());
 
@@ -102,7 +124,7 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
   }
 
   private <T> List<HttpSinkRequestEntry> getFailedRequests(
-      List<HttpSinkRequestEntryPair<Optional<HttpResponse<T>>>> responsePairs
+      List<HttpSinkRequestEntryWrapper<Optional<HttpResponse<T>>>> responsePairs
   ) {
     return responsePairs
         .stream()
