@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.sink;
 
+import com.getindata.connectors.http.SinkHttpClientBuilder;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
@@ -40,6 +41,9 @@ import java.util.Collections;
 public class HttpSink<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry> {
   private final String endpointUrl;
 
+  // having Builder instead of an instance of `SinkHttpClient` makes it possible to serialize `HttpSink`
+  private final SinkHttpClientBuilder sinkHttpClientBuilder;
+
   protected HttpSink(
       ElementConverter<InputT, HttpSinkRequestEntry> elementConverter,
       int maxBatchSize,
@@ -48,13 +52,16 @@ public class HttpSink<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry
       long maxBatchSizeInBytes,
       long maxTimeInBufferMS,
       long maxRecordSizeInBytes,
-      String endpointUrl
+      String endpointUrl,
+      SinkHttpClientBuilder sinkHttpClientBuilder
   ) {
     super(elementConverter, maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBatchSizeInBytes,
           maxTimeInBufferMS, maxRecordSizeInBytes
     );
     Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl), "The endpoint URL must be set when initializing HTTP Sink.");
     this.endpointUrl = endpointUrl;
+    this.sinkHttpClientBuilder =
+        Preconditions.checkNotNull(sinkHttpClientBuilder, "The HTTP client builder must not be null when initializing HTTP Sink.");
   }
 
   /**
@@ -81,6 +88,7 @@ public class HttpSink<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry
         getMaxTimeInBufferMS(),
         getMaxRecordSizeInBytes(),
         endpointUrl,
+        sinkHttpClientBuilder.build(),
         Collections.emptyList()
     );
   }
@@ -99,6 +107,7 @@ public class HttpSink<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry
         getMaxTimeInBufferMS(),
         getMaxRecordSizeInBytes(),
         endpointUrl,
+        sinkHttpClientBuilder.build(),
         recoveredState
     );
   }

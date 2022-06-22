@@ -1,5 +1,7 @@
 package com.getindata.connectors.http.sink;
 
+import com.getindata.connectors.http.SinkHttpClient;
+import com.getindata.connectors.http.SinkHttpClientBuilder;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
@@ -43,6 +45,7 @@ public class HttpSinkBuilder<InputT> extends
   private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1024 * 1024;
 
   private String endpointUrl;
+  private SinkHttpClientBuilder sinkHttpClientBuilder;
   private ElementConverter<InputT, HttpSinkRequestEntry> elementConverter;
 
   HttpSinkBuilder() {}
@@ -53,6 +56,15 @@ public class HttpSinkBuilder<InputT> extends
    */
   public HttpSinkBuilder<InputT> setEndpointUrl(String endpointUrl) {
     this.endpointUrl = endpointUrl;
+    return this;
+  }
+
+  /**
+   * @param sinkHttpClientBuilder builder for an implementation of {@link SinkHttpClient} that will be used by {@link HttpSink}
+   * @return {@link HttpSinkBuilder} itself
+   */
+  public HttpSinkBuilder<InputT> setSinkHttpClientBuilder(SinkHttpClientBuilder sinkHttpClientBuilder) {
+    this.sinkHttpClientBuilder = sinkHttpClientBuilder;
     return this;
   }
 
@@ -75,7 +87,8 @@ public class HttpSinkBuilder<InputT> extends
         Optional.ofNullable(getMaxBatchSizeInBytes()).orElse(DEFAULT_MAX_BATCH_SIZE_IN_B),
         Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
         Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
-        endpointUrl
+        endpointUrl,
+        sinkHttpClientBuilder
     );
   }
 }

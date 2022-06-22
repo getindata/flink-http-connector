@@ -1,6 +1,7 @@
 package com.getindata.connectors.http.sink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.getindata.connectors.http.sink.httpclient.JavaNetSinkHttpClient;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.junit.jupiter.api.AfterEach;
@@ -23,7 +24,7 @@ public class HttpSinkConnectionTest {
   private static final Set<Integer> messageIds = IntStream.range(0, 50).boxed().collect(Collectors.toSet());
   private static final List<String> messages =
       messageIds.stream().map(i -> "{\"http-sink-id\":" + i + "}").collect(Collectors.toList());
-  
+
   private WireMockServer wireMockServer;
 
   @BeforeEach
@@ -49,6 +50,7 @@ public class HttpSinkConnectionTest {
                            .setElementConverter(
                                (s, _context) -> new HttpSinkRequestEntry(
                                    "POST", "application/json", s.getBytes(StandardCharsets.UTF_8)))
+                           .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
                            .build();
     source.sinkTo(httpSink);
     env.execute("Http Sink test connection");
@@ -92,6 +94,7 @@ public class HttpSinkConnectionTest {
                            .setElementConverter(
                                (s, _context) -> new HttpSinkRequestEntry(
                                    "POST", "application/json", s.getBytes(StandardCharsets.UTF_8)))
+                           .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
                            .build();
     source.sinkTo(httpSink);
     env.execute("Http Sink test connection");
