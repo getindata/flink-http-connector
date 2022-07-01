@@ -2,10 +2,8 @@ package com.getindata.connectors.http.sink.httpclient;
 
 import com.getindata.connectors.http.SinkHttpClient;
 import com.getindata.connectors.http.SinkHttpClientResponse;
-import com.getindata.connectors.http.sink.HttpSink;
 import com.getindata.connectors.http.sink.HttpSinkRequestEntry;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,13 +11,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
  * An implementation of {@link SinkHttpClient} that uses Java 11's {@link HttpClient}.
  */
+@Slf4j
 public class JavaNetSinkHttpClient implements SinkHttpClient {
   private final HttpClient httpClient;
 
@@ -27,43 +25,11 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     this.httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
   }
 
-  /**
-   * A wrapper structure around an arbitrary element, keeping a reference to a particular
-   * {@link HttpSinkRequestEntry}. Used internally by the {@code HttpSinkWriter} to pass
-   * {@code HttpSinkRequestEntry} along some other element that is logically connected with it
-   * (e.g., full HTTP request built from the {@code HttpSinkRequestEntry}).
-   *
-   * @param <T>
-   */
-  @RequiredArgsConstructor
-  @EqualsAndHashCode
-  private static class HttpSinkRequestEntryWrapper<T> {
-    /**
-     * An element logically connected with the {@link HttpSinkRequestEntry}.
-     */
-    public final T element;
-
-    /**
-     * A representation of a single {@link HttpSink} request.
-     */
-    public final HttpSinkRequestEntry sinkRequestEntry;
-  }
-
   @Override
   public CompletableFuture<SinkHttpClientResponse> putRequests(
       List<HttpSinkRequestEntry> requestEntries, String endpointUrl
   ) {
-    var endpointUri = URI.create(endpointUrl);
-
-    List<HttpSinkRequestEntryWrapper<HttpRequest>> requests = requestEntries
-        .stream()
-        .map(requestEntry -> new HttpSinkRequestEntryWrapper<>(
-            buildHttpRequest(requestEntry, endpointUri),
-            requestEntry
-        ))
-        .collect(Collectors.toList());
-
-    return getCompletedFutures(requests).thenApply(this::prepareHttpClientResponse);
+    return submitRequests(requestEntries, endpointUrl).thenApply(this::prepareSinkHttpClientResponse);
   }
 
   private HttpRequest buildHttpRequest(HttpSinkRequestEntry requestEntry, URI endpointUri) {
@@ -76,33 +42,37 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         .build();
   }
 
-  private CompletableFuture<List<HttpSinkRequestEntryWrapper<Optional<HttpResponse<String>>>>> getCompletedFutures(
-      List<HttpSinkRequestEntryWrapper<HttpRequest>> requests
+  private CompletableFuture<List<JavaNetHttpResponseWrapper>> submitRequests(
+      List<HttpSinkRequestEntry> requestEntries, String endpointUrl
   ) {
-    var futures = requests
-        .stream()
-        .map(req -> httpClient
-            .sendAsync(req.element, HttpResponse.BodyHandlers.ofString())
-            .exceptionally(ex -> null)
-            .thenApply(res -> new HttpSinkRequestEntryWrapper<>(Optional.ofNullable(res), req.sinkRequestEntry))
-        )
-        .collect(Collectors.toList());
+    var endpointUri = URI.create(endpointUrl);
+    var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
 
-    var allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-    return allFutures.thenApply(_void -> futures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
+    for (var entry : requestEntries) {
+      var response = httpClient
+          .sendAsync(buildHttpRequest(entry, endpointUri), HttpResponse.BodyHandlers.ofString())
+          .exceptionally(ex -> {
+            log.error("Request fatally failed because of an exception", ex);
+            return null;
+          })
+          .thenApply(res -> new JavaNetHttpResponseWrapper(entry, res));
+      responseFutures.add(response);
+    }
+
+    var allFutures = CompletableFuture.allOf(responseFutures.toArray(new CompletableFuture[0]));
+    return allFutures.thenApply(_void -> responseFutures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
   }
 
-  private SinkHttpClientResponse prepareHttpClientResponse(
-      List<HttpSinkRequestEntryWrapper<Optional<HttpResponse<String>>>> responses
-  ) {
+  private SinkHttpClientResponse prepareSinkHttpClientResponse(List<JavaNetHttpResponseWrapper> responses) {
     var successfulResponses = new ArrayList<HttpSinkRequestEntry>();
     var failedResponses = new ArrayList<HttpSinkRequestEntry>();
 
     for (var response : responses) {
-      if (response.element.isEmpty() || response.element.get().statusCode() >= 500) {  // TODO: what about 4xx?
-        failedResponses.add(response.sinkRequestEntry);
+      var sinkRequestEntry = response.getSinkRequestEntry();
+      if (response.getResponse().isEmpty() || response.getResponse().get().statusCode() >= 400) {
+        failedResponses.add(sinkRequestEntry);
       } else {
-        successfulResponses.add(response.sinkRequestEntry);
+        successfulResponses.add(sinkRequestEntry);
       }
     }
 

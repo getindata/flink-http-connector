@@ -7,7 +7,6 @@ import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
-import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +25,6 @@ import java.util.function.Consumer;
 public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequestEntry> {
   private final String endpointUrl;
   private final SinkHttpClient sinkHttpClient;
-  private final SinkWriterMetricGroup metrics;
   private final Counter numRecordsSendErrorsCounter;
 
   public HttpSinkWriter(
@@ -50,7 +48,8 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     );
     this.endpointUrl = endpointUrl;
     this.sinkHttpClient = sinkHttpClient;
-    this.metrics = context.metricGroup();
+
+    var metrics = context.metricGroup();
     this.numRecordsSendErrorsCounter = metrics.getNumRecordsSendErrorsCounter();
   }
 

@@ -11,12 +11,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface SinkHttpClient {
   /**
-   * Returns a {@link CompletableFuture} that completes when all requests have been sent and returned their statuses.
+   * Sends HTTP requests to an external web service.
    *
    * @param requestEntries a set of request entries that should be sent to the destination
    * @param endpointUrl    the URL of the endpoint
-   * @return the new {@link CompletableFuture} wrapping {@link SinkHttpClientResponse}
-   * to be processed by {@code HttpSinkWriter}
+   * @return the new {@link CompletableFuture} wrapping {@link SinkHttpClientResponse} that
+   * completes when all requests have been sent and returned their statuses
    */
   CompletableFuture<SinkHttpClientResponse> putRequests(List<HttpSinkRequestEntry> requestEntries, String endpointUrl);
 }

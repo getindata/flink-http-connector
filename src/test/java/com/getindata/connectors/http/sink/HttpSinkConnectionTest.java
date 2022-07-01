@@ -3,6 +3,7 @@ package com.getindata.connectors.http.sink;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.getindata.connectors.http.sink.httpclient.JavaNetSinkHttpClient;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.http.Fault;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +41,12 @@ public class HttpSinkConnectionTest {
 
   @Test
   public void testConnection() throws Exception {
-    wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(
-        aResponse().withHeader("Content-Type", "text/json").withStatus(200).withBody("{}")));
+    wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
+                               .withHeader("Content-Type", equalTo("application/json"))
+                               .willReturn(
+                                   aResponse().withHeader("Content-Type", "application/json")
+                                              .withStatus(200)
+                                              .withBody("{}")));
 
     var env = StreamExecutionEnvironment.getExecutionEnvironment();
     var source = env.fromCollection(messages);
@@ -55,10 +60,13 @@ public class HttpSinkConnectionTest {
     source.sinkTo(httpSink);
     env.execute("Http Sink test connection");
 
-    var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
-    var requestsAsMap = postedRequests.stream().map(pr -> {
+    var responses = wireMockServer.getAllServeEvents();
+    assertTrue(responses.stream().allMatch(response -> Objects.equals(response.getRequest().getUrl(), "/myendpoint")));
+    assertTrue(responses.stream().allMatch(response -> response.getResponse().getStatus() == 200));
+
+    var requestsAsMap = responses.stream().map(response -> {
       try {
-        return new ObjectMapper().readValue(pr.getBody(), HashMap.class);
+        return new ObjectMapper().readValue(response.getRequest().getBody(), HashMap.class);
       } catch (IOException e) {
         return null;
       }
@@ -75,13 +83,15 @@ public class HttpSinkConnectionTest {
   }
 
   @Test
-  public void testFailedConnection() throws Exception {
+  public void testServerErrorConnection() throws Exception {
     wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
+                               .withHeader("Content-Type", equalTo("application/json"))
                                .inScenario("Retry Scenario")
                                .whenScenarioStateIs(STARTED)
                                .willReturn(serverError())
                                .willSetStateTo("Cause Success"));
     wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
+                               .withHeader("Content-Type", equalTo("application/json"))
                                .inScenario("Retry Scenario")
                                .whenScenarioStateIs("Cause Success")
                                .willReturn(aResponse().withStatus(200))
@@ -97,7 +107,39 @@ public class HttpSinkConnectionTest {
                            .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
                            .build();
     source.sinkTo(httpSink);
-    env.execute("Http Sink test connection");
+    env.execute("Http Sink test failed connection");
+
+    var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
+    assertEquals(2, postedRequests.size());
+    assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
+  }
+
+  @Test
+  public void testFailedConnection() throws Exception {
+    wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
+                               .withHeader("Content-Type", equalTo("application/json"))
+                               .inScenario("Retry Scenario")
+                               .whenScenarioStateIs(STARTED)
+                               .willReturn(serverError().withFault(Fault.EMPTY_RESPONSE))
+                               .willSetStateTo("Cause Success"));
+    wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
+                               .withHeader("Content-Type", equalTo("application/json"))
+                               .inScenario("Retry Scenario")
+                               .whenScenarioStateIs("Cause Success")
+                               .willReturn(aResponse().withStatus(200))
+                               .willSetStateTo("Cause Success"));
+
+    var env = StreamExecutionEnvironment.getExecutionEnvironment();
+    var source = env.fromCollection(List.of(messages.get(0)));
+    var httpSink = HttpSink.<String>builder()
+                           .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
+                           .setElementConverter(
+                               (s, _context) -> new HttpSinkRequestEntry(
+                                   "POST", "application/json", s.getBytes(StandardCharsets.UTF_8)))
+                           .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+                           .build();
+    source.sinkTo(httpSink);
+    env.execute("Http Sink test failed connection");
 
     var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
     assertEquals(2, postedRequests.size());
