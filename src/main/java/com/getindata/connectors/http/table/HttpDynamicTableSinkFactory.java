@@ -27,9 +27,12 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
   @Override
   public DynamicTableSink createDynamicTableSink(Context context) {
-    AsyncDynamicSinkContext factoryContext = new AsyncDynamicSinkContext(this, context);
-
+    final AsyncDynamicSinkContext factoryContext = new AsyncDynamicSinkContext(this, context);
     ReadableConfig tableOptions = factoryContext.getTableOptions();
+
+    // Validate configuration
+    FactoryUtil.createTableFactoryHelper(this, context).validate();
+    validateHttpSinkOptions(tableOptions);
     Properties properties = new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
 
     HttpDynamicSink.HttpDynamicTableSinkBuilder builder = new HttpDynamicSink.HttpDynamicTableSinkBuilder()
@@ -57,5 +60,17 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
     var options = super.optionalOptions();
     options.add(INSERT_METHOD);
     return options;
+  }
+
+  private static void validateHttpSinkOptions(ReadableConfig tableOptions) throws IllegalArgumentException {
+    tableOptions.getOptional(INSERT_METHOD).ifPresent(insertMethod -> {
+      if (!insertMethod.equals("POST") && !insertMethod.equals("PUT")) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Invalid option '%s'. It is expected to be either 'POST' or 'PUT'.",
+                INSERT_METHOD.key()
+            ));
+      }
+    });
   }
 }
