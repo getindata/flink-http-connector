@@ -4,6 +4,7 @@ import com.getindata.connectors.http.sink.HttpSink;
 import com.getindata.connectors.http.sink.HttpSinkBuilder;
 import com.getindata.connectors.http.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.sink.httpclient.JavaNetSinkHttpClient;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.ReadableConfig;
@@ -21,7 +22,6 @@ import org.apache.flink.util.Preconditions;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import static com.getindata.connectors.http.table.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.table.HttpDynamicSinkConnectorOptions.URL;
@@ -66,6 +66,7 @@ import static com.getindata.connectors.http.table.HttpDynamicSinkConnectorOption
  * }</pre>
  */
 @Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry> {
   private final DataType consumedDataType;
   private final EncodingFormat<SerializationSchema<RowData>> encodingFormat;
@@ -133,22 +134,6 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
   @Override
   public String asSummaryString() {
     return "HttpSink";
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
-    HttpDynamicSink that = (HttpDynamicSink) o;
-    return Objects.equals(consumedDataType, that.consumedDataType) &&
-           Objects.equals(encodingFormat, that.encodingFormat) &&
-           Objects.equals(tableOptions, that.tableOptions);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), consumedDataType, encodingFormat, tableOptions);
   }
 
   private String getContentTypeFromFormat(String format) {
