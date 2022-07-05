@@ -64,7 +64,7 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
   private static void validateHttpSinkOptions(ReadableConfig tableOptions) throws IllegalArgumentException {
     tableOptions.getOptional(INSERT_METHOD).ifPresent(insertMethod -> {
-      if (!insertMethod.equals("POST") && !insertMethod.equals("PUT")) {
+      if (!Set.of("POST", "PUT").contains(insertMethod)) {
         throw new IllegalArgumentException(
             String.format(
                 "Invalid option '%s'. It is expected to be either 'POST' or 'PUT'.",
