@@ -68,11 +68,14 @@ public class HttpDynamicSinkInsertTest {
 
     var postedRequests = wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")));
     assertEquals(1, postedRequests.size());
+
+    var request = postedRequests.get(0);
     assertEquals(
         "{\"id\":1,\"first_name\":\"Ninette\",\"last_name\":\"Clee\",\"gender\":\"Female\",\"stock\":\"CDZI\",\"currency\":\"RUB\",\"tx_date\":\"2021-08-24 15:22:59\"}",
-        postedRequests.get(0).getBodyAsString()
+        request.getBodyAsString()
     );
-    assertEquals(RequestMethod.POST, postedRequests.get(0).getMethod());
+    assertEquals(RequestMethod.POST, request.getMethod());
+    assertEquals("application/json", request.getHeader("Content-Type"));
   }
 
   @Test
@@ -116,8 +119,40 @@ public class HttpDynamicSinkInsertTest {
     ));
     for (var request : postedRequests) {
       assertEquals(RequestMethod.PUT, request.getMethod());
+      assertEquals("application/json", request.getHeader("Content-Type"));
       assertTrue(jsonRequests.contains(request.getBodyAsString()));
       jsonRequests.remove(request.getBodyAsString());
     }
+  }
+
+  @Test
+  public void testHttpDynamicSinkRawFormat() throws Exception {
+    wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+
+    final String createTable =
+        String.format(
+            "CREATE TABLE http (\n"
+            + "  last_name string"
+            + ") with (\n"
+            + "  'connector' = '%s',\n"
+            + "  'url' = '%s',\n"
+            + "  'format' = 'raw'\n"
+            + ")",
+            HttpDynamicTableSinkFactory.IDENTIFIER,
+            "http://localhost:" + SERVER_PORT + "/myendpoint"
+        );
+
+    tEnv.executeSql(createTable);
+
+    final String insert = "INSERT INTO http VALUES ('Clee')";
+    tEnv.executeSql(insert).await();
+
+    var postedRequests = wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")));
+    assertEquals(1, postedRequests.size());
+
+    var request = postedRequests.get(0);
+    assertEquals("Clee", request.getBodyAsString());
+    assertEquals(RequestMethod.POST, request.getMethod());
+    assertEquals("application/octet-stream", request.getHeader("Content-Type"));
   }
 }

@@ -7,26 +7,35 @@ import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfiguration
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.factories.FactoryUtil;
 
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import static com.getindata.connectors.http.table.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.table.HttpDynamicSinkConnectorOptions.URL;
 
-/** Factory for creating {@link HttpDynamicSink}. */
+/**
+ * Factory for creating {@link HttpDynamicSink}.
+ */
 public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
   public static final String IDENTIFIER = "http-sink";
+
+  private static final Map<String, String> FORMAT_CONTENT_TYPE_MAP = Map.ofEntries(
+      Map.entry("raw", "application/octet-stream"),
+      Map.entry("json", "application/json")
+  );
 
   @Override
   public DynamicTableSink createDynamicTableSink(Context context) {
     AsyncDynamicSinkContext factoryContext = new AsyncDynamicSinkContext(this, context);
 
-    ReadableConfig readableConfig = factoryContext.getTableOptions();
-    Properties properties = new AsyncSinkConfigurationValidator(readableConfig).getValidatedConfigurations();
+    ReadableConfig tableOptions = factoryContext.getTableOptions();
+    Properties properties = new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
 
     HttpDynamicSink.HttpDynamicTableSinkBuilder builder = new HttpDynamicSink.HttpDynamicTableSinkBuilder()
-        .setSinkConfig(getSinkConfigOptions(readableConfig))
+        .setTableOptions(tableOptions)
         .setEncodingFormat(factoryContext.getEncodingFormat())
+        .setFormatContentTypeMap(FORMAT_CONTENT_TYPE_MAP)
         .setConsumedDataType(factoryContext.getPhysicalDataType());
     addAsyncOptionsToBuilder(properties, builder);
 
@@ -45,19 +54,8 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
   @Override
   public Set<ConfigOption<?>> optionalOptions() {
-    return Set.of(INSERT_METHOD);
-  }
-
-  /**
-   * @param config a configuration object
-   * @return the configuration for {@link HttpDynamicSink}
-   */
-  private HttpDynamicSinkConfig getSinkConfigOptions(ReadableConfig config) {
-    return HttpDynamicSinkConfig
-        .builder()
-        .url(config.get(URL))
-        .format(config.get(FactoryUtil.FORMAT))
-        .insertMethod(config.get(INSERT_METHOD))
-        .build();
+    var options = super.optionalOptions();
+    options.add(INSERT_METHOD);
+    return options;
   }
 }
