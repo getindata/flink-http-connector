@@ -53,6 +53,7 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     this.numRecordsSendErrorsCounter = metrics.getNumRecordsSendErrorsCounter();
   }
 
+  // TODO: Reintroduce retries by adding backoff policy
   @Override
   protected void submitRequestEntries(
       List<HttpSinkRequestEntry> requestEntries, Consumer<List<HttpSinkRequestEntry>> requestResult
@@ -63,15 +64,25 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
         var failedRequestsNumber = requestEntries.size();
         log.error("Http Sink fatally failed to write all {} requests", failedRequestsNumber);
         numRecordsSendErrorsCounter.inc(failedRequestsNumber);
-        requestResult.accept(requestEntries);
+
+        // TODO: Make `HttpSink` retry the failed requests. Currently, it does not retry those at all,
+        //  only adds their count to the `numRecordsSendErrors` metric. It is due to the fact we do not have
+        //  a clear image how we want to do it, so it would be both efficient and correct.
+//        requestResult.accept(requestEntries);
       } else if (response.getFailedRequests().size() > 0) {
         var failedRequestsNumber = response.getFailedRequests().size();
         log.error("Http Sink failed to write and will retry {} requests", failedRequestsNumber);
         numRecordsSendErrorsCounter.inc(failedRequestsNumber);
-        requestResult.accept(response.getFailedRequests());
-      } else {
-        requestResult.accept(Collections.emptyList());
+        
+        // TODO: Make `HttpSink` retry the failed requests. Currently, it does not retry those at all,
+        //  only adds their count to the `numRecordsSendErrors` metric. It is due to the fact we do not have
+        //  a clear image how we want to do it, so it would be both efficient and correct.
+//        requestResult.accept(response.getFailedRequests());
+//      } else {
+//        requestResult.accept(Collections.emptyList());
+//      }
       }
+      requestResult.accept(Collections.emptyList());
     });
   }
 
