@@ -4,6 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.getindata.connectors.http.sink.httpclient.JavaNetSinkHttpClient;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.http.Fault;
+import org.apache.flink.configuration.ConfigConstants;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.Metric;
+import org.apache.flink.metrics.MetricConfig;
+import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.metrics.reporter.MetricReporter;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +33,54 @@ public class HttpSinkConnectionTest {
   private static final List<String> messages =
       messageIds.stream().map(i -> "{\"http-sink-id\":" + i + "}").collect(Collectors.toList());
 
+  private StreamExecutionEnvironment env;
   private WireMockServer wireMockServer;
+
+  // must be public because of the reflection
+  public static class SendErrorsTestReporter implements MetricReporter {
+    static volatile List<Counter> numRecordsSendErrors = null;
+
+    public static long getCount() {
+      return numRecordsSendErrors.stream().map(Counter::getCount).reduce(0L, Long::sum);
+    }
+
+    public static void reset() {
+      numRecordsSendErrors = new ArrayList<>();
+    }
+
+    @Override
+    public void open(MetricConfig metricConfig) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public void notifyOfAddedMetric(
+        Metric metric, String s, MetricGroup metricGroup
+    ) {
+      if ("numRecordsSendErrors".equals(s)) {
+        numRecordsSendErrors.add((Counter) metric);
+      }
+    }
+
+    @Override
+    public void notifyOfRemovedMetric(Metric metric, String s, MetricGroup metricGroup) {
+    }
+  }
 
   @BeforeEach
   public void setUp() {
+    SendErrorsTestReporter.reset();
+
+    env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration() {
+      {
+        this.setString(ConfigConstants.METRICS_REPORTER_PREFIX + "sendErrorsTestReporter." +
+                       ConfigConstants.METRICS_REPORTER_CLASS_SUFFIX, SendErrorsTestReporter.class.getName());
+      }
+    });
+
     wireMockServer = new WireMockServer(SERVER_PORT);
     wireMockServer.start();
   }
@@ -48,7 +99,6 @@ public class HttpSinkConnectionTest {
                                               .withStatus(200)
                                               .withBody("{}")));
 
-    var env = StreamExecutionEnvironment.getExecutionEnvironment();
     var source = env.fromCollection(messages);
     var httpSink = HttpSink.<String>builder()
                            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
@@ -97,7 +147,6 @@ public class HttpSinkConnectionTest {
                                .willReturn(aResponse().withStatus(200))
                                .willSetStateTo("Cause Success"));
 
-    var env = StreamExecutionEnvironment.getExecutionEnvironment();
     var source = env.fromCollection(List.of(messages.get(0)));
     var httpSink = HttpSink.<String>builder()
                            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
@@ -109,9 +158,11 @@ public class HttpSinkConnectionTest {
     source.sinkTo(httpSink);
     env.execute("Http Sink test failed connection");
 
-    var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
-    assertEquals(2, postedRequests.size());
-    assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
+    assertEquals(1, SendErrorsTestReporter.getCount());
+//    TODO: reintroduce along with the retries
+//    var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
+//    assertEquals(2, postedRequests.size());
+//    assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
   }
 
   @Test
@@ -120,7 +171,7 @@ public class HttpSinkConnectionTest {
                                .withHeader("Content-Type", equalTo("application/json"))
                                .inScenario("Retry Scenario")
                                .whenScenarioStateIs(STARTED)
-                               .willReturn(serverError().withFault(Fault.EMPTY_RESPONSE))
+                               .willReturn(aResponse().withFault(Fault.EMPTY_RESPONSE))
                                .willSetStateTo("Cause Success"));
     wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
                                .withHeader("Content-Type", equalTo("application/json"))
@@ -129,7 +180,6 @@ public class HttpSinkConnectionTest {
                                .willReturn(aResponse().withStatus(200))
                                .willSetStateTo("Cause Success"));
 
-    var env = StreamExecutionEnvironment.getExecutionEnvironment();
     var source = env.fromCollection(List.of(messages.get(0)));
     var httpSink = HttpSink.<String>builder()
                            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
@@ -141,8 +191,9 @@ public class HttpSinkConnectionTest {
     source.sinkTo(httpSink);
     env.execute("Http Sink test failed connection");
 
-    var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
-    assertEquals(2, postedRequests.size());
-    assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
+    assertEquals(1, SendErrorsTestReporter.getCount());
+//    var postedRequests = wireMockServer.findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
+//    assertEquals(2, postedRequests.size());
+//    assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
   }
 }

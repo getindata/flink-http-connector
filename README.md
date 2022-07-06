@@ -169,12 +169,17 @@ As a result, you should see a table with joined records like so:
 The `msg` column shows parameters used with REST call for given JOIN record.
 
 ## TODO
+
+### HTTP TableLookup Source
 - Implement caches.
 - Add support for other Flink types. Currently, STRING type is only fully supported.
 - Think about Retry Policy for Http Request
 - Use Flink Format [7] to parse Json response 
 - Add Configurable Timeout value
 - Check other `//TODO`'s.
+
+### HTTP Sink
+- Make `HttpSink` retry the failed requests. Currently, it does not retry those at all, only adds their count to the `numRecordsSendErrors` metric. It should be thoroughly thought over how to do it efficiently and then implemented.
 
 ### 
 [1] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/table/sql/queries/joins/#lookup-join
