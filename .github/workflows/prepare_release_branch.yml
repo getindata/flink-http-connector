@@ -52,7 +52,17 @@ jobs:
 
       - name: Bump development version
         run: |
-          git checkout main
+          git checkout -b bump-version-after-${{ steps.save_current_version.outputs.current_version }}
           mvn validate -D 'bump${{ github.event.inputs.version_part }}' -DgenerateBackupPoms=false
           git commit -am "Bump development version to $(mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout)"
-          git push origin main
+          git push -u origin bump-version-after-${{ steps.save_current_version.outputs.current_version }}
+
+      - name: Open a PR to bump development version to main
+        id: open_pr
+        uses: vsoch/pull-request-action@1.0.12
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PULL_REQUEST_BRANCH: main
+          PULL_REQUEST_FROM_BRANCH: bump-version-after-${{ steps.save_current_version.outputs.current_version }}
+          PULL_REQUEST_TITLE: "Bump development version after release of ${{ steps.save_current_version.outputs.current_version }}"
+          PULL_REQUEST_BODY: "Bump SNAPSHOT version and CHANGELOG for subsequent development."
