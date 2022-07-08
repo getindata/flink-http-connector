@@ -1,12 +1,13 @@
 package com.getindata.connectors.http;
 
-import com.getindata.connectors.http.internal.SinkHttpClient;
-import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import java.util.Optional;
+
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
-import java.util.Optional;
+import com.getindata.connectors.http.internal.SinkHttpClient;
+import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
 /**
  * Builder to construct {@link HttpSink}.
@@ -19,7 +20,8 @@ import java.util.Optional;
  *     HttpSink.<String>builder()
  *             .setEndpointUrl("http://example.com/myendpoint")
  *             .setElementConverter(
- *                 (s, _context) -> new HttpSinkRequestEntry("POST", "text/plain", s.getBytes(StandardCharsets.UTF_8)))
+ *                 (s, _context) -> new HttpSinkRequestEntry("POST", "text/plain",
+ *                 s.getBytes(StandardCharsets.UTF_8)))
  *             .build();
  * </pre>
  *
@@ -38,59 +40,63 @@ import java.util.Optional;
  */
 public class HttpSinkBuilder<InputT> extends
     AsyncSinkBaseBuilder<InputT, HttpSinkRequestEntry, HttpSinkBuilder<InputT>> {
-  private static final int DEFAULT_MAX_BATCH_SIZE = 500;
-  private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 50;
-  private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 10_000;
-  private static final long DEFAULT_MAX_BATCH_SIZE_IN_B = 5 * 1024 * 1024;
-  private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
-  private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1024 * 1024;
 
-  private String endpointUrl;
-  private SinkHttpClientBuilder sinkHttpClientBuilder;
-  private ElementConverter<InputT, HttpSinkRequestEntry> elementConverter;
+    private static final int DEFAULT_MAX_BATCH_SIZE = 500;
+    private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 50;
+    private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 10_000;
+    private static final long DEFAULT_MAX_BATCH_SIZE_IN_B = 5 * 1024 * 1024;
+    private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
+    private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1024 * 1024;
 
-  HttpSinkBuilder() {}
+    private String endpointUrl;
+    private SinkHttpClientBuilder sinkHttpClientBuilder;
+    private ElementConverter<InputT, HttpSinkRequestEntry> elementConverter;
 
-  /**
-   * @param endpointUrl the URL of the endpoint
-   * @return {@link HttpSinkBuilder} itself
-   */
-  public HttpSinkBuilder<InputT> setEndpointUrl(String endpointUrl) {
-    this.endpointUrl = endpointUrl;
-    return this;
-  }
+    HttpSinkBuilder() {
+    }
 
-  /**
-   * @param sinkHttpClientBuilder builder for an implementation of {@link SinkHttpClient} that
-   *                              will be used by {@link HttpSink}
-   * @return {@link HttpSinkBuilder} itself
-   */
-  public HttpSinkBuilder<InputT> setSinkHttpClientBuilder(SinkHttpClientBuilder sinkHttpClientBuilder) {
-    this.sinkHttpClientBuilder = sinkHttpClientBuilder;
-    return this;
-  }
+    /**
+     * @param endpointUrl the URL of the endpoint
+     * @return {@link HttpSinkBuilder} itself
+     */
+    public HttpSinkBuilder<InputT> setEndpointUrl(String endpointUrl) {
+        this.endpointUrl = endpointUrl;
+        return this;
+    }
 
-  /**
-   * @param elementConverter the {@link ElementConverter} to be used for the sink
-   * @return {@link HttpSinkBuilder} itself
-   */
-  public HttpSinkBuilder<InputT> setElementConverter(ElementConverter<InputT, HttpSinkRequestEntry> elementConverter) {
-    this.elementConverter = elementConverter;
-    return this;
-  }
+    /**
+     * @param sinkHttpClientBuilder builder for an implementation of {@link SinkHttpClient} that
+     *                              will be used by {@link HttpSink}
+     * @return {@link HttpSinkBuilder} itself
+     */
+    public HttpSinkBuilder<InputT> setSinkHttpClientBuilder(
+        SinkHttpClientBuilder sinkHttpClientBuilder) {
+        this.sinkHttpClientBuilder = sinkHttpClientBuilder;
+        return this;
+    }
 
-  @Override
-  public HttpSink<InputT> build() {
-    return new HttpSink<>(
-        elementConverter,
-        Optional.ofNullable(getMaxBatchSize()).orElse(DEFAULT_MAX_BATCH_SIZE),
-        Optional.ofNullable(getMaxInFlightRequests()).orElse(DEFAULT_MAX_IN_FLIGHT_REQUESTS),
-        Optional.ofNullable(getMaxBufferedRequests()).orElse(DEFAULT_MAX_BUFFERED_REQUESTS),
-        Optional.ofNullable(getMaxBatchSizeInBytes()).orElse(DEFAULT_MAX_BATCH_SIZE_IN_B),
-        Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
-        Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
-        endpointUrl,
-        sinkHttpClientBuilder
-    );
-  }
+    /**
+     * @param elementConverter the {@link ElementConverter} to be used for the sink
+     * @return {@link HttpSinkBuilder} itself
+     */
+    public HttpSinkBuilder<InputT> setElementConverter(
+        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter) {
+        this.elementConverter = elementConverter;
+        return this;
+    }
+
+    @Override
+    public HttpSink<InputT> build() {
+        return new HttpSink<>(
+            elementConverter,
+            Optional.ofNullable(getMaxBatchSize()).orElse(DEFAULT_MAX_BATCH_SIZE),
+            Optional.ofNullable(getMaxInFlightRequests()).orElse(DEFAULT_MAX_IN_FLIGHT_REQUESTS),
+            Optional.ofNullable(getMaxBufferedRequests()).orElse(DEFAULT_MAX_BUFFERED_REQUESTS),
+            Optional.ofNullable(getMaxBatchSizeInBytes()).orElse(DEFAULT_MAX_BATCH_SIZE_IN_B),
+            Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
+            Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
+            endpointUrl,
+            sinkHttpClientBuilder
+        );
+    }
 }

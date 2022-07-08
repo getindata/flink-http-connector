@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor
 public class LookupArg {
-  private final String argName;
-  private final String argValue;
+
+    private final String argName;
+
+    private final String argValue;
 }

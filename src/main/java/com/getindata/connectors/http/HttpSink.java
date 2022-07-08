@@ -1,9 +1,10 @@
 package com.getindata.connectors.http;
 
+import org.apache.flink.connector.base.sink.writer.ElementConverter;
+
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkInternal;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
-import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
 /**
  * A public implementation for {@code HttpSink} that performs async requests against a specified
@@ -17,7 +18,8 @@ import org.apache.flink.connector.base.sink.writer.ElementConverter;
  *     HttpSink.<String>builder()
  *             .setEndpointUrl("http://example.com/myendpoint")
  *             .setElementConverter(
- *                 (s, _context) -> new HttpSinkRequestEntry("POST", "text/plain", s.getBytes(StandardCharsets.UTF_8)))
+ *                 (s, _context) -> new HttpSinkRequestEntry("POST", "text/plain",
+ *                 s.getBytes(StandardCharsets.UTF_8)))
  *             .build();
  * </pre>
  *
