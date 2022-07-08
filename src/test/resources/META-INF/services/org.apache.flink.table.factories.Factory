@@ -1,1 +1,1 @@
-com.getindata.connectors.http.table.HttpLookupTableSourceFactory
+com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory

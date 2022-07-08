@@ -3,6 +3,7 @@ package com.getindata.connectors.http.table;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.getindata.connectors.http.internal.table.lookup.TableSourceHelper;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;

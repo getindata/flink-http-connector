@@ -1,7 +1,9 @@
 package com.getindata.connectors.http.sink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.getindata.connectors.http.sink.httpclient.JavaNetSinkHttpClient;
+import com.getindata.connectors.http.HttpSink;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.http.Fault;
 import org.apache.flink.configuration.ConfigConstants;

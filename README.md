@@ -7,7 +7,7 @@ The goal for HTTP TableLookup connector was to use it in Flink SQL statement as 
 Currently, HTTP TableLookup connector supports only Lookup Joins [1] and expects JSON as a response body. It also supports only the STRING types.
 
 #### HTTP Sink
-`HttpSink` supports both Streaming API (when using [HttpSink](src/main/java/com/getindata/connectors/http/sink/HttpSink.java) built using [HttpSinkBuilder](src/main/java/com/getindata/connectors/http/sink/HttpSinkBuilder.java)) and the Table API (using connector created in [HttpDynamicTableSinkFactory](src/main/java/com/getindata/connectors/http/table/HttpDynamicTableSinkFactory.java)). 
+`HttpSink` supports both Streaming API (when using [HttpSink](src/main/java/com/getindata/connectors/http/internal/sink/HttpSink.java) built using [HttpSinkBuilder](src/main/java/com/getindata/connectors/http/internal/sink/HttpSinkBuilder.java)) and the Table API (using connector created in [HttpDynamicTableSinkFactory](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicTableSinkFactory.java)). 
 
 ## Prerequisites
 * Java 11
@@ -53,7 +53,7 @@ http://localhost:8080/client/service?id=1&uuid=2
 ``
 
 ### HTTP Sink
-The following example shows the minimum Table API example to create a [HttpDynamicSink](src/main/java/com/getindata/connectors/http/table/HttpDynamicSink.java) that writes JSON values to an HTTP endpoint using POST method, assuming Flink has JAR of [JSON serializer](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/json/) installed:
+The following example shows the minimum Table API example to create a [HttpDynamicSink](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicSink.java) that writes JSON values to an HTTP endpoint using POST method, assuming Flink has JAR of [JSON serializer](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/json/) installed:
 
 ```roomsql
 CREATE TABLE http (

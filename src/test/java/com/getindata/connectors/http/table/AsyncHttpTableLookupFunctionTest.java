@@ -1,12 +1,14 @@
 package com.getindata.connectors.http.table;
 
-import static com.getindata.connectors.http.table.TableSourceHelper.buildGenericRowData;
+import static com.getindata.connectors.http.internal.table.lookup.TableSourceHelper.buildGenericRowData;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.getindata.connectors.http.internal.table.lookup.AsyncHttpTableLookupFunction;
+import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

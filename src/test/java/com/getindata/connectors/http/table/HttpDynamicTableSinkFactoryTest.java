@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.table;
 
+import com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.junit.jupiter.api.BeforeEach;

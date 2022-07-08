@@ -2,6 +2,7 @@ package com.getindata.connectors.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.getindata.connectors.http.internal.utils.ExceptionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 

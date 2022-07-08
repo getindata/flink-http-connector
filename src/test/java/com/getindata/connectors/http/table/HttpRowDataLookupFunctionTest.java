@@ -5,9 +5,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.getindata.connectors.http.PollingClient;
-import com.getindata.connectors.http.PollingClientFactory;
-import com.getindata.connectors.http.table.HttpTableLookupFunction.ColumnData;
+import com.getindata.connectors.http.internal.PollingClient;
+import com.getindata.connectors.http.internal.PollingClientFactory;
+import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction;
+import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction.ColumnData;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
+import com.getindata.connectors.http.internal.table.lookup.LookupArg;
 import java.util.List;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.table.data.RowData;
