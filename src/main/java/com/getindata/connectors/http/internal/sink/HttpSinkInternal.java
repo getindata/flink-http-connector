@@ -1,6 +1,9 @@
 package com.getindata.connectors.http.internal.sink;
 
-import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
@@ -8,21 +11,19 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
+import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+
 
 /**
  * An internal implementation of HTTP Sink that performs async requests against a specified HTTP
  * endpoint using the buffering protocol specified in {@link AsyncSinkBase}.
- *
+ * <p>
  * API of this class can change without any concerns as long as it does not have any influence on
- * methods defined in
- * {@link com.getindata.connectors.http.HttpSink} and
- * {@link com.getindata.connectors.http.HttpSinkBuilder}
- * classes.
+ * methods defined in {@link com.getindata.connectors.http.HttpSink} and {@link
+ * com.getindata.connectors.http.HttpSinkBuilder} classes.
  *
- * <p>The behaviour of the buffering may be specified by providing configuration during the sink build time.
+ * <p>The behaviour of the buffering may be specified by providing configuration during the sink
+ * build time.
  *
  * <ul>
  *   <li>{@code maxBatchSize}: the maximum size of a batch of entries that may be sent to the HTTP
@@ -45,71 +46,77 @@ import java.util.Collections;
  * @param <InputT> type of the elements that should be sent through HTTP request.
  */
 public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequestEntry> {
-  private final String endpointUrl;
 
-  // having Builder instead of an instance of `SinkHttpClient` makes it possible to serialize `HttpSink`
-  private final SinkHttpClientBuilder sinkHttpClientBuilder;
+    private final String endpointUrl;
 
-  protected HttpSinkInternal(
-      ElementConverter<InputT, HttpSinkRequestEntry> elementConverter,
-      int maxBatchSize,
-      int maxInFlightRequests,
-      int maxBufferedRequests,
-      long maxBatchSizeInBytes,
-      long maxTimeInBufferMS,
-      long maxRecordSizeInBytes,
-      String endpointUrl,
-      SinkHttpClientBuilder sinkHttpClientBuilder
-  ) {
-    super(elementConverter, maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBatchSizeInBytes,
-          maxTimeInBufferMS, maxRecordSizeInBytes
-    );
-    Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl), "The endpoint URL must be set when initializing HTTP Sink.");
-    this.endpointUrl = endpointUrl;
-    this.sinkHttpClientBuilder =
-        Preconditions.checkNotNull(sinkHttpClientBuilder, "The HTTP client builder must not be null when initializing HTTP Sink.");
-  }
+    // having Builder instead of an instance of `SinkHttpClient`
+    // makes it possible to serialize `HttpSink`
+    private final SinkHttpClientBuilder sinkHttpClientBuilder;
 
-  @Override
-  public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> createWriter(
-      InitContext context
-  ) throws IOException {
-    return new HttpSinkWriter<>(
-        getElementConverter(),
-        context,
-        getMaxBatchSize(),
-        getMaxInFlightRequests(),
-        getMaxBufferedRequests(),
-        getMaxBatchSizeInBytes(),
-        getMaxTimeInBufferMS(),
-        getMaxRecordSizeInBytes(),
-        endpointUrl,
-        sinkHttpClientBuilder.build(),
-        Collections.emptyList()
-    );
-  }
+    protected HttpSinkInternal(
+        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter,
+        int maxBatchSize,
+        int maxInFlightRequests,
+        int maxBufferedRequests,
+        long maxBatchSizeInBytes,
+        long maxTimeInBufferMS,
+        long maxRecordSizeInBytes,
+        String endpointUrl,
+        SinkHttpClientBuilder sinkHttpClientBuilder
+    ) {
+        super(elementConverter, maxBatchSize, maxInFlightRequests, maxBufferedRequests,
+            maxBatchSizeInBytes,
+            maxTimeInBufferMS, maxRecordSizeInBytes
+        );
+        Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl),
+            "The endpoint URL must be set when initializing HTTP Sink.");
+        this.endpointUrl = endpointUrl;
+        this.sinkHttpClientBuilder =
+            Preconditions.checkNotNull(sinkHttpClientBuilder,
+                "The HTTP client builder must not be null when initializing HTTP Sink.");
+    }
 
-  @Override
-  public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> restoreWriter(
-      InitContext context, Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState
-  ) throws IOException {
-    return new HttpSinkWriter<>(
-        getElementConverter(),
-        context,
-        getMaxBatchSize(),
-        getMaxInFlightRequests(),
-        getMaxBufferedRequests(),
-        getMaxBatchSizeInBytes(),
-        getMaxTimeInBufferMS(),
-        getMaxRecordSizeInBytes(),
-        endpointUrl,
-        sinkHttpClientBuilder.build(),
-        recoveredState
-    );
-  }
+    @Override
+    public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> createWriter(
+        InitContext context
+    ) throws IOException {
+        return new HttpSinkWriter<>(
+            getElementConverter(),
+            context,
+            getMaxBatchSize(),
+            getMaxInFlightRequests(),
+            getMaxBufferedRequests(),
+            getMaxBatchSizeInBytes(),
+            getMaxTimeInBufferMS(),
+            getMaxRecordSizeInBytes(),
+            endpointUrl,
+            sinkHttpClientBuilder.build(),
+            Collections.emptyList()
+        );
+    }
 
-  @Override
-  public SimpleVersionedSerializer<BufferedRequestState<HttpSinkRequestEntry>> getWriterStateSerializer() {
-    return new HttpSinkWriterStateSerializer();
-  }
+    @Override
+    public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> restoreWriter(
+        InitContext context, Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState
+    ) throws IOException {
+        return new HttpSinkWriter<>(
+            getElementConverter(),
+            context,
+            getMaxBatchSize(),
+            getMaxInFlightRequests(),
+            getMaxBufferedRequests(),
+            getMaxBatchSizeInBytes(),
+            getMaxTimeInBufferMS(),
+            getMaxRecordSizeInBytes(),
+            endpointUrl,
+            sinkHttpClientBuilder.build(),
+            recoveredState
+        );
+    }
+
+    @Override
+    public SimpleVersionedSerializer<BufferedRequestState<HttpSinkRequestEntry>>
+        getWriterStateSerializer() {
+        return new HttpSinkWriterStateSerializer();
+    }
 }

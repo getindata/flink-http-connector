@@ -1,9 +1,9 @@
 package com.getindata.connectors.http.internal.table.sink;
 
-import com.getindata.connectors.http.HttpSink;
-import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
-import com.getindata.connectors.http.HttpSinkBuilder;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Nullable;
+
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -19,10 +19,10 @@ import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
 
-import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.getindata.connectors.http.HttpSink;
+import com.getindata.connectors.http.HttpSinkBuilder;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
 
@@ -72,140 +72,152 @@ import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkC
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry> {
-  private final DataType consumedDataType;
-  private final EncodingFormat<SerializationSchema<RowData>> encodingFormat;
-  private final ReadableConfig tableOptions;
-  private final Map<String, String> formatContentTypeMap;
 
-  protected HttpDynamicSink(
-      @Nullable Integer maxBatchSize,
-      @Nullable Integer maxInFlightRequests,
-      @Nullable Integer maxBufferedRequests,
-      @Nullable Long maxBufferSizeInBytes,
-      @Nullable Long maxTimeInBufferMS,
-      DataType consumedDataType,
-      EncodingFormat<SerializationSchema<RowData>> encodingFormat,
-      Map<String, String> formatContentTypeMap,
-      ReadableConfig tableOptions
-  ) {
-    super(maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBufferSizeInBytes, maxTimeInBufferMS);
-    this.consumedDataType = Preconditions.checkNotNull(consumedDataType, "Consumed data type must not be null");
-    this.encodingFormat = Preconditions.checkNotNull(encodingFormat, "Encoding format must not be null");
-    this.formatContentTypeMap = Preconditions.checkNotNull(formatContentTypeMap, "Format to content type map must not be null");
-    this.tableOptions = Preconditions.checkNotNull(tableOptions, "Table options must not be null");
-  }
+    private final DataType consumedDataType;
+    private final EncodingFormat<SerializationSchema<RowData>> encodingFormat;
+    private final ReadableConfig tableOptions;
+    private final Map<String, String> formatContentTypeMap;
 
-  @Override
-  public ChangelogMode getChangelogMode(ChangelogMode requestedMode) {
-    return encodingFormat.getChangelogMode();
-  }
-
-  @Override
-  public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
-    SerializationSchema<RowData> serializationSchema = encodingFormat.createRuntimeEncoder(context, consumedDataType);
-
-    var insertMethod = tableOptions.get(INSERT_METHOD);
-    var contentType = getContentTypeFromFormat(tableOptions.get(FactoryUtil.FORMAT));
-    HttpSinkBuilder<RowData> builder = HttpSink
-        .<RowData>builder()
-        .setEndpointUrl(tableOptions.get(URL))
-        .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
-        .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
-            insertMethod,
-            contentType,
-            serializationSchema.serialize(rowData)
-        ));
-    addAsyncOptionsToSinkBuilder(builder);
-
-    return SinkV2Provider.of(builder.build());
-  }
-
-  @Override
-  public DynamicTableSink copy() {
-    return new HttpDynamicSink(
-        maxBatchSize,
-        maxInFlightRequests,
-        maxBufferedRequests,
-        maxBufferSizeInBytes,
-        maxTimeInBufferMS,
-        consumedDataType,
-        encodingFormat,
-        new HashMap<>(formatContentTypeMap),
-        tableOptions
-    );
-  }
-
-  @Override
-  public String asSummaryString() {
-    return "HttpSink";
-  }
-
-  private String getContentTypeFromFormat(String format) {
-    var contentType = formatContentTypeMap.get(format);
-    if (contentType != null) {
-      return contentType;
-    }
-
-    log.warn("Unexpected format {}. MIME type for the request will be set to \"application/{}\".", format, format);
-    return "application/" + format;
-  }
-
-  /**
-   * Builder to construct {@link HttpDynamicSink}.
-   */
-  public static class HttpDynamicTableSinkBuilder
-      extends AsyncDynamicTableSinkBuilder<HttpSinkRequestEntry, HttpDynamicTableSinkBuilder> {
-
-    private ReadableConfig tableOptions = null;
-    private Map<String, String> formatContentTypeMap = null;
-    private DataType consumedDataType = null;
-    private EncodingFormat<SerializationSchema<RowData>> encodingFormat = null;
-
-    /**
-     * @param tableOptions the {@link ReadableConfig} consisting of options listed in table creation DDL
-     * @return {@link HttpDynamicTableSinkBuilder} itself
-     */
-    public HttpDynamicTableSinkBuilder setTableOptions(ReadableConfig tableOptions) {
-      this.tableOptions = tableOptions;
-      return this;
-    }
-
-    public HttpDynamicTableSinkBuilder setFormatContentTypeMap(Map<String, String> formatContentTypeMap) {
-      this.formatContentTypeMap = formatContentTypeMap;
-      return this;
-    }
-
-    /**
-     * @param encodingFormat the format for encoding records
-     * @return {@link HttpDynamicTableSinkBuilder} itself
-     */
-    public HttpDynamicTableSinkBuilder setEncodingFormat(EncodingFormat<SerializationSchema<RowData>> encodingFormat) {
-      this.encodingFormat = encodingFormat;
-      return this;
-    }
-
-    /**
-     * @param consumedDataType the consumed data type of the table
-     * @return {@link HttpDynamicTableSinkBuilder} itself
-     */
-    public HttpDynamicTableSinkBuilder setConsumedDataType(DataType consumedDataType) {
-      this.consumedDataType = consumedDataType;
-      return this;
+    protected HttpDynamicSink(
+        @Nullable Integer maxBatchSize,
+        @Nullable Integer maxInFlightRequests,
+        @Nullable Integer maxBufferedRequests,
+        @Nullable Long maxBufferSizeInBytes,
+        @Nullable Long maxTimeInBufferMS,
+        DataType consumedDataType,
+        EncodingFormat<SerializationSchema<RowData>> encodingFormat,
+        Map<String, String> formatContentTypeMap,
+        ReadableConfig tableOptions
+    ) {
+        super(maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBufferSizeInBytes,
+            maxTimeInBufferMS);
+        this.consumedDataType =
+            Preconditions.checkNotNull(consumedDataType, "Consumed data type must not be null");
+        this.encodingFormat =
+            Preconditions.checkNotNull(encodingFormat, "Encoding format must not be null");
+        this.formatContentTypeMap = Preconditions.checkNotNull(formatContentTypeMap,
+            "Format to content type map must not be null");
+        this.tableOptions =
+            Preconditions.checkNotNull(tableOptions, "Table options must not be null");
     }
 
     @Override
-    public HttpDynamicSink build() {
-      return new HttpDynamicSink(
-          getMaxBatchSize(),
-          getMaxInFlightRequests(),
-          getMaxBufferedRequests(),
-          getMaxBufferSizeInBytes(),
-          getMaxTimeInBufferMS(),
-          consumedDataType,
-          encodingFormat,
-          formatContentTypeMap,
-          tableOptions
-      );
+    public ChangelogMode getChangelogMode(ChangelogMode requestedMode) {
+        return encodingFormat.getChangelogMode();
     }
-  }
+
+    @Override
+    public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
+        SerializationSchema<RowData> serializationSchema =
+            encodingFormat.createRuntimeEncoder(context, consumedDataType);
+
+        var insertMethod = tableOptions.get(INSERT_METHOD);
+        var contentType = getContentTypeFromFormat(tableOptions.get(FactoryUtil.FORMAT));
+        HttpSinkBuilder<RowData> builder = HttpSink
+            .<RowData>builder()
+            .setEndpointUrl(tableOptions.get(URL))
+            .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
+                insertMethod,
+                contentType,
+                serializationSchema.serialize(rowData)
+            ));
+        addAsyncOptionsToSinkBuilder(builder);
+
+        return SinkV2Provider.of(builder.build());
+    }
+
+    @Override
+    public DynamicTableSink copy() {
+        return new HttpDynamicSink(
+            maxBatchSize,
+            maxInFlightRequests,
+            maxBufferedRequests,
+            maxBufferSizeInBytes,
+            maxTimeInBufferMS,
+            consumedDataType,
+            encodingFormat,
+            new HashMap<>(formatContentTypeMap),
+            tableOptions
+        );
+    }
+
+    @Override
+    public String asSummaryString() {
+        return "HttpSink";
+    }
+
+    private String getContentTypeFromFormat(String format) {
+        var contentType = formatContentTypeMap.get(format);
+        if (contentType != null) {
+            return contentType;
+        }
+
+        log.warn(
+            "Unexpected format {}. MIME type for the request will be set to \"application/{}\".",
+            format, format);
+        return "application/" + format;
+    }
+
+    /**
+     * Builder to construct {@link HttpDynamicSink}.
+     */
+    public static class HttpDynamicTableSinkBuilder
+        extends AsyncDynamicTableSinkBuilder<HttpSinkRequestEntry, HttpDynamicTableSinkBuilder> {
+
+        private ReadableConfig tableOptions = null;
+        private Map<String, String> formatContentTypeMap = null;
+        private DataType consumedDataType = null;
+        private EncodingFormat<SerializationSchema<RowData>> encodingFormat = null;
+
+        /**
+         * @param tableOptions the {@link ReadableConfig} consisting of options listed in table
+         *                     creation DDL
+         * @return {@link HttpDynamicTableSinkBuilder} itself
+         */
+        public HttpDynamicTableSinkBuilder setTableOptions(ReadableConfig tableOptions) {
+            this.tableOptions = tableOptions;
+            return this;
+        }
+
+        public HttpDynamicTableSinkBuilder setFormatContentTypeMap(
+            Map<String, String> formatContentTypeMap) {
+            this.formatContentTypeMap = formatContentTypeMap;
+            return this;
+        }
+
+        /**
+         * @param encodingFormat the format for encoding records
+         * @return {@link HttpDynamicTableSinkBuilder} itself
+         */
+        public HttpDynamicTableSinkBuilder setEncodingFormat(
+            EncodingFormat<SerializationSchema<RowData>> encodingFormat) {
+            this.encodingFormat = encodingFormat;
+            return this;
+        }
+
+        /**
+         * @param consumedDataType the consumed data type of the table
+         * @return {@link HttpDynamicTableSinkBuilder} itself
+         */
+        public HttpDynamicTableSinkBuilder setConsumedDataType(DataType consumedDataType) {
+            this.consumedDataType = consumedDataType;
+            return this;
+        }
+
+        @Override
+        public HttpDynamicSink build() {
+            return new HttpDynamicSink(
+                getMaxBatchSize(),
+                getMaxInFlightRequests(),
+                getMaxBufferedRequests(),
+                getMaxBufferSizeInBytes(),
+                getMaxTimeInBufferMS(),
+                consumedDataType,
+                encodingFormat,
+                formatContentTypeMap,
+                tableOptions
+            );
+        }
+    }
 }

@@ -1,10 +1,11 @@
 package com.getindata.connectors.http.internal;
 
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import java.util.List;
+
 import lombok.Data;
 import lombok.NonNull;
 
-import java.util.List;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
 /**
  * Data class holding {@link HttpSinkRequestEntry} instances that {@link SinkHttpClient} attempted
@@ -12,15 +13,16 @@ import java.util.List;
  */
 @Data
 public class SinkHttpClientResponse {
-  /**
-   * A list of successfully written requests.
-   */
-  @NonNull
-  private final List<HttpSinkRequestEntry> successfulRequests;
 
-  /**
-   * A list of requests that {@link SinkHttpClient} failed to write.
-   */
-  @NonNull
-  private final List<HttpSinkRequestEntry> failedRequests;
+    /**
+     * A list of successfully written requests.
+     */
+    @NonNull
+    private final List<HttpSinkRequestEntry> successfulRequests;
+
+    /**
+     * A list of requests that {@link SinkHttpClient} failed to write.
+     */
+    @NonNull
+    private final List<HttpSinkRequestEntry> failedRequests;
 }
