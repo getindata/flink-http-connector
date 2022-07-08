@@ -6,8 +6,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.getindata.connectors.http.JsonResultTableConverter;
-import com.getindata.connectors.http.JsonResultTableConverter.HttpResultConverterOptions;
+import com.getindata.connectors.http.internal.JsonResultTableConverter;
+import com.getindata.connectors.http.internal.JsonResultTableConverter.HttpResultConverterOptions;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
+import com.getindata.connectors.http.internal.table.lookup.LookupArg;
+import com.getindata.connectors.http.internal.table.lookup.RestTablePollingClient;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;

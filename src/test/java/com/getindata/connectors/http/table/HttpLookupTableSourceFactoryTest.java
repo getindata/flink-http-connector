@@ -4,6 +4,7 @@ import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSou
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;

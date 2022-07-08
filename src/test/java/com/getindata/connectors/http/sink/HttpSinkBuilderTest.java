@@ -1,7 +1,9 @@
 package com.getindata.connectors.http.sink;
 
-import com.getindata.connectors.http.SinkHttpClient;
-import com.getindata.connectors.http.SinkHttpClientResponse;
+import com.getindata.connectors.http.HttpSink;
+import com.getindata.connectors.http.internal.SinkHttpClient;
+import com.getindata.connectors.http.internal.SinkHttpClientResponse;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.junit.jupiter.api.Test;
 

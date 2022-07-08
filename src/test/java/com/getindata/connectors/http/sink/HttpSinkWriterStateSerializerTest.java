@@ -1,5 +1,7 @@
 package com.getindata.connectors.http.sink;
 
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.HttpSinkWriterStateSerializer;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.junit.jupiter.api.Test;

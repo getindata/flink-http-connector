@@ -3,7 +3,8 @@ package com.getindata.connectors.http;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.getindata.connectors.http.JsonResultTableConverter.HttpResultConverterOptions;
+import com.getindata.connectors.http.internal.JsonResultTableConverter;
+import com.getindata.connectors.http.internal.JsonResultTableConverter.HttpResultConverterOptions;
 import java.util.List;
 import java.util.Map;
 import org.apache.flink.table.data.RowData;

@@ -3,6 +3,9 @@ package com.getindata.connectors.http.table;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
+import com.getindata.connectors.http.internal.table.lookup.RestTablePollingClient;
+import com.getindata.connectors.http.internal.table.lookup.RestTablePollingClientFactory;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.table.functions.FunctionContext;
 import org.junit.jupiter.api.BeforeEach;

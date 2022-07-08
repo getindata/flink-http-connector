@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.table;
 
+import com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

@@ -3,7 +3,11 @@ package com.getindata.connectors.http.table;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.getindata.connectors.http.table.HttpTableLookupFunction.ColumnData;
+import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction;
+import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction.ColumnData;
+import com.getindata.connectors.http.internal.table.lookup.AsyncHttpTableLookupFunction;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
