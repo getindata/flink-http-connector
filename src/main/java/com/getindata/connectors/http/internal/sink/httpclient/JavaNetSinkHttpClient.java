@@ -23,8 +23,9 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private final HttpClient httpClient;
 
     public JavaNetSinkHttpClient() {
-        this.httpClient =
-            HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+        this.httpClient = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
     }
 
     @Override
