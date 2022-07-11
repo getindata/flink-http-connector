@@ -1,6 +1,9 @@
 # flink-http-connector
 The HTTP TableLookup connector that allows for pulling data from external system via HTTP GET method and HTTP Sink that allows for sending data to external system via HTTP requests.
 
+**Note**: The `main` branch may be in an *unstable or even broken state* during development.
+Please use [releases](https://github.com/getindata/flink-http-connector/releases) instead of the `main` branch in order to get a stable set of binaries.
+
 #### HTTP TableLookup Source
 The goal for HTTP TableLookup connector was to use it in Flink SQL statement as a standard table that can be later joined with other stream using pure SQL Flink.
  
