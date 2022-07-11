@@ -1,4 +1,7 @@
 # flink-http-connector
+
+[![Maven Central](https://img.shields.io/maven-central/v/com.getindata/flink-http-connector)](https://mvnrepository.com/artifact/com.getindata/flink-http-connector)
+
 The HTTP TableLookup connector that allows for pulling data from external system via HTTP GET method and HTTP Sink that allows for sending data to external system via HTTP requests.
 
 **Note**: The `main` branch may be in an *unstable or even broken state* during development.
