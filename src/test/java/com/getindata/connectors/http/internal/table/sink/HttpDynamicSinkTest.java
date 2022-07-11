@@ -1,6 +1,7 @@
-package com.getindata.connectors.http.table;
+package com.getindata.connectors.http.internal.table.sink;
 
-import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink;
+import java.util.Map;
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.factories.FactoryUtil;
@@ -8,12 +9,10 @@ import org.apache.flink.table.factories.TestFormatFactory;
 import org.apache.flink.table.types.AtomicDataType;
 import org.apache.flink.table.types.logical.BooleanType;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
 
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpDynamicSinkTest {
 
