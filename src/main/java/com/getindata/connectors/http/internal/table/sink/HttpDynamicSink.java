@@ -23,6 +23,7 @@ import com.getindata.connectors.http.HttpSink;
 import com.getindata.connectors.http.HttpSinkBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.CONTENT_TYPE_HEADER;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
 
@@ -113,15 +114,17 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
         var insertMethod = tableOptions.get(INSERT_METHOD);
         var contentType = getContentTypeFromFormat(tableOptions.get(FactoryUtil.FORMAT));
+
+        // TODO EXP-98 add headers to DDL and add tests for this
         HttpSinkBuilder<RowData> builder = HttpSink
             .<RowData>builder()
             .setEndpointUrl(tableOptions.get(URL))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
             .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
                 insertMethod,
-                contentType,
                 serializationSchema.serialize(rowData)
-            ));
+            ))
+            .setProperty(CONTENT_TYPE_HEADER, contentType);
         addAsyncOptionsToSinkBuilder(builder);
 
         return SinkV2Provider.of(builder.build());

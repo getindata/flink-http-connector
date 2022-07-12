@@ -1,5 +1,8 @@
 package com.getindata.connectors.http;
 
+import java.util.Properties;
+
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
@@ -25,6 +28,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  *
  * @param <InputT> type of the elements that should be sent through HTTP request.
  */
+@PublicEvolving
 public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
 
     HttpSink(
@@ -36,7 +40,8 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             String endpointUrl,
-            SinkHttpClientBuilder sinkHttpClientBuilder) {
+            SinkHttpClientBuilder sinkHttpClientBuilder,
+            Properties properties) {
         super(elementConverter,
             maxBatchSize,
             maxInFlightRequests,
@@ -45,7 +50,8 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             maxTimeInBufferMS,
             maxRecordSizeInBytes,
             endpointUrl,
-            sinkHttpClientBuilder
+            sinkHttpClientBuilder,
+            properties
         );
     }
 

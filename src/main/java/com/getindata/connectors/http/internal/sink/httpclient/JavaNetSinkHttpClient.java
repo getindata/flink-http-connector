@@ -2,49 +2,79 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_HEADER_PREFIX;
+
 /**
  * An implementation of {@link SinkHttpClient} that uses Java 11's {@link HttpClient}.
+ * This implementation supports HTTP traffic only.
  */
 @Slf4j
 public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final HttpClient httpClient;
 
-    public JavaNetSinkHttpClient() {
+    private final String[] headersAndValues;
+
+    public JavaNetSinkHttpClient(Properties properties) {
         this.httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
+
+        Map<String, String> headerMap =
+            ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
+
+        // TODO EXP-98 add tests
+        headersAndValues = headerMap
+            .entrySet()
+            .stream()
+            .flatMap(entry -> {
+                String originalKey = entry.getKey();
+                // TODO EXP-98 extract this to utils and add tests. Wrap with try/catch in Utils
+                String newKey = originalKey.substring(originalKey.lastIndexOf(".") + 1);
+
+                return Stream.of(newKey, entry.getValue());
+            }).toArray(String[]::new);
     }
 
     @Override
     public CompletableFuture<SinkHttpClientResponse> putRequests(
-        List<HttpSinkRequestEntry> requestEntries, String endpointUrl
-    ) {
+            List<HttpSinkRequestEntry> requestEntries, String endpointUrl) {
         return submitRequests(requestEntries, endpointUrl).thenApply(
             this::prepareSinkHttpClientResponse);
     }
 
     private HttpRequest buildHttpRequest(HttpSinkRequestEntry requestEntry, URI endpointUri) {
-        return HttpRequest
+        Builder requestBuilder = HttpRequest
             .newBuilder()
             .uri(endpointUri)
-            .version(java.net.http.HttpClient.Version.HTTP_1_1)
-            .header("Content-Type", requestEntry.contentType)
+            .version(Version.HTTP_1_1)
             .method(requestEntry.method,
-                HttpRequest.BodyPublishers.ofByteArray(requestEntry.element))
-            .build();
+                BodyPublishers.ofByteArray(requestEntry.element));
+
+        if (headersAndValues.length != 0) {
+            requestBuilder.headers(headersAndValues);
+        }
+
+        return requestBuilder.build();
     }
 
     private CompletableFuture<List<JavaNetHttpResponseWrapper>> submitRequests(

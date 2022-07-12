@@ -1,13 +1,16 @@
 package com.getindata.connectors.http;
 
 import java.util.Optional;
+import java.util.Properties;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 
 /**
  * Builder to construct {@link HttpSink}.
@@ -42,17 +45,32 @@ public class HttpSinkBuilder<InputT> extends
     AsyncSinkBaseBuilder<InputT, HttpSinkRequestEntry, HttpSinkBuilder<InputT>> {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 500;
+
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 50;
+
     private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 10_000;
+
     private static final long DEFAULT_MAX_BATCH_SIZE_IN_B = 5 * 1024 * 1024;
+
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
+
     private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1024 * 1024;
 
+    private static final SinkHttpClientBuilder DEFAULT_CLIENT_BUILDER = JavaNetSinkHttpClient::new;
+
+    private final Properties properties = new Properties();
+
+    // Mandatory field
     private String endpointUrl;
-    private SinkHttpClientBuilder sinkHttpClientBuilder;
+
+    // Mandatory field
     private ElementConverter<InputT, HttpSinkRequestEntry> elementConverter;
 
+    // If not defined, should be set to DEFAULT_CLIENT_BUILDER
+    private SinkHttpClientBuilder sinkHttpClientBuilder;
+
     HttpSinkBuilder() {
+        this.sinkHttpClientBuilder = DEFAULT_CLIENT_BUILDER;
     }
 
     /**
@@ -79,9 +97,20 @@ public class HttpSinkBuilder<InputT> extends
      * @param elementConverter the {@link ElementConverter} to be used for the sink
      * @return {@link HttpSinkBuilder} itself
      */
+    @PublicEvolving
     public HttpSinkBuilder<InputT> setElementConverter(
         ElementConverter<InputT, HttpSinkRequestEntry> elementConverter) {
         this.elementConverter = elementConverter;
+        return this;
+    }
+
+    public HttpSinkBuilder<InputT> setProperty(String propertyName, String propertyValue) {
+        this.properties.setProperty(propertyName, propertyValue);
+        return this;
+    }
+
+    public HttpSinkBuilder<InputT> setProperties(Properties properties) {
+        this.properties.putAll(properties);
         return this;
     }
 
@@ -96,7 +125,8 @@ public class HttpSinkBuilder<InputT> extends
             Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
             Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
             endpointUrl,
-            sinkHttpClientBuilder
+            sinkHttpClientBuilder,
+            properties
         );
     }
 }

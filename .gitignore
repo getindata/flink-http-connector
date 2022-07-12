@@ -6,3 +6,4 @@ target
 /src/main/main.iml
 /src/test/test.iml
 /flink-http-connector.iml
+/dependency-reduced-pom.xml

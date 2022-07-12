@@ -22,12 +22,6 @@ public final class HttpSinkRequestEntry implements Serializable {
     public final String method;
 
     /**
-     * Value of the Content-Type header, e.g. <i>application/json</i>.
-     */
-    @NonNull
-    public final String contentType;
-
-    /**
      * Body of the request, encoded as byte array.
      */
     public final byte[] element;

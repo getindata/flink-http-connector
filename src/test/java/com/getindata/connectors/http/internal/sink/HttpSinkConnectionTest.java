@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.getindata.connectors.http.HttpSink;
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 
 public class HttpSinkConnectionTest {
@@ -62,27 +63,31 @@ public class HttpSinkConnectionTest {
 
     @Test
     public void testConnection() throws Exception {
-        wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-            .withHeader("Content-Type", equalTo("application/json"))
+        String contentTypeHeader = "application/json";
+        String endpoint = "/myendpoint";
+
+        wireMockServer.stubFor(any(urlPathEqualTo(endpoint))
+            .withHeader("Content-Type", equalTo(contentTypeHeader))
             .willReturn(
-                aResponse().withHeader("Content-Type", "application/json")
+                aResponse().withHeader("Content-Type", contentTypeHeader)
                     .withStatus(200)
                     .withBody("{}")));
 
         var source = env.fromCollection(messages);
         var httpSink = HttpSink.<String>builder()
-            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
+            .setEndpointUrl("http://localhost:" + SERVER_PORT + endpoint)
             .setElementConverter(
-                (s, _context) -> new HttpSinkRequestEntry(
-                    "POST", "application/json", s.getBytes(StandardCharsets.UTF_8)))
+                (s, _context) ->
+                    new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setProperty(HttpConnectorConfigConstants.CONTENT_TYPE_HEADER, contentTypeHeader)
             .build();
         source.sinkTo(httpSink);
         env.execute("Http Sink test connection");
 
         var responses = wireMockServer.getAllServeEvents();
         assertTrue(responses.stream()
-            .allMatch(response -> Objects.equals(response.getRequest().getUrl(), "/myendpoint")));
+            .allMatch(response -> Objects.equals(response.getRequest().getUrl(), endpoint)));
         assertTrue(
             responses.stream().allMatch(response -> response.getResponse().getStatus() == 200));
 
@@ -123,8 +128,8 @@ public class HttpSinkConnectionTest {
         var httpSink = HttpSink.<String>builder()
             .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
             .setElementConverter(
-                (s, _context) -> new HttpSinkRequestEntry(
-                    "POST", "application/json", s.getBytes(StandardCharsets.UTF_8)))
+                (s, _context) ->
+                    new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
             .build();
         source.sinkTo(httpSink);
@@ -158,8 +163,8 @@ public class HttpSinkConnectionTest {
         var httpSink = HttpSink.<String>builder()
             .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
             .setElementConverter(
-                (s, _context) -> new HttpSinkRequestEntry(
-                    "POST", "application/json", s.getBytes(StandardCharsets.UTF_8)))
+                (s, _context) ->
+                    new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
             .build();
         source.sinkTo(httpSink);
