@@ -11,6 +11,7 @@ import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfiguration
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.factories.FactoryUtil;
 
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
@@ -33,7 +34,8 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         ReadableConfig tableOptions = factoryContext.getTableOptions();
 
         // Validate configuration
-        FactoryUtil.createTableFactoryHelper(this, context).validate();
+        FactoryUtil.createTableFactoryHelper(this, context)
+            .validateExcept(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP);
         validateHttpSinkOptions(tableOptions);
         Properties asyncSinkProperties =
             new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
