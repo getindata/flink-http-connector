@@ -66,8 +66,8 @@ CREATE TABLE http (
   id bigint,
   some_field string
 ) WITH (
-  'connector' = 'http-sink'
-  'url' = 'http://example.com/myendpoint'
+  'connector' = 'http-sink',
+  'url' = 'http://example.com/myendpoint',
   'format' = 'json'
 )
 ```
@@ -81,6 +81,52 @@ INSERT INTO http VALUES (1, 'Ninette'), (2, 'Hedy')
 Due to the fact that `HttpSink` sends bytes inside HTTP request's body, one can easily swap `'format' = 'json'` for some other [format](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/overview/). 
 
 Other examples of usage of the Table API can be found in [some tests](src/test/java/com/getindata/connectors/http/table/HttpDynamicSinkInsertTest.java).
+
+#### Http headers (currently supported only for HTTP Sink)
+It is possible to set HTTP headers that will be added to HTTP request send by sink connector.
+Headers are defined via property key `gid.connector.http.sink.header.HEADER_NAME = header value` for example:
+`gid.connector.http.sink.header.X-Content-Type-Options = nosniff`.
+Properties can be set via Sink builder or Property object:
+```java
+HttpSink.<String>builder()
+      .setEndpointUrl("http://example.com/myendpoint")
+      .setElementConverter(
+          (s, _context) -> new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+      .setProperty("gid.connector.http.sink.header.X-Content-Type-Options", "nosniff")
+      .build();
+```
+or
+
+```java
+Properties properties = Properties();
+properties.setProperty("gid.connector.http.sink.header.X-Content-Type-Options", "nosniff");
+
+HttpSink.<String>builder()
+      .setEndpointUrl("http://example.com/myendpoint")
+      .setElementConverter(
+          (s, _context) -> new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+      .setProperties(properties)
+      .build();
+```
+
+In Table/SQL API, headers can be set using http sink table DDL. In example below, HTTP request done for `http` table will contain three headers:
+- `Origin`
+- `X-Content-Type-Options`
+- `Content-Type`
+
+```roomsql
+CREATE TABLE http (
+  id bigint,
+  some_field string
+) WITH (
+  'connector' = 'http-sink',
+  'url' = 'http://example.com/myendpoint',
+  'format' = 'json',
+  'gid.connector.http.sink.header.Origin' = '*',
+  'gid.connector.http.sink.header.X-Content-Type-Options' = 'nosniff',
+  'gid.connector.http.sink.header.Content-Type' = 'application/json'
+)
+```
 
 ## Implementation
 Implementation of an HTTP source connector is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  

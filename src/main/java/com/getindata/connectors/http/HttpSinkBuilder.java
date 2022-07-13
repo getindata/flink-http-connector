@@ -23,7 +23,8 @@ import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpCli
  *     HttpSink.<String>builder()
  *             .setEndpointUrl("http://example.com/myendpoint")
  *             .setElementConverter(
- *                 (s, _context) -> new HttpSinkRequestEntry("POST", "text/plain",
+ *                 (s, _context) -> new HttpSinkRequestEntry(
+ *                 "POST",
  *                 s.getBytes(StandardCharsets.UTF_8)))
  *             .build();
  * </pre>
