@@ -1,6 +1,9 @@
 package com.getindata.connectors.http.internal.config;
 
-// TODO EXP-98 add Javadoc
+/**
+ * A Runtime exception throw when there is any issue with configuration properties for Http
+ * Connector.
+ */
 public class ConfigException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;

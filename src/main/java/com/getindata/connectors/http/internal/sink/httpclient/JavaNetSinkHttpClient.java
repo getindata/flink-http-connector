@@ -8,14 +8,15 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
@@ -42,22 +43,14 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         Map<String, String> headerMap =
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
 
-        // TODO EXP-98 add tests
-        headersAndValues = headerMap
-            .entrySet()
-            .stream()
-            .flatMap(entry -> {
-                String originalKey = entry.getKey();
-                // TODO EXP-98 extract this to utils and add tests. Wrap with try/catch in Utils
-                String newKey = ConfigUtils.extractPropertyLastElement(originalKey);
-
-                return Stream.of(newKey, entry.getValue());
-            }).toArray(String[]::new);
+        // TODO ESP-98 add tests
+        headersAndValues = ConfigUtils.flatMapToHeaderArray(headerMap);
     }
 
     @Override
     public CompletableFuture<SinkHttpClientResponse> putRequests(
-            List<HttpSinkRequestEntry> requestEntries, String endpointUrl) {
+            List<HttpSinkRequestEntry> requestEntries,
+            String endpointUrl) {
         return submitRequests(requestEntries, endpointUrl).thenApply(
             this::prepareSinkHttpClientResponse);
     }
@@ -78,8 +71,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     }
 
     private CompletableFuture<List<JavaNetHttpResponseWrapper>> submitRequests(
-        List<HttpSinkRequestEntry> requestEntries, String endpointUrl
-    ) {
+            List<HttpSinkRequestEntry> requestEntries,
+            String endpointUrl) {
         var endpointUri = URI.create(endpointUrl);
         var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
 
@@ -101,7 +94,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     }
 
     private SinkHttpClientResponse prepareSinkHttpClientResponse(
-        List<JavaNetHttpResponseWrapper> responses) {
+            List<JavaNetHttpResponseWrapper> responses) {
         var successfulResponses = new ArrayList<HttpSinkRequestEntry>();
         var failedResponses = new ArrayList<HttpSinkRequestEntry>();
 
@@ -116,5 +109,10 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         }
 
         return new SinkHttpClientResponse(successfulResponses, failedResponses);
+    }
+
+    @VisibleForTesting
+    String[] getHeadersAndValues() {
+        return Arrays.copyOf(headersAndValues, headersAndValues.length);
     }
 }

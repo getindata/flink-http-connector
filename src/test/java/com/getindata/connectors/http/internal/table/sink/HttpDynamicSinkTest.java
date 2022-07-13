@@ -9,12 +9,30 @@ import org.apache.flink.table.factories.TestFormatFactory;
 import org.apache.flink.table.types.AtomicDataType;
 import org.apache.flink.table.types.logical.BooleanType;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink.HttpDynamicTableSinkBuilder;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
 
 public class HttpDynamicSinkTest {
+
+    @Test
+    public void testAsSummaryString() {
+        var mockFormat = new TestFormatFactory.EncodingFormatMock(",", ChangelogMode.insertOnly());
+
+        HttpDynamicSink dynamicSink = new HttpDynamicTableSinkBuilder()
+            .setTableOptions(new Configuration())
+            .setConsumedDataType(
+                new AtomicDataType(new BooleanType(false)))
+            .setEncodingFormat(mockFormat)
+            .setFormatContentTypeMap(Map.of())
+            .build();
+
+        assertThat(dynamicSink.asSummaryString()).isEqualTo("HttpSink");
+    }
 
     @Test
     public void copyEqualityTest() {

@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.getindata.connectors.http.internal.config.ConfigException;
+import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
 
 class ConfigUtilsTest {
 
@@ -28,7 +29,7 @@ class ConfigUtilsTest {
 
         assertThat(mappedProperties).hasSize(3);
         assertThat(mappedProperties)
-            .containsExactlyEntriesOf(
+            .containsAllEntriesOf(
                 Map.of(
                     "my.property", "val2",
                     "my.property.detail", "val4",
@@ -63,6 +64,13 @@ class ConfigUtilsTest {
         assertThatThrownBy(
             () -> ConfigUtils.propertiesToMap(properties, "a.property", String.class))
             .isInstanceOf(ConfigException.class);
+
+        // should throw on non String key regardless of key prefix.
+        Properties nonStringProperties = new Properties();
+        nonStringProperties.put(new Object(), 1);
+        assertThatThrownBy(
+            () -> ConfigUtils.propertiesToMap(nonStringProperties, "a.property", String.class))
+            .isInstanceOf(ConfigException.class);
     }
 
     @ParameterizedTest(name = "Property full name - {0}")
@@ -80,5 +88,24 @@ class ConfigUtilsTest {
         assertThatThrownBy(
             () -> ConfigUtils.extractPropertyLastElement(invalidProperty))
             .isInstanceOf(ConfigException.class);
+    }
+
+    @Test
+    public void flatMapPropertyMap() {
+        Map<String, String> propertyMap = Map.of(
+            "propertyOne", "val1",
+            "my.propertyTwo", "val2",
+            "my.super.propertyThree", "val3"
+        );
+
+        String[] propertyArray = ConfigUtils.flatMapToHeaderArray(propertyMap);
+
+        // size is == propertyMap.key size + propertyMap.value.size
+        assertThat(propertyArray).hasSize(6);
+
+        // assert that we have property followed by its value.
+        assertPropertyArray(propertyArray, "propertyOne", "val1");
+        assertPropertyArray(propertyArray, "propertyTwo", "val2");
+        assertPropertyArray(propertyArray, "propertyThree", "val3");
     }
 }

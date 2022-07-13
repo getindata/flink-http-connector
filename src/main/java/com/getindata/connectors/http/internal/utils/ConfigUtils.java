@@ -3,6 +3,7 @@ package com.getindata.connectors.http.internal.utils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -76,6 +77,31 @@ public final class ConfigUtils {
         }
 
         return propertyKay.substring(delimiterLastIndex + 1);
+    }
+
+    /**
+     * Flat map a given Map of header name and header value map to an array containing both header
+     * names and values. For example, header map of
+     * <pre>
+     *     Map.of(
+     *     header1, val1,
+     *     header2, val2
+     *     )
+     * </pre>
+     * will be converter to an array of:
+     * <pre>
+     *      String[] headers = {"header1", "val1", "header2", "val2"};
+     * </pre>
+     */
+    public static String[] flatMapToHeaderArray(Map<String, String> headerMap) {
+        return headerMap
+            .entrySet()
+            .stream()
+            .flatMap(entry -> {
+                String originalKey = entry.getKey();
+                String newKey = ConfigUtils.extractPropertyLastElement(originalKey);
+                return Stream.of(newKey, entry.getValue());
+            }).toArray(String[]::new);
     }
 
     private static <T> void tryAddToConfigMap(
