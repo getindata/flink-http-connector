@@ -49,7 +49,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             .flatMap(entry -> {
                 String originalKey = entry.getKey();
                 // TODO EXP-98 extract this to utils and add tests. Wrap with try/catch in Utils
-                String newKey = originalKey.substring(originalKey.lastIndexOf(".") + 1);
+                String newKey = ConfigUtils.extractPropertyLastElement(originalKey);
 
                 return Stream.of(newKey, entry.getValue());
             }).toArray(String[]::new);
