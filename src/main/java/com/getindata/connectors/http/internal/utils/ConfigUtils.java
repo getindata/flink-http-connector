@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.internal.config.ConfigException;
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 
 @NoArgsConstructor(access = AccessLevel.NONE)
 public final class ConfigUtils {
@@ -115,6 +116,28 @@ public final class ConfigUtils {
                 String.format("Unable to cast value for property %s to type %s", key,
                     clazz), e);
         }
+    }
+
+    public static Properties getHttpConnectorProperties(Map<String, String> tableOptions) {
+        final Properties httpProperties = new Properties();
+
+        if (hasHttpConnectorProperties(tableOptions)) {
+            tableOptions.keySet().stream()
+                .filter(key -> key.startsWith(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP))
+                .forEach(
+                    key -> {
+                        final String value = tableOptions.get(key);
+                        httpProperties.put(key, value);
+                    });
+        }
+        return httpProperties;
+    }
+
+    private static boolean hasHttpConnectorProperties(Map<String, String> tableOptions) {
+        return tableOptions
+            .keySet()
+            .stream()
+            .anyMatch(k -> k.startsWith(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP));
     }
 
 }

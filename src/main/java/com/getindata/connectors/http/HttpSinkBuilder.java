@@ -104,11 +104,20 @@ public class HttpSinkBuilder<InputT> extends
         return this;
     }
 
+    /**
+     * Set property for Http Sink.
+     * @param propertyName property name.
+     * @param propertyValue property value.
+     */
     public HttpSinkBuilder<InputT> setProperty(String propertyName, String propertyValue) {
         this.properties.setProperty(propertyName, propertyValue);
         return this;
     }
 
+    /**
+     * Add properties to Http Sink configuration
+     * @param properties Properties to add.
+     */
     public HttpSinkBuilder<InputT> setProperties(Properties properties) {
         this.properties.putAll(properties);
         return this;

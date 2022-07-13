@@ -43,7 +43,6 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         Map<String, String> headerMap =
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
 
-        // TODO ESP-98 add tests
         headersAndValues = ConfigUtils.flatMapToHeaderArray(headerMap);
     }
 
