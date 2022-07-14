@@ -43,7 +43,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         Map<String, String> headerMap =
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
 
-        headersAndValues = ConfigUtils.flatMapToHeaderArray(headerMap);
+        this.headersAndValues = ConfigUtils.toHeaderAndValueArray(headerMap);
     }
 
     @Override

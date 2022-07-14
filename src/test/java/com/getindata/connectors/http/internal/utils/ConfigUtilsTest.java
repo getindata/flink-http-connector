@@ -98,7 +98,7 @@ class ConfigUtilsTest {
             "my.super.propertyThree", "val3"
         );
 
-        String[] propertyArray = ConfigUtils.flatMapToHeaderArray(propertyMap);
+        String[] propertyArray = ConfigUtils.toHeaderAndValueArray(propertyMap);
 
         // size is == propertyMap.key size + propertyMap.value.size
         assertThat(propertyArray).hasSize(6);

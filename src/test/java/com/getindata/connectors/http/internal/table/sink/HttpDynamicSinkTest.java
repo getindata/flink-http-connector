@@ -1,7 +1,5 @@
 package com.getindata.connectors.http.internal.table.sink;
 
-import java.util.Map;
-
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.factories.FactoryUtil;
@@ -28,7 +26,6 @@ public class HttpDynamicSinkTest {
             .setConsumedDataType(
                 new AtomicDataType(new BooleanType(false)))
             .setEncodingFormat(mockFormat)
-            .setFormatContentTypeMap(Map.of())
             .build();
 
         assertThat(dynamicSink.asSummaryString()).isEqualTo("HttpSink");
@@ -51,7 +48,6 @@ public class HttpDynamicSinkTest {
             .setConsumedDataType(
                 new AtomicDataType(new BooleanType(false)))
             .setEncodingFormat(mockFormat)
-            .setFormatContentTypeMap(Map.of())
             .build();
 
         assertEquals(sink, sink.copy());
@@ -74,7 +70,6 @@ public class HttpDynamicSinkTest {
             )
             .setConsumedDataType(consumedDataType)
             .setEncodingFormat(mockFormat)
-            .setFormatContentTypeMap(Map.of())
             .setMaxBatchSize(1);
     }
 

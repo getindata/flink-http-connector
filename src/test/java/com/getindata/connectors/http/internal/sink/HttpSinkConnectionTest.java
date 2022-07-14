@@ -80,7 +80,9 @@ public class HttpSinkConnectionTest {
                 (s, _context) ->
                     new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
-            .setProperty(HttpConnectorConfigConstants.CONTENT_TYPE_HEADER, contentTypeHeader)
+            .setProperty(
+                HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Content-Type",
+                contentTypeHeader)
             .build();
         source.sinkTo(httpSink);
         env.execute("Http Sink test connection");

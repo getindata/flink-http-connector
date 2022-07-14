@@ -21,9 +21,4 @@ public final class HttpConnectorConfigConstants {
      */
     public static final String SINK_HEADER_PREFIX = GID_CONNECTOR_HTTP + "sink.header.";
 
-    /**
-     * A property for Content-Type HTTP header.
-     */
-    public static final String CONTENT_TYPE_HEADER = SINK_HEADER_PREFIX + "Content-Type";
-
 }

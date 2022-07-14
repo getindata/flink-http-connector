@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.sink;
 
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -23,11 +22,6 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
     public static final String IDENTIFIER = "http-sink";
 
-    private static final Map<String, String> FORMAT_CONTENT_TYPE_MAP = Map.ofEntries(
-        Map.entry("raw", "application/octet-stream"),
-        Map.entry("json", "application/json")
-    );
-
     @Override
     public DynamicTableSink createDynamicTableSink(Context context) {
         final AsyncDynamicSinkContext factoryContext = new AsyncDynamicSinkContext(this, context);
@@ -47,7 +41,6 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
             new HttpDynamicSink.HttpDynamicTableSinkBuilder()
                 .setTableOptions(tableOptions)
                 .setEncodingFormat(factoryContext.getEncodingFormat())
-                .setFormatContentTypeMap(FORMAT_CONTENT_TYPE_MAP)
                 .setConsumedDataType(factoryContext.getPhysicalDataType())
                 .setProperties(httpConnectorProperties);
         addAsyncOptionsToBuilder(asyncSinkProperties, builder);

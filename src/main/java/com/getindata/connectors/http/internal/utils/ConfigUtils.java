@@ -53,31 +53,31 @@ public final class ConfigUtils {
      * be in format as <b>{@code this.is.my.property.name}</b>, using "dot" as a delimiter. For this
      * example the returned value would be <b>{@code name}</b>.
      *
-     * @param propertyKay Property name to extract the last element from.
+     * @param propertyKey Property name to extract the last element from.
      * @return property last element or the property name if {@code propertyKey} parameter had no
      * dot delimiter.
      * @throws ConfigException when invalid property such as null, empty, blank, ended with dot was
      *                         used.
      */
-    public static String extractPropertyLastElement(String propertyKay) {
-        if (StringUtils.isNullOrWhitespaceOnly(propertyKay)) {
+    public static String extractPropertyLastElement(String propertyKey) {
+        if (StringUtils.isNullOrWhitespaceOnly(propertyKey)) {
             throw new ConfigException("Provided a property name that is null, empty or blank.");
         }
 
-        if (!propertyKay.contains(PROPERTY_NAME_DELIMITER)) {
-            return propertyKay;
+        if (!propertyKey.contains(PROPERTY_NAME_DELIMITER)) {
+            return propertyKey;
         }
 
-        int delimiterLastIndex = propertyKay.lastIndexOf(PROPERTY_NAME_DELIMITER);
-        if (delimiterLastIndex == propertyKay.length() - 1) {
+        int delimiterLastIndex = propertyKey.lastIndexOf(PROPERTY_NAME_DELIMITER);
+        if (delimiterLastIndex == propertyKey.length() - 1) {
             throw new ConfigException(
                 String.format(
                     "Invalid property - %s. Property name should not end with property delimiter.",
-                    propertyKay)
+                    propertyKey)
             );
         }
 
-        return propertyKay.substring(delimiterLastIndex + 1);
+        return propertyKey.substring(delimiterLastIndex + 1);
     }
 
     /**
@@ -94,7 +94,7 @@ public final class ConfigUtils {
      *      String[] headers = {"header1", "val1", "header2", "val2"};
      * </pre>
      */
-    public static String[] flatMapToHeaderArray(Map<String, String> headerMap) {
+    public static String[] toHeaderAndValueArray(Map<String, String> headerMap) {
         return headerMap
             .entrySet()
             .stream()
@@ -121,23 +121,11 @@ public final class ConfigUtils {
     public static Properties getHttpConnectorProperties(Map<String, String> tableOptions) {
         final Properties httpProperties = new Properties();
 
-        if (hasHttpConnectorProperties(tableOptions)) {
-            tableOptions.keySet().stream()
-                .filter(key -> key.startsWith(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP))
-                .forEach(
-                    key -> {
-                        final String value = tableOptions.get(key);
-                        httpProperties.put(key, value);
-                    });
-        }
+        tableOptions.entrySet().stream()
+            .filter(entry ->
+                entry.getKey().startsWith(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP))
+            .forEach(entry -> httpProperties.put(entry.getKey(), entry.getValue()));
+
         return httpProperties;
     }
-
-    private static boolean hasHttpConnectorProperties(Map<String, String> tableOptions) {
-        return tableOptions
-            .keySet()
-            .stream()
-            .anyMatch(k -> k.startsWith(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP));
-    }
-
 }
