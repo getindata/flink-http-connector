@@ -6,6 +6,7 @@
   Methods defined in classes located outside "internal" package are considered "public API".
   Any changes to those methods should be communicated as "not backward compatible" and should be avoided.
 - Add checkstyle configuration to "dev" folder. Add checkstyle check during maven build
+- Add HTTP sink client header configuration via properties.
 
 ## [0.2.0] - 2022-07-06
 

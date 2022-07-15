@@ -17,7 +17,6 @@ public class HttpSinkWriterStateSerializer
     protected void serializeRequestToStream(HttpSinkRequestEntry s, DataOutputStream out)
         throws IOException {
         out.writeUTF(s.method);
-        out.writeUTF(s.contentType);
         out.write(s.element);
     }
 
@@ -25,10 +24,9 @@ public class HttpSinkWriterStateSerializer
     protected HttpSinkRequestEntry deserializeRequestFromStream(long requestSize,
         DataInputStream in) throws IOException {
         var method = in.readUTF();
-        var contentType = in.readUTF();
         var bytes = new byte[(int) requestSize];
         in.read(bytes);
-        return new HttpSinkRequestEntry(method, contentType, bytes);
+        return new HttpSinkRequestEntry(method, bytes);
     }
 
     @Override

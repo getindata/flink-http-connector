@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.sink;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
@@ -40,6 +41,7 @@ public class HttpDynamicSinkInsertTest {
     @Test
     public void testHttpDynamicSinkDefaultPost() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+        String contentTypeHeaderValue = "application/json";
 
         final String createTable =
             String.format(
@@ -54,10 +56,12 @@ public class HttpDynamicSinkInsertTest {
                     + ") with (\n"
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
-                    + "  'format' = 'json'\n"
+                    + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
-                "http://localhost:" + SERVER_PORT + "/myendpoint"
+                "http://localhost:" + SERVER_PORT + "/myendpoint",
+                contentTypeHeaderValue
             );
 
         tEnv.executeSql(createTable);
@@ -79,12 +83,13 @@ public class HttpDynamicSinkInsertTest {
             request.getBodyAsString()
         );
         assertEquals(RequestMethod.POST, request.getMethod());
-        assertEquals("application/json", request.getHeader("Content-Type"));
+        assertEquals(contentTypeHeaderValue, request.getHeader("Content-Type"));
     }
 
     @Test
     public void testHttpDynamicSinkPut() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+        String contentTypeHeaderValue = "application/json";
 
         final String createTable =
             String.format(
@@ -100,10 +105,12 @@ public class HttpDynamicSinkInsertTest {
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
                     + "  'insert-method' = 'PUT',\n"
-                    + "  'format' = 'json'\n"
+                    + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
-                "http://localhost:" + SERVER_PORT + "/myendpoint"
+                "http://localhost:" + SERVER_PORT + "/myendpoint",
+                contentTypeHeaderValue
             );
 
         tEnv.executeSql(createTable);
@@ -126,7 +133,7 @@ public class HttpDynamicSinkInsertTest {
         ));
         for (var request : postedRequests) {
             assertEquals(RequestMethod.PUT, request.getMethod());
-            assertEquals("application/json", request.getHeader("Content-Type"));
+            assertEquals(contentTypeHeaderValue, request.getHeader("Content-Type"));
             assertTrue(jsonRequests.contains(request.getBodyAsString()));
             jsonRequests.remove(request.getBodyAsString());
         }
@@ -135,6 +142,7 @@ public class HttpDynamicSinkInsertTest {
     @Test
     public void testHttpDynamicSinkRawFormat() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+        String contentTypeHeaderValue = "application/octet-stream";
 
         final String createTable =
             String.format(
@@ -143,10 +151,12 @@ public class HttpDynamicSinkInsertTest {
                     + ") with (\n"
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
-                    + "  'format' = 'raw'\n"
+                    + "  'format' = 'raw',\n"
+                    + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
-                "http://localhost:" + SERVER_PORT + "/myendpoint"
+                "http://localhost:" + SERVER_PORT + "/myendpoint",
+                contentTypeHeaderValue
             );
 
         tEnv.executeSql(createTable);
@@ -160,6 +170,50 @@ public class HttpDynamicSinkInsertTest {
         var request = postedRequests.get(0);
         assertEquals("Clee", request.getBodyAsString());
         assertEquals(RequestMethod.POST, request.getMethod());
-        assertEquals("application/octet-stream", request.getHeader("Content-Type"));
+        assertEquals(contentTypeHeaderValue, request.getHeader("Content-Type"));
+    }
+
+    @Test
+    public void testHttpRequestWithHeadersFromDdl()
+        throws ExecutionException, InterruptedException {
+        String originHeaderValue = "*";
+        String xContentTypeOptionsHeaderValue = "nosniff";
+        String contentTypeHeaderValue = "application/json";
+
+        wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+
+        final String createTable =
+            String.format(
+                "CREATE TABLE http (\n"
+                    + "  last_name string"
+                    + ") with (\n"
+                    + "  'connector' = '%s',\n"
+                    + "  'url' = '%s',\n"
+                    + "  'format' = 'raw',\n"
+                    + "  'gid.connector.http.sink.header.Origin' = '%s',\n"
+                    + "  'gid.connector.http.sink.header.X-Content-Type-Options' = '%s',\n"
+                    + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
+                    + ")",
+                HttpDynamicTableSinkFactory.IDENTIFIER,
+                "http://localhost:" + SERVER_PORT + "/myendpoint",
+                originHeaderValue,
+                xContentTypeOptionsHeaderValue,
+                contentTypeHeaderValue
+            );
+
+        tEnv.executeSql(createTable);
+
+        final String insert = "INSERT INTO http VALUES ('Clee')";
+        tEnv.executeSql(insert).await();
+
+        var postedRequests = wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")));
+        assertEquals(1, postedRequests.size());
+
+        var request = postedRequests.get(0);
+        assertEquals("Clee", request.getBodyAsString());
+        assertEquals(RequestMethod.POST, request.getMethod());
+        assertEquals(contentTypeHeaderValue, request.getHeader("Content-Type"));
+        assertEquals(originHeaderValue, request.getHeader("Origin"));
+        assertEquals(xContentTypeOptionsHeaderValue, request.getHeader("X-Content-Type-Options"));
     }
 }

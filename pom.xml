@@ -83,6 +83,7 @@ under the License.
     <wiremock.version>2.27.2</wiremock.version>
     <jacoco.plugin.version>0.8.7</jacoco.plugin.version>
     <maven.shade.plugin.version>3.1.1</maven.shade.plugin.version>
+    <mockito-inline.version>4.6.1</mockito-inline.version>
   </properties>
 
   <repositories>
@@ -262,6 +263,13 @@ under the License.
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock</artifactId>
       <version>${wiremock.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-inline</artifactId>
+      <version>${mockito-inline.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

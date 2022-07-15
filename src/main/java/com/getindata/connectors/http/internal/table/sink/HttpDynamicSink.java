@@ -1,7 +1,6 @@
 package com.getindata.connectors.http.internal.table.sink;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 import javax.annotation.Nullable;
 
 import lombok.EqualsAndHashCode;
@@ -15,7 +14,6 @@ import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.sink.SinkV2Provider;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
 
@@ -74,9 +72,12 @@ import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkC
 public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry> {
 
     private final DataType consumedDataType;
+
     private final EncodingFormat<SerializationSchema<RowData>> encodingFormat;
+
     private final ReadableConfig tableOptions;
-    private final Map<String, String> formatContentTypeMap;
+
+    private final Properties properties;
 
     protected HttpDynamicSink(
         @Nullable Integer maxBatchSize,
@@ -86,8 +87,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         @Nullable Long maxTimeInBufferMS,
         DataType consumedDataType,
         EncodingFormat<SerializationSchema<RowData>> encodingFormat,
-        Map<String, String> formatContentTypeMap,
-        ReadableConfig tableOptions
+        ReadableConfig tableOptions,
+        Properties properties
     ) {
         super(maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBufferSizeInBytes,
             maxTimeInBufferMS);
@@ -95,10 +96,9 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             Preconditions.checkNotNull(consumedDataType, "Consumed data type must not be null");
         this.encodingFormat =
             Preconditions.checkNotNull(encodingFormat, "Encoding format must not be null");
-        this.formatContentTypeMap = Preconditions.checkNotNull(formatContentTypeMap,
-            "Format to content type map must not be null");
         this.tableOptions =
             Preconditions.checkNotNull(tableOptions, "Table options must not be null");
+        this.properties = properties;
     }
 
     @Override
@@ -112,16 +112,17 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             encodingFormat.createRuntimeEncoder(context, consumedDataType);
 
         var insertMethod = tableOptions.get(INSERT_METHOD);
-        var contentType = getContentTypeFromFormat(tableOptions.get(FactoryUtil.FORMAT));
+
+        // TODO ESP-98 add headers to DDL and add tests for this
         HttpSinkBuilder<RowData> builder = HttpSink
             .<RowData>builder()
             .setEndpointUrl(tableOptions.get(URL))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
             .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
                 insertMethod,
-                contentType,
                 serializationSchema.serialize(rowData)
-            ));
+            ))
+            .setProperties(properties);
         addAsyncOptionsToSinkBuilder(builder);
 
         return SinkV2Provider.of(builder.build());
@@ -137,8 +138,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             maxTimeInBufferMS,
             consumedDataType,
             encodingFormat,
-            new HashMap<>(formatContentTypeMap),
-            tableOptions
+            tableOptions,
+            properties
         );
     }
 
@@ -147,28 +148,19 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         return "HttpSink";
     }
 
-    private String getContentTypeFromFormat(String format) {
-        var contentType = formatContentTypeMap.get(format);
-        if (contentType != null) {
-            return contentType;
-        }
-
-        log.warn(
-            "Unexpected format {}. MIME type for the request will be set to \"application/{}\".",
-            format, format);
-        return "application/" + format;
-    }
-
     /**
      * Builder to construct {@link HttpDynamicSink}.
      */
     public static class HttpDynamicTableSinkBuilder
         extends AsyncDynamicTableSinkBuilder<HttpSinkRequestEntry, HttpDynamicTableSinkBuilder> {
 
-        private ReadableConfig tableOptions = null;
-        private Map<String, String> formatContentTypeMap = null;
-        private DataType consumedDataType = null;
-        private EncodingFormat<SerializationSchema<RowData>> encodingFormat = null;
+        private final Properties properties = new Properties();
+
+        private ReadableConfig tableOptions;
+
+        private DataType consumedDataType;
+
+        private EncodingFormat<SerializationSchema<RowData>> encodingFormat;
 
         /**
          * @param tableOptions the {@link ReadableConfig} consisting of options listed in table
@@ -177,12 +169,6 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
          */
         public HttpDynamicTableSinkBuilder setTableOptions(ReadableConfig tableOptions) {
             this.tableOptions = tableOptions;
-            return this;
-        }
-
-        public HttpDynamicTableSinkBuilder setFormatContentTypeMap(
-            Map<String, String> formatContentTypeMap) {
-            this.formatContentTypeMap = formatContentTypeMap;
             return this;
         }
 
@@ -205,6 +191,25 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             return this;
         }
 
+        /**
+         * Set property for Http Sink.
+         * @param propertyName property name.
+         * @param propertyValue property value.
+         */
+        public HttpDynamicTableSinkBuilder setProperty(String propertyName, String propertyValue) {
+            this.properties.setProperty(propertyName, propertyValue);
+            return this;
+        }
+
+        /**
+         * Add properties to Http Sink configuration
+         * @param properties Properties to add.
+         */
+        public HttpDynamicTableSinkBuilder setProperties(Properties properties) {
+            this.properties.putAll(properties);
+            return this;
+        }
+
         @Override
         public HttpDynamicSink build() {
             return new HttpDynamicSink(
@@ -215,8 +220,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
                 getMaxTimeInBufferMS(),
                 consumedDataType,
                 encodingFormat,
-                formatContentTypeMap,
-                tableOptions
+                tableOptions,
+                properties
             );
         }
     }

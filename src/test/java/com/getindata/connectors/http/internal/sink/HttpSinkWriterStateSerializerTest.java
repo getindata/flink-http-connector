@@ -12,8 +12,8 @@ import static org.apache.flink.connector.base.sink.writer.AsyncSinkWriterTestUti
 public class HttpSinkWriterStateSerializerTest {
 
     private static final ElementConverter<String, HttpSinkRequestEntry> ELEMENT_CONVERTER =
-        (s, _context) -> new HttpSinkRequestEntry("POST", "application/json",
-            s.getBytes(StandardCharsets.UTF_8));
+        (s, _context) ->
+            new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8));
 
     @Test
     public void testSerializeAndDeserialize() throws IOException {
