@@ -1,8 +1,10 @@
 package com.getindata.connectors.http.internal.table.sink;
 
+import java.util.Arrays;
 import java.util.Properties;
 import javax.annotation.Nullable;
 
+import com.getindata.fink.spring.context.ContextRegistry;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -16,11 +18,16 @@ import org.apache.flink.table.connector.sink.SinkV2Provider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.StringUtils;
+import org.springframework.context.ApplicationContext;
 
 import com.getindata.connectors.http.HttpSink;
 import com.getindata.connectors.http.HttpSinkBuilder;
+import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
+import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
 
@@ -79,6 +86,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
     private final Properties properties;
 
+    private final SinkHttpClientBuilder httpClientBuilder;
+
     protected HttpDynamicSink(
         @Nullable Integer maxBatchSize,
         @Nullable Integer maxInFlightRequests,
@@ -88,8 +97,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         DataType consumedDataType,
         EncodingFormat<SerializationSchema<RowData>> encodingFormat,
         ReadableConfig tableOptions,
-        Properties properties
-    ) {
+        Properties properties) {
         super(maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBufferSizeInBytes,
             maxTimeInBufferMS);
         this.consumedDataType =
@@ -99,6 +107,32 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         this.tableOptions =
             Preconditions.checkNotNull(tableOptions, "Table options must not be null");
         this.properties = properties;
+
+        String clientBuilderName =
+            properties.getProperty(HttpConnectorConfigConstants.HTTP_CLIENT_BEAN_NAME,"");
+
+        String configurationPackage =
+            properties.getProperty(HttpConnectorConfigConstants.BEAN_CONFIGURATION_PACKAGE,"");
+
+        if (!StringUtils.isNullOrWhitespaceOnly(clientBuilderName)
+            && !StringUtils.isNullOrWhitespaceOnly(configurationPackage)
+            && ConfigUtils.checkIfSpringRegistryExists()) {
+
+            log.info(
+                String.format(
+                    "About to get bean %s from config class %s.",
+                    clientBuilderName,
+                    configurationPackage)
+            );
+
+            ApplicationContext context = ContextRegistry.INSTANCE.getContext(configurationPackage);
+            log.info(Arrays.toString(context.getBeanDefinitionNames()));
+
+            this.httpClientBuilder = context
+                .getBean(clientBuilderName, SinkHttpClientBuilder.class);
+        } else {
+            this.httpClientBuilder = JavaNetSinkHttpClient::new;
+        }
     }
 
     @Override
@@ -117,12 +151,12 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         HttpSinkBuilder<RowData> builder = HttpSink
             .<RowData>builder()
             .setEndpointUrl(tableOptions.get(URL))
-            .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setSinkHttpClientBuilder(this.httpClientBuilder)
             .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
                 insertMethod,
                 serializationSchema.serialize(rowData)
             ))
-            .setProperties(properties);
+            .setProperties(this.properties);
         addAsyncOptionsToSinkBuilder(builder);
 
         return SinkV2Provider.of(builder.build());

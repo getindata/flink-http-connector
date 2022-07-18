@@ -7,11 +7,13 @@ import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.internal.config.ConfigException;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.NONE)
 public final class ConfigUtils {
 
@@ -127,5 +129,16 @@ public final class ConfigUtils {
             .forEach(entry -> httpProperties.put(entry.getKey(), entry.getValue()));
 
         return httpProperties;
+    }
+
+    public static boolean checkIfSpringRegistryExists() {
+        try {
+            Class.forName("com.getindata.fink.spring.context.ContextRegistry");
+            return true;
+        } catch (ClassNotFoundException e) {
+            log.warn("Flink Spring registry not found."
+                + " Spring bean injection will not be possible.");
+        }
+        return false;
     }
 }

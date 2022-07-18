@@ -22,8 +22,10 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
     public static final String IDENTIFIER = "http-sink";
 
+
     @Override
     public DynamicTableSink createDynamicTableSink(Context context) {
+
         final AsyncDynamicSinkContext factoryContext = new AsyncDynamicSinkContext(this, context);
         ReadableConfig tableOptions = factoryContext.getTableOptions();
 

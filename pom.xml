@@ -23,7 +23,7 @@ under the License.
 
   <groupId>com.getindata</groupId>
   <artifactId>flink-http-connector</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.3.0.spring-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>flink-http-connector</name>
@@ -113,6 +113,13 @@ under the License.
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-clients</artifactId>
       <version>${flink.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.getindata</groupId>
+      <artifactId>flink-spring</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
 
@@ -320,7 +327,7 @@ under the License.
         </executions>
       </plugin>
 
-      <plugin>
+     <!-- <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco.plugin.version}</version>
@@ -383,7 +390,7 @@ under the License.
             </configuration>
           </execution>
         </executions>
-      </plugin>
+      </plugin>-->
 
       <!-- We use the maven-shade plugin to create a fat jar that contains all necessary dependencies. -->
       <!-- Change the value of <mainClass>...</mainClass> if your program entry point changes. -->
