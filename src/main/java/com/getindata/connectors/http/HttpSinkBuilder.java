@@ -18,7 +18,7 @@ import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpCli
  * <p>The following example shows the minimum setup to create a {@link HttpSink} that writes String
  * values to an HTTP endpoint using POST method.
  *
- * <pre>
+ * <pre>{@code
  * HttpSink<String> httpSink =
  *     HttpSink.<String>builder()
  *             .setEndpointUrl("http://example.com/myendpoint")
@@ -27,7 +27,7 @@ import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpCli
  *                 "POST",
  *                 s.getBytes(StandardCharsets.UTF_8)))
  *             .build();
- * </pre>
+ * }</pre>
  *
  * <p>If the following parameters are not set in this builder, the following defaults will be used:
  * <ul>
@@ -107,8 +107,9 @@ public class HttpSinkBuilder<InputT> extends
 
     /**
      * Set property for Http Sink.
-     * @param propertyName property name.
-     * @param propertyValue property value.
+     * @param propertyName property name
+     * @param propertyValue property value
+     * @return {@link HttpSinkBuilder} itself
      */
     public HttpSinkBuilder<InputT> setProperty(String propertyName, String propertyValue) {
         this.properties.setProperty(propertyName, propertyValue);
@@ -117,7 +118,8 @@ public class HttpSinkBuilder<InputT> extends
 
     /**
      * Add properties to Http Sink configuration
-     * @param properties Properties to add.
+     * @param properties properties to add
+     * @return {@link HttpSinkBuilder} itself
      */
     public HttpSinkBuilder<InputT> setProperties(Properties properties) {
         this.properties.putAll(properties);

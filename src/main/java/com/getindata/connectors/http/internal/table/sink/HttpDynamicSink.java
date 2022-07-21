@@ -193,8 +193,9 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
         /**
          * Set property for Http Sink.
-         * @param propertyName property name.
-         * @param propertyValue property value.
+         * @param propertyName property name
+         * @param propertyValue property value
+         * @return {@link HttpDynamicTableSinkBuilder} itself
          */
         public HttpDynamicTableSinkBuilder setProperty(String propertyName, String propertyValue) {
             this.properties.setProperty(propertyName, propertyValue);
@@ -203,7 +204,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
         /**
          * Add properties to Http Sink configuration
-         * @param properties Properties to add.
+         * @param properties properties to add
+         * @return {@link HttpDynamicTableSinkBuilder} itself
          */
         public HttpDynamicTableSinkBuilder setProperties(Properties properties) {
             this.properties.putAll(properties);

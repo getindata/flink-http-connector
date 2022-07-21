@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Fix JavaDoc errors.
+
 ## [0.3.0] - 2022-07-21
 
 -   Package refactoring. Hide internal classes that does not have to be used by API users under "internal" package.

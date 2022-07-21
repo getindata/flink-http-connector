@@ -16,7 +16,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  *
  * <p>
  * To create a new instance  of this class use {@link HttpSinkBuilder}. An example would be:
- * <pre>
+ * <pre>{@code
  * HttpSink<String> httpSink =
  *     HttpSink.<String>builder()
  *             .setEndpointUrl("http://example.com/myendpoint")
@@ -24,7 +24,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  *                 (s, _context) -> new HttpSinkRequestEntry("POST", "text/plain",
  *                 s.getBytes(StandardCharsets.UTF_8)))
  *             .build();
- * </pre>
+ * }</pre>
  *
  * @param <InputT> type of the elements that should be sent through HTTP request.
  */
