@@ -24,6 +24,7 @@ public final class ConfigUtils {
      * @param properties properties to extract keys from.
      * @param keyPrefix prefix used to match property name with.
      * @param valueClazz type to cast property values to.
+     * @param <T> type of the elements of a returned map.
      * @return Map of propertyName to propertyValue.
      */
     public static <T> Map<String, T> propertiesToMap(
@@ -83,16 +84,19 @@ public final class ConfigUtils {
     /**
      * Flat map a given Map of header name and header value map to an array containing both header
      * names and values. For example, header map of
-     * <pre>
+     * <pre>{@code
      *     Map.of(
      *     header1, val1,
      *     header2, val2
      *     )
-     * </pre>
+     * }</pre>
      * will be converter to an array of:
-     * <pre>
+     * <pre>{@code
      *      String[] headers = {"header1", "val1", "header2", "val2"};
-     * </pre>
+     * }</pre>
+     *
+     * @param headerMap mapping of header names to header values
+     * @return an array containing both header names and values
      */
     public static String[] toHeaderAndValueArray(Map<String, String> headerMap) {
         return headerMap
