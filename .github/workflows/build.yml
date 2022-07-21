@@ -34,6 +34,9 @@ jobs:
           mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS test integration-test
           cat target/site/jacoco/index.html | grep -o 'Total[^%]*%'
 
+      - name: Test JavaDoc
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
+
       - name: Add coverage to PR
         id: jacoco
         uses: madrapps/jacoco-report@v1.2
