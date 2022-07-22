@@ -16,6 +16,8 @@ import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.sink.SinkV2Provider;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.factories.Factory;
+import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
@@ -113,6 +115,18 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
         String configurationPackage =
             properties.getProperty(HttpConnectorConfigConstants.BEAN_CONFIGURATION_PACKAGE,"");
+
+        String myFactory = properties.getProperty(HttpConnectorConfigConstants.FACTORY_NAME,"");
+
+        try {
+            Factory factory =
+                FactoryUtil.discoverFactory(this.getClass().getClassLoader(), Factory.class,
+                    myFactory);
+            log.info("THIS IS MY FACTORY: " + factory.factoryIdentifier()
+                + " " + factory.getClass());
+        } catch (Exception e) {
+            log.error("eh... ", e);
+        }
 
         if (!StringUtils.isNullOrWhitespaceOnly(clientBuilderName)
             && !StringUtils.isNullOrWhitespaceOnly(configurationPackage)

@@ -26,4 +26,6 @@ public final class HttpConnectorConfigConstants {
     public static final String BEAN_CONFIGURATION_PACKAGE = GID_CONNECTOR_HTTP
         + "configuration.package";
 
+    public static final String FACTORY_NAME = GID_CONNECTOR_HTTP + "factory";
+
 }
