@@ -113,7 +113,6 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
         var insertMethod = tableOptions.get(INSERT_METHOD);
 
-        // TODO ESP-98 add headers to DDL and add tests for this
         HttpSinkBuilder<RowData> builder = HttpSink
             .<RowData>builder()
             .setEndpointUrl(tableOptions.get(URL))

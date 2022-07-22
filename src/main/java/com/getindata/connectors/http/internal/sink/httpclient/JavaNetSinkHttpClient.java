@@ -35,6 +35,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final String[] headersAndValues;
 
+    private final HttpStatusCodeChecker statusCodeChecker;
+
     public JavaNetSinkHttpClient(Properties properties) {
         this.httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -44,6 +46,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
 
         this.headersAndValues = ConfigUtils.toHeaderAndValueArray(headerMap);
+        this.statusCodeChecker = new HttpStatusCodeChecker(properties);
     }
 
     @Override
@@ -100,7 +103,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         for (var response : responses) {
             var sinkRequestEntry = response.getSinkRequestEntry();
             if (response.getResponse().isEmpty()
-                || response.getResponse().get().statusCode() >= 400) {
+                || statusCodeChecker.isNotErrorCode(response.getResponse().get().statusCode())) {
                 failedResponses.add(sinkRequestEntry);
             } else {
                 successfulResponses.add(sinkRequestEntry);
