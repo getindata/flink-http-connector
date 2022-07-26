@@ -17,6 +17,7 @@ public class TypeStatusCodeChecker implements HttpStatusCodeChecker {
 
     /**
      * Creates TypeStatusCodeChecker for given {@link HttpType}
+     * @param httpType {@link HttpType} for this {@link TypeStatusCodeChecker} instance.
      */
     public TypeStatusCodeChecker(HttpType httpType) {
         this.httpTypeCode = httpType.getHttpTypeCode();
@@ -25,9 +26,10 @@ public class TypeStatusCodeChecker implements HttpStatusCodeChecker {
     /**
      * Checks whether given status code belongs to Http code status type.
      * For example:
-     * <pre>
+     * <pre>{@code
      *    TypeStatusCodeChecker checker =  new TypeStatusCodeChecker(5);
      *    checker.isErrorCode(505); <- will return true.
+     *    }
      * </pre>
      * @param statusCode http status code to assess.
      * @return true if status code is considered as error or false if not.

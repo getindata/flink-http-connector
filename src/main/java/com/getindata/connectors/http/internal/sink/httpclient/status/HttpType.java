@@ -32,13 +32,14 @@ public enum HttpType {
     /**
      * @return a {@link HttpType} instance based on http type code,
      * for example {@code HttpType.getByCode(1)} will return {@link HttpType#INFO} type.
+     * @param statusCode Http status code to get the {@link HttpType} instance for.
      */
-    public static HttpType getByCode(int i) {
-        return map.get(i);
+    public static HttpType getByCode(int statusCode) {
+        return map.get(statusCode);
     }
 
     /**
-     * @return a "hundrets" digit that represents given {@link HttpType} instance. For example
+     * @return a "hundreds" digit that represents given {@link HttpType} instance. For example
      * {@code HttpType.INFO.getHttpTypeCode()} will return 1 since HTTP information repossess have
      * status codes in range 100 - 199.
      */
