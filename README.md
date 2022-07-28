@@ -131,15 +131,15 @@ CREATE TABLE http (
 ```
 
 #### HTTP status code handler (currently supported only for HTTP Sink)
-Http Sink connector allow defining list of HTTP status codes that should be threaded as errors. 
+Http Sink connector allows defining list of HTTP status codes that should be treated as errors. 
 By default all 400s and 500s response codes will be interpreted as error code.
 
 This behavior can be changed by using below properties in table definition (DDL) or passing it via 
 `setProperty' method from Sink's builder. The property names are:
-- `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be threaded as error for example 404.
+- `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
 Many status codes can be defined in one value, where each code should be separated with comma, for example:
-`401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be threaded as errors.
-An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be threaded as errors.
+`401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
+An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors.
 - `gid.connector.http.sink.error.code.exclude` used to exclude a HTTP code from error list. Many status codes can be defined in one value, where each code should be separated with comma, for example:
   `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
 

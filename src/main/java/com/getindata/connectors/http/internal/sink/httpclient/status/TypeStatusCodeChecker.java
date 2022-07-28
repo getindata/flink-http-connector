@@ -16,11 +16,13 @@ public class TypeStatusCodeChecker implements HttpStatusCodeChecker {
     private final int httpTypeCode;
 
     /**
-     * Creates TypeStatusCodeChecker for given {@link HttpType}
-     * @param httpType {@link HttpType} for this {@link TypeStatusCodeChecker} instance.
+     * Creates TypeStatusCodeChecker for given {@link HttpResponseCodeType}
+     *
+     * @param httpResponseCodeType {@link HttpResponseCodeType} for this {@link
+     *                             TypeStatusCodeChecker} instance.
      */
-    public TypeStatusCodeChecker(HttpType httpType) {
-        this.httpTypeCode = httpType.getHttpTypeCode();
+    public TypeStatusCodeChecker(HttpResponseCodeType httpResponseCodeType) {
+        this.httpTypeCode = httpResponseCodeType.getHttpTypeCode();
     }
 
     /**

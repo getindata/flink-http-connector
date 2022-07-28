@@ -76,7 +76,15 @@ class ComposeHttpStatusCodeCheckerTest {
 
         codeChecker = new ComposeHttpStatusCodeChecker(properties);
 
-        assertAll(() -> CODES.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isFalse()));
+        assertAll(() -> {
+            CODES.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isFalse());
+
+            assertThat(codeChecker.isErrorCode(301))
+                .withFailMessage(
+                    "Not on a white list but matches 3XX range. "
+                        + "Should be considered as error code.")
+                .isTrue();
+        });
     }
 
     @Test
@@ -103,7 +111,14 @@ class ComposeHttpStatusCodeCheckerTest {
 
         codeChecker = new ComposeHttpStatusCodeChecker(properties);
 
-        assertAll(() -> codes.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isTrue()));
+        assertAll(() -> {
+            codes.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isTrue());
+
+            assertThat(codeChecker.isErrorCode(303))
+                .withFailMessage(
+                    "Out ot Error code type range therefore should be not marked as error code.")
+                .isFalse();
+        });
     }
 
     @ParameterizedTest
@@ -115,9 +130,26 @@ class ComposeHttpStatusCodeCheckerTest {
             HttpConnectorConfigConstants.HTTP_ERROR_CODES_LIST, listCode);
 
         assertThrows(
-            NumberFormatException.class,
+            Exception.class,
             () -> new ComposeHttpStatusCodeChecker(properties)
         );
+    }
+
+    private static Stream<Arguments> typeCodeArgs() {
+        return Stream.of(
+            Arguments.of("1XX", true),
+            Arguments.of("1X1", false),
+            Arguments.of("XX1", false),
+            Arguments.of("XX1XX", false),
+            Arguments.of("XX1 XX", false)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("typeCodeArgs")
+    public void testIsTypeCode(String httpTypeCodeMask, boolean isTypeCode) {
+        ComposeHttpStatusCodeChecker checker = new ComposeHttpStatusCodeChecker(new Properties());
+        assertThat(checker.isTypeCode(httpTypeCodeMask)).isEqualTo(isTypeCode);
     }
 
     private static Properties prepareProperties(String errorCodeList, String whiteList) {

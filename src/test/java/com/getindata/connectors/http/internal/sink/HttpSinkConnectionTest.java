@@ -185,10 +185,7 @@ public class HttpSinkConnectionTest {
     public void testFailedConnection404OnWhiteList() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
             .withHeader("Content-Type", equalTo("application/json"))
-            .inScenario("404 on white list.")
-            .whenScenarioStateIs(STARTED)
-            .willReturn(aResponse().withBody("404 body").withStatus(404))
-            .willSetStateTo("Cause Success"));
+            .willReturn(aResponse().withBody("404 body").withStatus(404)));
 
         var source = env.fromCollection(List.of(messages.get(0)));
         var httpSink = HttpSink.<String>builder()
