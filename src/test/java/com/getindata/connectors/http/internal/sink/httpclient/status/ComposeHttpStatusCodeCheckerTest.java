@@ -122,7 +122,7 @@ class ComposeHttpStatusCodeCheckerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"X", "XXX", " X X", "1X1", "XX1"})
+    @ValueSource(strings = {"X", "XXX", " X X", "1X1", "XX1", "XX1XX", "XX1 XX"})
     public void shouldThrowOnInvalidCodeRange(String listCode) {
 
         Properties properties = new Properties();
@@ -133,23 +133,6 @@ class ComposeHttpStatusCodeCheckerTest {
             Exception.class,
             () -> new ComposeHttpStatusCodeChecker(properties)
         );
-    }
-
-    private static Stream<Arguments> typeCodeArgs() {
-        return Stream.of(
-            Arguments.of("1XX", true),
-            Arguments.of("1X1", false),
-            Arguments.of("XX1", false),
-            Arguments.of("XX1XX", false),
-            Arguments.of("XX1 XX", false)
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("typeCodeArgs")
-    public void testIsTypeCode(String httpTypeCodeMask, boolean isTypeCode) {
-        ComposeHttpStatusCodeChecker checker = new ComposeHttpStatusCodeChecker(new Properties());
-        assertThat(checker.isTypeCode(httpTypeCodeMask)).isEqualTo(isTypeCode);
     }
 
     private static Properties prepareProperties(String errorCodeList, String whiteList) {

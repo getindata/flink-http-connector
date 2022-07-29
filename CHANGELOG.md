@@ -4,6 +4,8 @@
 
 ### Fixed
 - Fix JavaDoc errors.
+
+### Added
 - Add new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
   to set HTTP status code that should be interpreted as errors.
 

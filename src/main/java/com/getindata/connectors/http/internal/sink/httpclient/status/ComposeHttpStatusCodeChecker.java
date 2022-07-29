@@ -6,7 +6,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
@@ -18,13 +17,13 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
  */
 public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
 
-    private static final Set<TypeStatusCodeChecker> DEFAULT_ERROR_CODES =
+    private static final Set<HttpStatusCodeChecker> DEFAULT_ERROR_CODES =
         Set.of(
             new TypeStatusCodeChecker(HttpResponseCodeType.CLIENT_ERROR),
             new TypeStatusCodeChecker(HttpResponseCodeType.SERVER_ERROR)
         );
 
-    private static final int MIN_HTTP_ERROR_CODE = 100;
+    private static final int MIN_HTTP_STATUS_CODE = 100;
 
     /**
      * Set of {@link HttpStatusCodeChecker} for white listed status codes.
@@ -35,11 +34,11 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
      * Set of {@link HttpStatusCodeChecker} that check status code againts value match or {@link
      * HttpResponseCodeType} match.
      */
-    private final Set<HttpStatusCodeChecker> errorCodes = new HashSet<>();
+    private final Set<HttpStatusCodeChecker> errorCodes;
 
     public ComposeHttpStatusCodeChecker(Properties properties) {
         excludedCodes = prepareWhiteList(properties);
-        prepareErrorCodes(properties);
+        errorCodes = prepareErrorCodes(properties);
     }
 
     /**
@@ -53,12 +52,12 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
     public boolean isErrorCode(int statusCode) {
 
         Preconditions.checkArgument(
-            statusCode >= MIN_HTTP_ERROR_CODE,
+            statusCode >= MIN_HTTP_STATUS_CODE,
             String.format(
                 "Provided invalid Http status code %s,"
                     + " status code should be equal or bigger than %d.",
                 statusCode,
-                MIN_HTTP_ERROR_CODE)
+                MIN_HTTP_STATUS_CODE)
         );
 
         boolean isWhiteListed = excludedCodes.stream()
@@ -69,20 +68,15 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
                 .anyMatch(httpStatusCodeChecker -> httpStatusCodeChecker.isErrorCode(statusCode));
     }
 
-    private void prepareErrorCodes(Properties properties) {
+    private Set<HttpStatusCodeChecker> prepareErrorCodes(Properties properties) {
         String sErrorCodes =
             properties.getProperty(HttpConnectorConfigConstants.HTTP_ERROR_CODES_LIST, "");
 
         if (StringUtils.isNullOrWhitespaceOnly(sErrorCodes)) {
-            errorCodes.addAll(DEFAULT_ERROR_CODES);
+            return DEFAULT_ERROR_CODES;
         } else {
             String[] splitCodes = sErrorCodes.split(HttpConnectorConfigConstants.ERROR_CODE_DELIM);
-
-            if (splitCodes.length == 0) {
-                errorCodes.addAll(DEFAULT_ERROR_CODES);
-            } else {
-                prepareErrorCodes(splitCodes);
-            }
+            return prepareErrorCodes(splitCodes);
         }
     }
 
@@ -91,7 +85,9 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
      * {@link SingleValueHttpStatusCodeChecker} for full codes such as 100, 404 etc. or to
      * {@link TypeStatusCodeChecker} for codes that were constructed with "XX" mask
      */
-    private void prepareErrorCodes(String[] statusCodes) {
+    private Set<HttpStatusCodeChecker> prepareErrorCodes(String[] statusCodes) {
+
+        Set<HttpStatusCodeChecker> errorCodes = new HashSet<>();
         for (String sCode : statusCodes) {
             if (!StringUtils.isNullOrWhitespaceOnly(sCode)) {
                 String trimCode = sCode.toUpperCase().trim();
@@ -111,6 +107,7 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
                 }
             }
         }
+        return (errorCodes.isEmpty()) ? DEFAULT_ERROR_CODES : errorCodes;
     }
 
     private Set<WhiteListHttpStatusCodeChecker> prepareWhiteList(Properties properties) {
@@ -132,8 +129,7 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
      *             be 3 characters long, trim and uppercase.
      * @return true if string matches "anything + XX" and false if not.
      */
-    @VisibleForTesting
-    boolean isTypeCode(final String code) {
+    private boolean isTypeCode(final String code) {
         return code.charAt(1) == 'X' && code.charAt(2) == 'X';
     }
 }
