@@ -21,6 +21,8 @@ import org.apache.flink.annotation.VisibleForTesting;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.status.ComposeHttpStatusCodeChecker;
+import com.getindata.connectors.http.internal.sink.httpclient.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_HEADER_PREFIX;
 
@@ -35,6 +37,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final String[] headersAndValues;
 
+    private final HttpStatusCodeChecker statusCodeChecker;
+
     public JavaNetSinkHttpClient(Properties properties) {
         this.httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
@@ -44,6 +48,10 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
 
         this.headersAndValues = ConfigUtils.toHeaderAndValueArray(headerMap);
+
+        // TODO Inject this via constructor when implementing a response processor.
+        //  Processor will be injected and it will wrap statusChecker implementation.
+        this.statusCodeChecker = new ComposeHttpStatusCodeChecker(properties);
     }
 
     @Override
@@ -99,8 +107,9 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
         for (var response : responses) {
             var sinkRequestEntry = response.getSinkRequestEntry();
+            // TODO Add response processor here and orchestrate it with statusCodeChecker.
             if (response.getResponse().isEmpty()
-                || response.getResponse().get().statusCode() >= 400) {
+                || statusCodeChecker.isErrorCode(response.getResponse().get().statusCode())) {
                 failedResponses.add(sinkRequestEntry);
             } else {
                 successfulResponses.add(sinkRequestEntry);

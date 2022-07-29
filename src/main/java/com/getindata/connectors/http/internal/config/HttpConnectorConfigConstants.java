@@ -11,6 +11,8 @@ import lombok.experimental.UtilityClass;
 @NoArgsConstructor(access = AccessLevel.NONE)
 public final class HttpConnectorConfigConstants {
 
+    public static final String ERROR_CODE_DELIM = ",";
+
     /**
      * A property prefix for http connector.
      */
@@ -20,5 +22,11 @@ public final class HttpConnectorConfigConstants {
      * A property prefix for http connector header properties
      */
     public static final String SINK_HEADER_PREFIX = GID_CONNECTOR_HTTP + "sink.header.";
+
+    // Error code handling configuration.
+    public static final String HTTP_ERROR_CODE_WHITE_LIST =
+        GID_CONNECTOR_HTTP + "sink.error.code.exclude";
+
+    public static final String HTTP_ERROR_CODES_LIST = GID_CONNECTOR_HTTP + "sink.error.code";
 
 }

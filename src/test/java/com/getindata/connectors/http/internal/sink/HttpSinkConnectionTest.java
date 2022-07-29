@@ -154,6 +154,7 @@ public class HttpSinkConnectionTest {
             .whenScenarioStateIs(STARTED)
             .willReturn(aResponse().withFault(Fault.EMPTY_RESPONSE))
             .willSetStateTo("Cause Success"));
+
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
             .withHeader("Content-Type", equalTo("application/json"))
             .inScenario("Retry Scenario")
@@ -180,6 +181,28 @@ public class HttpSinkConnectionTest {
         // postedRequests.get(1).getBodyAsString());
     }
 
+    @Test
+    public void testFailedConnection404OnWhiteList() throws Exception {
+        wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .willReturn(aResponse().withBody("404 body").withStatus(404)));
+
+        var source = env.fromCollection(List.of(messages.get(0)));
+        var httpSink = HttpSink.<String>builder()
+            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
+            .setElementConverter(
+                (s, _context) ->
+                    new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+            .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setProperty("gid.connector.http.sink.error.code.exclude", "404, 405")
+            .setProperty("gid.connector.http.sink.error.code", "4XX")
+            .build();
+        source.sinkTo(httpSink);
+        env.execute("Http Sink test failed connection");
+
+        assertEquals(0, SendErrorsTestReporter.getCount());
+    }
+
     // must be public because of the reflection
     public static class SendErrorsTestReporter implements MetricReporter {
 
@@ -203,8 +226,10 @@ public class HttpSinkConnectionTest {
 
         @Override
         public void notifyOfAddedMetric(
-            Metric metric, String s, MetricGroup metricGroup
-        ) {
+                Metric metric,
+                String s,
+                MetricGroup metricGroup) {
+
             if ("numRecordsSendErrors".equals(s)) {
                 numRecordsSendErrors.add((Counter) metric);
             }

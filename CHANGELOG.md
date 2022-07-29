@@ -5,6 +5,10 @@
 ### Fixed
 - Fix JavaDoc errors.
 
+### Added
+- Add new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
+  to set HTTP status code that should be interpreted as errors.
+
 ## [0.3.0] - 2022-07-21
 
 -   Package refactoring. Hide internal classes that does not have to be used by API users under "internal" package.

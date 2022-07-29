@@ -8,12 +8,9 @@ The HTTP TableLookup connector that allows for pulling data from external system
 **Note**: The `main` branch may be in an *unstable or even broken state* during development.
 Please use [releases](https://github.com/getindata/flink-http-connector/releases) instead of the `main` branch in order to get a stable set of binaries.
 
-#### HTTP TableLookup Source
 The goal for HTTP TableLookup connector was to use it in Flink SQL statement as a standard table that can be later joined with other stream using pure SQL Flink.
  
 Currently, HTTP TableLookup connector supports only Lookup Joins [1] and expects JSON as a response body. It also supports only the STRING types.
-
-#### HTTP Sink
 `HttpSink` supports both Streaming API (when using [HttpSink](src/main/java/com/getindata/connectors/http/internal/sink/HttpSink.java) built using [HttpSinkBuilder](src/main/java/com/getindata/connectors/http/internal/sink/HttpSinkBuilder.java)) and the Table API (using connector created in [HttpDynamicTableSinkFactory](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicTableSinkFactory.java)). 
 
 ## Prerequisites
@@ -133,21 +130,19 @@ CREATE TABLE http (
 )
 ```
 
-## Implementation
-Implementation of an HTTP source connector is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  
-To be more specific we are using a `LookupTableSource`. Unfortunately Flink's new unified source interface [2] cannot be used for this type of source.
-Issue was discussed on Flink's user mailing list - https://lists.apache.org/thread/tx2w1m15zt5qnvt924mmbvr7s8rlyjmw
+#### HTTP status code handler (currently supported only for HTTP Sink)
+Http Sink connector allows defining list of HTTP status codes that should be treated as errors. 
+By default all 400s and 500s response codes will be interpreted as error code.
 
-Implementation of an HTTP Sink is based on Flink's `AsyncSinkBase` introduced in Flink 1.15 [3, 4].
+This behavior can be changed by using below properties in table definition (DDL) or passing it via 
+`setProperty' method from Sink's builder. The property names are:
+- `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
+Many status codes can be defined in one value, where each code should be separated with comma, for example:
+`401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
+An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors.
+- `gid.connector.http.sink.error.code.exclude` used to exclude a HTTP code from error list. Many status codes can be defined in one value, where each code should be separated with comma, for example:
+  `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
 
-## Http Response to Table schema mapping
-The mapping from Http Json Response to SQL table schema is done via Json Paths [5]. 
-This is achieved thanks to `com.jayway.jsonpath:json-path` library.
-
-If no `root` or `field.#.path` option is defined, the connector will use the column name as json path and will try to look for Json Node with that name in received Json. If no node with a given name is found, the connector will return `null` as value for this field. 
-
-If the `field.#.path` option is defined, connector will use given Json path from option's value in order to find Json data that should be used for this column. 
-For example `'field.isActive.path' = '$.details.isActive'` - the value for table column `isActive` will be taken from `$.details.isActive` node from received Json.
 
 ## Table API Connector Options
 ### HTTP TableLookup Source
@@ -224,6 +219,23 @@ As a result, you should see a table with joined records like so:
 ![join-result](docs/JoinTable.PNG)
 
 The `msg` column shows parameters used with REST call for given JOIN record.
+
+## Implementation
+### HTTP Source
+Implementation of an HTTP source connector is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  
+To be more specific we are using a `LookupTableSource`. Unfortunately Flink's new unified source interface [2] cannot be used for this type of source.
+Issue was discussed on Flink's user mailing list - https://lists.apache.org/thread/tx2w1m15zt5qnvt924mmbvr7s8rlyjmw
+
+Implementation of an HTTP Sink is based on Flink's `AsyncSinkBase` introduced in Flink 1.15 [3, 4].
+
+#### Http Response to Table schema mapping
+The mapping from Http Json Response to SQL table schema is done via Json Paths [5].
+This is achieved thanks to `com.jayway.jsonpath:json-path` library.
+
+If no `root` or `field.#.path` option is defined, the connector will use the column name as json path and will try to look for Json Node with that name in received Json. If no node with a given name is found, the connector will return `null` as value for this field.
+
+If the `field.#.path` option is defined, connector will use given Json path from option's value in order to find Json data that should be used for this column.
+For example `'field.isActive.path' = '$.details.isActive'` - the value for table column `isActive` will be taken from `$.details.isActive` node from received Json.
 
 ## TODO
 
