@@ -16,6 +16,13 @@ public class ConfigException extends RuntimeException {
         super(message, t);
     }
 
+    /**
+     * Creates an exception object using predefined exception message template:
+     * {@code Invalid value + (value) + for configuration + (property name) + (additional message) }
+     * @param name configuration property name.
+     * @param value configuration property value.
+     * @param message custom message appended to the end of exception message.
+     */
     public ConfigException(String name, Object value, String message) {
         super("Invalid value " + value + " for configuration " + name + (message == null ? ""
             : ": " + message));

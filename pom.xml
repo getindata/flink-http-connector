@@ -148,6 +148,7 @@ under the License.
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-connector-base</artifactId>
       <version>${flink.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <!--===== Needed Dep ====-->
@@ -158,12 +159,6 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>4.5.13</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
@@ -171,6 +166,13 @@ under the License.
     </dependency>
 
     <!--TEST-->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.13</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-common</artifactId>
