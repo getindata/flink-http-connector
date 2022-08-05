@@ -23,6 +23,11 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
+ * ============================= NOTE =================================
+ * This code has been copied from
+ * https://github.com/apache/httpcomponents-client/tree/rel/v4.5.13
+ * and it was changed to use in this project.
+ * ====================================================================
  */
 
 package com.getindata.connectors.http.internal.utils.uri;
