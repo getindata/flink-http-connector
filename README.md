@@ -18,6 +18,13 @@ Currently, HTTP TableLookup connector supports only Lookup Joins [1] and expects
 * Maven 3
 * Flink 1.15+
 
+## Runtime dependencies
+This connector has few Flink's runtime dependencies, that are expected to be provided.
+* `org.apache.flink.flink-java`
+* `org.apache.flink.flink-clients`
+* `org.apache.flink.flink-connector-base`
+* `org.apache.flink.flink-java`
+
 ## Installation
 
 In order to use the `flink-http-connector` the following dependencies are required for both projects using a build automation tool (such as Maven or SBT) and SQL Client with SQL JAR bundles. For build automation tool reference, look into Maven Central: [https://mvnrepository.com/artifact/com.getindata/flink-http-connector](https://mvnrepository.com/artifact/com.getindata/flink-http-connector).
