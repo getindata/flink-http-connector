@@ -35,6 +35,7 @@ package com.getindata.connectors.http.internal.utils.uri;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,7 @@ import org.apache.flink.util.StringUtils;
 
 /**
  * Builder for {@link URI} instances.
+ * This class is based on {@code org.apache.httpcomponents.httpclient#URIBuilder} version 4.5.13.
  */
 public class URIBuilder {
 
@@ -158,14 +160,17 @@ public class URIBuilder {
         this.encodedAuthority = uri.getRawAuthority();
         this.encodedPath = uri.getRawPath();
         this.queryParams =
-            parseQuery(uri.getRawQuery(), this.charset != null ? this.charset : Constants.UTF_8);
+            parseQuery(
+                uri.getRawQuery(),
+                this.charset != null ? this.charset : StandardCharsets.UTF_8
+            );
         this.encodedFragment = uri.getRawFragment();
         this.encodedQuery = uri.getRawQuery();
     }
 
     private String encodeUrlForm(final List<NameValuePair> params) {
         return URLEncodedUtils.format(
-            params, this.charset != null ? this.charset : Constants.UTF_8
+            params, this.charset != null ? this.charset : StandardCharsets.UTF_8
         );
     }
 }

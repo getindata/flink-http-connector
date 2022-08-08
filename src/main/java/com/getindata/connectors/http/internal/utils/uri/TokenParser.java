@@ -58,9 +58,6 @@ class TokenParser {
      * US-ASCII HT, horizontal-tab (9)
      */
     static final char HT = '\t';
-    /**
-     * Double quote
-     */
 
     static final TokenParser INSTANCE = new TokenParser();
 

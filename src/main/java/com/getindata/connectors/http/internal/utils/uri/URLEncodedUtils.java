@@ -35,6 +35,7 @@ package com.getindata.connectors.http.internal.utils.uri;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -277,7 +278,10 @@ class URLEncodedUtils {
         Preconditions.checkNotNull(sequence, "Char sequence cannot be null.");
         final List<String> list = splitPathSegments(sequence);
         for (int i = 0; i < list.size(); i++) {
-            list.set(i, urlDecode(list.get(i), charset != null ? charset : Constants.UTF_8, false));
+            list.set(
+                i,
+                urlDecode(list.get(i), charset != null ? charset : StandardCharsets.UTF_8, false)
+            );
         }
         return list;
     }
@@ -429,7 +433,10 @@ class URLEncodedUtils {
         if (content == null) {
             return null;
         }
-        return urlEncode(content, charset != null ? charset : Constants.UTF_8, URLENCODER, true);
+        return urlEncode(
+            content,
+            charset != null ? charset : StandardCharsets.UTF_8, URLENCODER, true
+        );
     }
 
     /**
@@ -443,6 +450,6 @@ class URLEncodedUtils {
         if (content == null) {
             return null;
         }
-        return urlDecode(content, charset != null ? charset : Constants.UTF_8, true);
+        return urlDecode(content, charset != null ? charset : StandardCharsets.UTF_8, true);
     }
 }
