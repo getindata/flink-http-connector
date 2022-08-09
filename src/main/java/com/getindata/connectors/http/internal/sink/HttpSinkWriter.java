@@ -27,35 +27,25 @@ import com.getindata.connectors.http.internal.SinkHttpClient;
 public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequestEntry> {
 
     private final String endpointUrl;
+
     private final SinkHttpClient sinkHttpClient;
+
     private final Counter numRecordsSendErrorsCounter;
 
     public HttpSinkWriter(
-        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter, Sink.InitContext context,
-        int maxBatchSize,
-        int maxInFlightRequests, int maxBufferedRequests, long maxBatchSizeInBytes,
-        long maxTimeInBufferMS,
-        long maxRecordSizeInBytes, String endpointUrl, SinkHttpClient sinkHttpClient
-    ) {
-        this(elementConverter, context, maxBatchSize, maxInFlightRequests, maxBufferedRequests,
-            maxBatchSizeInBytes,
-            maxTimeInBufferMS, maxRecordSizeInBytes, endpointUrl, sinkHttpClient,
-            Collections.emptyList()
-        );
-    }
-
-    public HttpSinkWriter(
-        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter, Sink.InitContext context,
-        int maxBatchSize,
-        int maxInFlightRequests, int maxBufferedRequests, long maxBatchSizeInBytes,
-        long maxTimeInBufferMS,
-        long maxRecordSizeInBytes, String endpointUrl, SinkHttpClient sinkHttpClient,
-        Collection<BufferedRequestState<HttpSinkRequestEntry>> bufferedRequestStates
-    ) {
+            ElementConverter<InputT, HttpSinkRequestEntry> elementConverter,
+            Sink.InitContext context,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long maxBatchSizeInBytes,
+            long maxTimeInBufferMS,
+            long maxRecordSizeInBytes,
+            String endpointUrl,
+            SinkHttpClient sinkHttpClient,
+            Collection<BufferedRequestState<HttpSinkRequestEntry>> bufferedRequestStates) {
         super(elementConverter, context, maxBatchSize, maxInFlightRequests, maxBufferedRequests,
-            maxBatchSizeInBytes,
-            maxTimeInBufferMS, maxRecordSizeInBytes, bufferedRequestStates
-        );
+            maxBatchSizeInBytes, maxTimeInBufferMS, maxRecordSizeInBytes, bufferedRequestStates);
         this.endpointUrl = endpointUrl;
         this.sinkHttpClient = sinkHttpClient;
 
@@ -67,13 +57,13 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     @Override
     protected void submitRequestEntries(
         List<HttpSinkRequestEntry> requestEntries,
-        Consumer<List<HttpSinkRequestEntry>> requestResult
-    ) {
+        Consumer<List<HttpSinkRequestEntry>> requestResult) {
         var future = sinkHttpClient.putRequests(requestEntries, endpointUrl);
         future.whenComplete((response, err) -> {
             if (err != null) {
-                var failedRequestsNumber = requestEntries.size();
-                log.error("Http Sink fatally failed to write all {} requests",
+                int failedRequestsNumber = requestEntries.size();
+                log.error(
+                    "Http Sink fatally failed to write all {} requests",
                     failedRequestsNumber);
                 numRecordsSendErrorsCounter.inc(failedRequestsNumber);
 
@@ -83,7 +73,7 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                 //  a clear image how we want to do it, so it would be both efficient and correct.
                 //requestResult.accept(requestEntries);
             } else if (response.getFailedRequests().size() > 0) {
-                var failedRequestsNumber = response.getFailedRequests().size();
+                int failedRequestsNumber = response.getFailedRequests().size();
                 log.error("Http Sink failed to write and will retry {} requests",
                     failedRequestsNumber);
                 numRecordsSendErrorsCounter.inc(failedRequestsNumber);

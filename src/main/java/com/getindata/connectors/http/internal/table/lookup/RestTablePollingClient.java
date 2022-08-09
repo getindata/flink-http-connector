@@ -12,10 +12,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.table.data.RowData;
-import org.apache.http.client.utils.URIBuilder;
 
 import com.getindata.connectors.http.internal.JsonResultTableConverter;
 import com.getindata.connectors.http.internal.PollingClient;
+import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 
 @Slf4j
 @RequiredArgsConstructor

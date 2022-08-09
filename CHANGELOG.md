@@ -9,6 +9,12 @@
 - Add new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
   to set HTTP status code that should be interpreted as errors.
 
+### Changed
+- Change dependency scope for `org.apache.flink.flink-connector-base` from `compile` to `provided`.
+
+### Removed
+- Remove dependency on `org.apache.httpcomponents.httpclient`from production code. Dependency is only for test scope.
+
 ## [0.3.0] - 2022-07-21
 
 -   Package refactoring. Hide internal classes that does not have to be used by API users under "internal" package.
