@@ -25,10 +25,17 @@ public class HttpLookupTableSourceFactoryTest {
                 Column.physical("id", DataTypes.STRING().notNull()),
                 Column.physical("msg", DataTypes.STRING().notNull()),
                 Column.physical("uuid", DataTypes.STRING().notNull()),
-                Column.physical("isActive", DataTypes.STRING().notNull()),
-                Column.physical("balance", DataTypes.STRING().notNull())),
+                Column.physical("details", DataTypes.ROW(
+                    DataTypes.FIELD("isActive", DataTypes.BOOLEAN()),
+                    DataTypes.FIELD("nestedDetails", DataTypes.ROW(
+                            DataTypes.FIELD("balance", DataTypes.STRING())
+                        )
+                    )
+                ).notNull())
+            ),
             Collections.emptyList(),
-            UniqueConstraint.primaryKey("id", List.of("id")));
+            UniqueConstraint.primaryKey("id", List.of("id"))
+        );
 
     @Test
     void shouldCreateForMandatoryFields() {
@@ -41,31 +48,6 @@ public class HttpLookupTableSourceFactoryTest {
     @Test
     void shouldThrowIfMissingUrl() {
         Map<String, String> options = Collections.singletonMap("connector", "rest-lookup");
-        assertThatExceptionOfType(ValidationException.class)
-            .isThrownBy(() -> createTableSource(SCHEMA, options));
-    }
-
-    @Test
-    void shouldAcceptRootParameter() {
-        Map<String, String> options = getOptions(Map.of("root", "$.some.path"));
-        DynamicTableSource source = createTableSource(SCHEMA, options);
-        assertThat(source).isNotNull();
-        assertThat(source).isInstanceOf(HttpLookupTableSource.class);
-    }
-
-    @Test
-    void shouldAcceptAliasParameter() {
-        Map<String, String> options =
-            getOptions(Map.of("field.isActive.path", "$.details.isActive"));
-        DynamicTableSource source = createTableSource(SCHEMA, options);
-        assertThat(source).isNotNull();
-        assertThat(source).isInstanceOf(HttpLookupTableSource.class);
-    }
-
-    @Test
-    void shouldThrowIfAliasDoesNotMathColumn() {
-        Map<String, String> options =
-            getOptions(Map.of("field.bogusField.path", "$.details.isActive"));
         assertThatExceptionOfType(ValidationException.class)
             .isThrownBy(() -> createTableSource(SCHEMA, options));
     }
@@ -87,7 +69,10 @@ public class HttpLookupTableSourceFactoryTest {
     }
 
     private Map<String, String> getMandatoryOptions() {
-        return Map.of("connector", "rest-lookup", "url", "http://localhost:8080/service");
+        return Map.of(
+            "connector", "rest-lookup",
+            "url", "http://localhost:8080/service",
+            "format", "json");
     }
 
     private Map<String, String> getOptions(Map<String, String> optionalOptions) {

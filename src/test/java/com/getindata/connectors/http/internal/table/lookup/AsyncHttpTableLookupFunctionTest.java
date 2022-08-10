@@ -5,11 +5,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import static com.getindata.connectors.http.internal.table.lookup.TableSourceHelper.buildGenericRowData;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class)
 class AsyncHttpTableLookupFunctionTest {
 
@@ -88,7 +91,7 @@ class AsyncHttpTableLookupFunctionTest {
                 .whenComplete(
                     (rs, t) -> {
                         if (t != null) {
-                            System.out.println(t);
+                            log.error(t.getMessage(), t);
                         }
 
                         result.addAll(rs);
@@ -111,8 +114,8 @@ class AsyncHttpTableLookupFunctionTest {
                     threadNames.add(Thread.currentThread().getName());
                     // make sure we pile up all keyRows on threads
                     barrier.await();
-                    return buildGenericRowData(
-                        Collections.singletonList(invocationOnMock.getArgument(0)));
+                    return Optional.of(buildGenericRowData(
+                        Collections.singletonList(invocationOnMock.getArgument(0))));
                 });
     }
 
@@ -127,7 +130,7 @@ class AsyncHttpTableLookupFunctionTest {
                     if (argument == 12) {
                         throw new RuntimeException("Exception On problematic item");
                     }
-                    return buildGenericRowData(Collections.singletonList(argument));
+                    return Optional.of(buildGenericRowData(Collections.singletonList(argument)));
                 });
     }
 }

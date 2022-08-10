@@ -1,6 +1,5 @@
-package com.getindata.connectors.http.app;
+package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.github.tomakehurst.wiremock.common.FileSource;
@@ -11,11 +10,8 @@ import com.github.tomakehurst.wiremock.http.Response;
 
 /**
  * Wiremock Extension that prepares HTTP REST endpoint response body. This extension is stateful,
- * every next response will have values like id == counter, id2 == counter + 1
- * and uuid = randomValue value in its response,
- * where counter is incremented for every subsequent request.
- *
- * This class is used for AppDemo Wiremock.
+ * every next response will have id == counter and id2 == counter + 1 value in its response, where
+ * counter is incremented for every subsequent request.
  */
 public class JsonTransform extends ResponseTransformer {
 
@@ -25,7 +21,7 @@ public class JsonTransform extends ResponseTransformer {
         "{\n"
             + "\t\"id\": \"&COUNTER&\",\n"
             + "\t\"id2\": \"&COUNTER_2&\",\n"
-            + "\t\"uuid\": \"&UUID&\",\n"
+            + "\t\"uuid\": \"fbb68a46-80a9-46da-9d40-314b5287079c\",\n"
             + "\t\"picture\": \"http://placehold.it/32x32\",\n"
             + "\t\"msg\": \"&PARAM&, cnt: &COUNTER&\",\n"
             + "\t\"age\": 30,\n"
@@ -102,7 +98,6 @@ public class JsonTransform extends ResponseTransformer {
         return RESULT_JSON
             .replaceAll("&PARAM&", param)
             .replaceAll("&COUNTER&", String.valueOf(counter))
-            .replaceAll("&COUNTER_2&", String.valueOf(counter + 1))
-            .replaceAll("&UUID&", UUID.randomUUID().toString());
+            .replaceAll("&COUNTER_2&", String.valueOf(counter + 1));
     }
 }

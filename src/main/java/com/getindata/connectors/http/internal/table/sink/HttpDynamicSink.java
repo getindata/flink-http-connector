@@ -88,8 +88,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         DataType consumedDataType,
         EncodingFormat<SerializationSchema<RowData>> encodingFormat,
         ReadableConfig tableOptions,
-        Properties properties
-    ) {
+        Properties properties) {
         super(maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBufferSizeInBytes,
             maxTimeInBufferMS);
         this.consumedDataType =

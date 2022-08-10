@@ -45,5 +45,4 @@ public final class TestHelper {
                 Arrays.toString(headerArray))
         );
     }
-
 }

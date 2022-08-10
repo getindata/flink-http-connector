@@ -20,6 +20,7 @@ public class HttpDynamicSinkInsertTest {
     private static final int SERVER_PORT = 9090;
 
     protected StreamExecutionEnvironment env;
+
     protected StreamTableEnvironment tEnv;
 
     private WireMockServer wireMockServer;

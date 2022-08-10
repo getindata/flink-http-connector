@@ -29,13 +29,22 @@ class HttpLookupTableSourceTest {
                 Column.physical("id", DataTypes.STRING().notNull()),
                 Column.physical("msg", DataTypes.STRING().notNull()),
                 Column.physical("uuid", DataTypes.STRING().notNull()),
-                Column.physical("isActive", DataTypes.STRING().notNull()),
-                Column.physical("balance", DataTypes.STRING().notNull())),
+                Column.physical("details", DataTypes.ROW(
+                    DataTypes.FIELD("isActive", DataTypes.BOOLEAN()),
+                    DataTypes.FIELD("nestedDetails", DataTypes.ROW(
+                            DataTypes.FIELD("balance", DataTypes.STRING())
+                        )
+                    )
+                ).notNull())
+            ),
             Collections.emptyList(),
-            UniqueConstraint.primaryKey("id", List.of("id")));
-    private final List<String> columnNames = List.of("id", "msg", "uuid", "isActive", "balance");
+            UniqueConstraint.primaryKey("id", List.of("id"))
+        );
+
     private final int[][] lookupKey = {{0}};
+
     private ColumnData expectedColumnData;
+
     private HttpLookupConfig expectedLookupConfig;
 
     @BeforeEach
@@ -45,7 +54,6 @@ class HttpLookupTableSourceTest {
 
         expectedLookupConfig =
             HttpLookupConfig.builder()
-                .columnNames(columnNames)
                 .url("http://localhost:8080/service")
                 .build();
     }
@@ -84,7 +92,6 @@ class HttpLookupTableSourceTest {
 
         expectedLookupConfig =
             HttpLookupConfig.builder()
-                .columnNames(columnNames)
                 .useAsync(true)
                 .url("http://localhost:8080/service")
                 .build();
@@ -101,6 +108,9 @@ class HttpLookupTableSourceTest {
     }
 
     private Map<String, String> getOptions() {
-        return Map.of("connector", "rest-lookup", "url", "http://localhost:8080/service");
+        return Map.of(
+            "connector", "rest-lookup",
+            "url", "http://localhost:8080/service",
+            "format", "json");
     }
 }
