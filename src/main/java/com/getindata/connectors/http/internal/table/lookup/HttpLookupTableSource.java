@@ -4,6 +4,8 @@ import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.LookupTableSource;
@@ -22,8 +24,12 @@ public class HttpLookupTableSource
     implements LookupTableSource, SupportsProjectionPushDown, SupportsLimitPushDown {
 
     private final DataType physicalRowDataType;
+
     private final PollingClientFactory<RowData> pollingClientFactory;
+
     private final HttpLookupConfig lookupConfig;
+
+    private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
 
     @Override
     public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext context) {
@@ -35,12 +41,17 @@ public class HttpLookupTableSource
             keyNames[i] = fieldName;
         }
 
-        return buildLookupFunction(keyNames);
+        return buildLookupFunction(keyNames, context);
     }
 
     @Override
     public DynamicTableSource copy() {
-        return new HttpLookupTableSource(physicalRowDataType, pollingClientFactory, lookupConfig);
+        return new HttpLookupTableSource(
+            physicalRowDataType,
+            pollingClientFactory,
+            lookupConfig,
+            decodingFormat
+        );
     }
 
     @Override
@@ -57,16 +68,17 @@ public class HttpLookupTableSource
         return false;
     }
 
-    @Override
-    public void applyProjection(int[][] projectedFields) {
-    }
+    private LookupRuntimeProvider buildLookupFunction(String[] keyNames, LookupContext context) {
 
-    private LookupRuntimeProvider buildLookupFunction(String[] keyNames) {
+        DeserializationSchema<RowData> schemaDecoder =
+            decodingFormat.createRuntimeDecoder(context, physicalRowDataType);
+
         ColumnData columnData = ColumnData.builder().keyNames(keyNames).build();
 
         HttpTableLookupFunction dataLookupFunction =
             HttpTableLookupFunction.builder()
                 .pollingClientFactory(pollingClientFactory)
+                .schemaDecoder(schemaDecoder)
                 .columnData(columnData)
                 .options(lookupConfig)
                 .build();

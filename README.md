@@ -10,7 +10,7 @@ Please use [releases](https://github.com/getindata/flink-http-connector/releases
 
 The goal for HTTP TableLookup connector was to use it in Flink SQL statement as a standard table that can be later joined with other stream using pure SQL Flink.
  
-Currently, HTTP TableLookup connector supports only Lookup Joins [1] and expects JSON as a response body. It also supports only the STRING types.
+Currently, HTTP source connector supports only Lookup Joins (TableLookup) [1] in Table/SQL API.
 `HttpSink` supports both Streaming API (when using [HttpSink](src/main/java/com/getindata/connectors/http/internal/sink/HttpSink.java) built using [HttpSinkBuilder](src/main/java/com/getindata/connectors/http/internal/sink/HttpSinkBuilder.java)) and the Table API (using connector created in [HttpDynamicTableSinkFactory](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicTableSinkFactory.java)). 
 
 ## Prerequisites
@@ -23,7 +23,6 @@ This connector has few Flink's runtime dependencies, that are expected to be pro
 * `org.apache.flink.flink-java`
 * `org.apache.flink.flink-clients`
 * `org.apache.flink.flink-connector-base`
-* `org.apache.flink.flink-java`
 
 ## Installation
 
@@ -38,23 +37,41 @@ You can read the official JavaDoc documentation of the latest release at [https:
 ### HTTP TableLookup Source
 Flink SQL table definition:
 
+Enrichment Lookup Table
 ```roomsql
 CREATE TABLE Customers (
-id STRING,
-id2 STRING,
-msg STRING,
-uuid STRING,
-isActive STRING,
-balance STRING
+	id STRING,
+	id2 STRING,
+	msg STRING,
+	uuid STRING,
+	details ROW<
+	  isActive BOOLEAN,
+	  nestedDetails ROW<
+	    balance STRING
+	  >
+	>
 ) WITH (
 'connector' = 'rest-lookup',
+'format' = 'json',
 'url' = 'http://localhost:8080/client',
-'asyncPolling' = 'true',
-'field.isActive.path' = '$.details.isActive',
-'field.balance.path' = '$.details.nestedDetails.balance'
+'asyncPolling' = 'true'
 )
 ```
-Using _Customers_ table in Flink SQL Lookup Join:
+Data Source Table
+```roomsql
+CREATE TABLE Orders (id STRING, id2 STRING, proc_time AS PROCTIME()
+) WITH (
+'connector' = 'datagen',
+'rows-per-second' = '1',
+'fields.id.kind' = 'sequence',
+'fields.id.start' = '1',
+'fields.id.end' = '120',
+'fields.id2.kind' = 'sequence',
+'fields.id2.start' = '2',
+'fields.id2.end' = '120'
+);
+
+Using _Customers_ table in Flink SQL Lookup Join with Orders table:
 
 ```roomsql
 SELECT o.id, o.id2, c.msg, c.uuid, c.isActive, c.balance FROM Orders AS o 
@@ -153,13 +170,12 @@ An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s
 
 ## Table API Connector Options
 ### HTTP TableLookup Source
-| Option       | Required | Description/Value                                                                                                                                                                                                                         |
-|--------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| connector    | required | The Value should be set to _rest-lookup_                                                                                                                                                                                                  |
-| url          | required | The base URL that should be use for GET requests. For example _http://localhost:8080/client_                                                                                                                                              |
-| asyncPolling | optional | true/false - determines whether Async Pooling should be used. Mechanism is based on Flink's Async I/O.                                                                                                                                    |
-| root         | optional | Sets the json root node for entire table. The value should be presented as Json Path [5], for example `$.details`.                                                                                                                        |
-| field.#.path | optional | The Json Path from response model that should be use for given `#` field. If `root` option was defined it will be added to field path. The value must be presented in Json Path format [5], for example `$.details.nestedDetails.balance` |
+| Option       | Required | Description/Value                                                                                        |
+|--------------|----------|----------------------------------------------------------------------------------------------------------|
+| connector    | required | The Value should be set to _rest-lookup_                                                                 |
+| format       | required | Flink's format name that should be used to decode REST response, Use `json` for a typical REST endpoint. |
+| url          | required | The base URL that should be use for GET requests. For example _http://localhost:8080/client_             |
+| asyncPolling | optional | true/false - determines whether Async Pooling should be used. Mechanism is based on Flink's Async I/O.   |
 
 ### HTTP Sink
 | Option                     | Required | Description/Value                                                                                                                                                                                  |
@@ -207,13 +223,22 @@ CREATE TABLE Orders (id STRING, id2 STRING, proc_time AS PROCTIME()
 
 Create Http Connector Lookup Table:
 ```roomsql
-CREATE TABLE Customers (id STRING, id2 STRING, msg STRING, uuid STRING, isActive STRING, balance STRING
+CREATE TABLE Customers (
+	id STRING,
+	id2 STRING,
+	msg STRING,
+	uuid STRING,
+	details ROW<
+	  isActive BOOLEAN,
+	  nestedDetails ROW<
+	    balance STRING
+	  >
+	>
 ) WITH (
-'connector' = 'rest-lookup', 
+'connector' = 'rest-lookup',
+'format' = 'json' 
 'url' = 'http://localhost:8080/client', 
-'asyncPolling' = 'true', 
-'field.isActive.path' = '$.details.isActive', 
-'field.balance.path' = '$.details.nestedDetails.balance'
+'asyncPolling' = 'true'
 );
 ```
 

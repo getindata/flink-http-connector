@@ -15,16 +15,17 @@ public class HttpStubApp {
 
     private static WireMockServer wireMockServer;
 
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         wireMockServer =
             new WireMockServer(
                 WireMockConfiguration.wireMockConfig().port(8080).extensions(JsonTransform.class));
         wireMockServer.start();
 
-        wireMockServer.addStubMapping(setupServerStub(200));
+        wireMockServer.addStubMapping(setupServerStub());
     }
 
-    private static StubMapping setupServerStub(int status) {
+    private static StubMapping setupServerStub() {
         return wireMockServer.stubFor(
             get(urlPathEqualTo(URL))
                 .willReturn(

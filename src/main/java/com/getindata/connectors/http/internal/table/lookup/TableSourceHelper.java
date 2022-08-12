@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
@@ -33,7 +34,12 @@ public final class TableSourceHelper {
         return Collections.emptyList();
     }
 
-    public static GenericRowData buildGenericRowData(List<Object> values) {
+    /**
+     * Builds {@link RowData} object based on provided list of values.
+     * @param values values to use as {@link RowData} column values.
+     * @return new {@link RowData} instance.
+     */
+    public static RowData buildGenericRowData(List<Object> values) {
         GenericRowData row = new GenericRowData(values.size());
 
         for (int i = 0; i < values.size(); ++i) {
@@ -41,9 +47,5 @@ public final class TableSourceHelper {
         }
 
         return row;
-    }
-
-    public static GenericRowData buildEmptyRow(int size) {
-        return new GenericRowData(size);
     }
 }

@@ -1,7 +1,7 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import org.apache.flink.api.connector.source.SourceReaderContext;
-import org.apache.flink.table.functions.FunctionContext;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.table.data.RowData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,13 +17,12 @@ class RestTablePollingClientFactoryTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void shouldCreateClient() {
-
-        assertThat(factory.createPollClient(mock(SourceReaderContext.class)))
-            .isInstanceOf(RestTablePollingClient.class);
-
         assertThat(
-            factory.createPollClient(mock(FunctionContext.class), mock(HttpLookupConfig.class)))
-            .isInstanceOf(RestTablePollingClient.class);
+            factory.createPollClient(
+                mock(HttpLookupConfig.class),
+                (DeserializationSchema<RowData>) mock(DeserializationSchema.class))
+        ).isInstanceOf(RestTablePollingClient.class);
     }
 }

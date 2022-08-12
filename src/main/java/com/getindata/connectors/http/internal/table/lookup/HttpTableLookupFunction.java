@@ -3,6 +3,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.AccessLevel;
@@ -11,7 +12,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.metrics.Gauge;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.binary.BinaryStringData;
@@ -26,6 +27,8 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
 
     private final PollingClientFactory<RowData> pollingClientFactory;
 
+    private final DeserializationSchema<RowData> schemaDecoder;
+
     @Getter
     private final ColumnData columnData;
 
@@ -33,15 +36,18 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
     private final HttpLookupConfig options;
 
     private transient AtomicInteger localHttpCallCounter;
-    private PollingClient<RowData> client;
+
+    private transient PollingClient<RowData> client;
 
     @Builder
-    public HttpTableLookupFunction(
+    private HttpTableLookupFunction(
         PollingClientFactory<RowData> pollingClientFactory,
+        DeserializationSchema<RowData> schemaDecoder,
         ColumnData columnData,
         HttpLookupConfig options) {
 
         this.pollingClientFactory = pollingClientFactory;
+        this.schemaDecoder = schemaDecoder;
         this.columnData = columnData;
         this.options = options;
     }
@@ -50,8 +56,9 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
     public void open(FunctionContext context) throws Exception {
         super.open(context);
         this.localHttpCallCounter = new AtomicInteger(0);
-        this.client = pollingClientFactory.createPollClient(context, options);
-        Gauge<Integer> httpCallCounter = context
+        this.client = pollingClientFactory.createPollClient(options, schemaDecoder);
+
+        context
             .getMetricGroup()
             .gauge("http-table-lookup-call-counter", () -> localHttpCallCounter.intValue());
     }
@@ -60,11 +67,11 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
      * This is a lookup method which is called by Flink framework in a runtime.
      */
     public void eval(Object... keys) {
-        RowData result = lookupByKeys(keys);
-        collect(result);
+        lookupByKeys(keys)
+            .ifPresent(this::collect);
     }
 
-    public RowData lookupByKeys(Object[] keys) {
+    public Optional<RowData> lookupByKeys(Object[] keys) {
         RowData keyRow = GenericRowData.of(keys);
         log.debug("Used Keys - {}", keyRow);
 
@@ -93,6 +100,7 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
         return new LookupArg(keyName, keyValue);
     }
 
+    // TODOESP-148 DO I need this??
     @Data
     @Builder
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

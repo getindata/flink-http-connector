@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.util.List;
 
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.binary.BinaryStringData;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -31,13 +31,16 @@ class HttpRowDataLookupFunctionTest {
     private PollingClientFactory<RowData> pollingClientFactory;
 
     @Mock
-    private FunctionContext context;
+    private FunctionContext functionContext;
 
     @Mock
     private Collector<RowData> collector;
 
     @Mock
     private PollingClient<RowData> client;
+
+    @Mock
+    private DeserializationSchema<RowData> schemaDecoder;
 
     @Captor
     private ArgumentCaptor<List<LookupArg>> lookupArgCaptor;
@@ -46,17 +49,24 @@ class HttpRowDataLookupFunctionTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        Mockito.when(context.getMetricGroup()).thenReturn(mock(MetricGroup.class));
+        HttpLookupConfig lookupConfig = HttpLookupConfig.builder().build();
 
-        HttpLookupConfig options =
-            HttpLookupConfig.builder().columnNames(List.of("id, uuid")).build();
         ColumnData columnData =
-            ColumnData.builder().keyNames((List.of("id", "uuid").toArray(new String[2]))).build();
+            ColumnData.builder()
+                .keyNames((List.of("id", "uuid").toArray(new String[2])))
+                .build();
 
-        when(pollingClientFactory.createPollClient(context, options)).thenReturn(client);
+        when(functionContext.getMetricGroup()).thenReturn(mock(MetricGroup.class));
+        when(pollingClientFactory.createPollClient(lookupConfig, schemaDecoder)).thenReturn(client);
 
-        lookupFunction = new HttpTableLookupFunction(pollingClientFactory, columnData, options);
-        lookupFunction.open(context);
+        lookupFunction = HttpTableLookupFunction.builder()
+            .pollingClientFactory(pollingClientFactory)
+            .schemaDecoder(schemaDecoder)
+            .columnData(columnData)
+            .options(lookupConfig)
+            .build();
+
+        lookupFunction.open(functionContext);
         lookupFunction.setCollector(collector);
     }
 

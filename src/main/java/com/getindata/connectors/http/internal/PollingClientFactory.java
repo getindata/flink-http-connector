@@ -1,14 +1,15 @@
 package com.getindata.connectors.http.internal;
 
-import org.apache.flink.api.connector.source.SourceReaderContext;
-import org.apache.flink.table.functions.FunctionContext;
+import java.io.Serializable;
+
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
 
-public interface PollingClientFactory<OUT> {
+public interface PollingClientFactory<OUT> extends Serializable {
 
-    PollingClient<OUT> createPollClient(FunctionContext context,
-        HttpLookupConfig options);
-
-    PollingClient<OUT> createPollClient(SourceReaderContext readerContext);
+    PollingClient<OUT> createPollClient(
+        HttpLookupConfig options,
+        DeserializationSchema<OUT> schemaDecoder
+    );
 }

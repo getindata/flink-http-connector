@@ -6,14 +6,17 @@
 - Fix JavaDoc errors.
 
 ### Added
-- Add new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
+- Add to Http Sink a new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
   to set HTTP status code that should be interpreted as errors.
+- Use Flink's format support to Http Lookup Source. 
 
 ### Changed
 - Change dependency scope for `org.apache.flink.flink-connector-base` from `compile` to `provided`.
+- Changed DDL of `rest-lookup` connector. Dropped `json-path` properties, and add mandatory `format` property.
 
 ### Removed
 - Remove dependency on `org.apache.httpcomponents.httpclient`from production code. Dependency is only for test scope.
+- Removed dependency on `com.jayway.jsonpath.json-path`
 
 ## [0.3.0] - 2022-07-21
 
