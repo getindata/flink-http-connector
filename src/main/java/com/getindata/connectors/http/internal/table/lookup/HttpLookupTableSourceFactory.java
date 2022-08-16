@@ -54,11 +54,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
         ReadableConfig readableConfig = helper.getOptions();
 
-        ResolvedSchema resolvedSchema = context.getCatalogTable().getResolvedSchema();
-        DataType physicalRowDataType =
-            toRowDataType(resolvedSchema.getColumns(), Column::isPhysical);
-
-        validateOptions(context, readableConfig, physicalRowDataType);
+        validateOptions(context, readableConfig);
 
         DecodingFormat<DeserializationSchema<RowData>> decodingFormat =
             helper.discoverDecodingFormat(
@@ -68,6 +64,11 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
         PollingClientFactory<RowData> pollingClientFactory = new RestTablePollingClientFactory();
         HttpLookupConfig lookupConfig = getHttpLookupOptions(readableConfig);
+
+        ResolvedSchema resolvedSchema = context.getCatalogTable().getResolvedSchema();
+
+        DataType physicalRowDataType =
+            toRowDataType(resolvedSchema.getColumns(), Column::isPhysical);
 
         return new HttpLookupTableSource(
             physicalRowDataType,
@@ -101,10 +102,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
     }
 
     // TODO FIX There is something ugly here. Verify with DataGenTableSourceFactory and refactor.
-    private void validateOptions(
-            Context context,
-            ReadableConfig readableConfig,
-            DataType physicalRowDataType) {
+    private void validateOptions(Context context, ReadableConfig readableConfig) {
 
         Set<ConfigOption<?>> allOptions = new HashSet<>();
         allOptions.addAll(optionalOptions());
