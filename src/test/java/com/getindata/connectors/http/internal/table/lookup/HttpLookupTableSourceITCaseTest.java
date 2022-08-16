@@ -62,7 +62,7 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
-    public void testHttpDynamicSinkDefaultPost() throws Exception {
+    public void testHttpLookupJoin() throws Exception {
 
         setupServerStub(wireMockServer);
 
