@@ -9,6 +9,7 @@
 - Add to Http Sink a new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
   to set HTTP status code that should be interpreted as errors.
 - Use Flink's format support to Http Lookup Source. 
+- Add HTTP Lookup source client header configuration via properties.
 
 ### Changed
 - Change dependency scope for `org.apache.flink.flink-connector-base` from `compile` to `provided`.

@@ -25,12 +25,15 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
     @Override
     public DynamicTableSink createDynamicTableSink(Context context) {
         final AsyncDynamicSinkContext factoryContext = new AsyncDynamicSinkContext(this, context);
+
+        // This is actually same as calling helper.getOptions();
         ReadableConfig tableOptions = factoryContext.getTableOptions();
 
         // Validate configuration
         FactoryUtil.createTableFactoryHelper(this, context)
             .validateExcept(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP);
         validateHttpSinkOptions(tableOptions);
+
         Properties asyncSinkProperties =
             new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
 

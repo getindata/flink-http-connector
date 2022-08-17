@@ -1,16 +1,13 @@
-package com.getindata.connectors.http.internal.sink.httpclient;
+package com.getindata.connectors.http.internal.table.lookup;
 
 import java.net.http.HttpClient;
 import java.util.Properties;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.table.data.RowData;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,37 +15,21 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
 
 @ExtendWith(MockitoExtension.class)
-class JavaNetSinkHttpClientTest {
-
-    private static MockedStatic<HttpClient> httpClientStaticMock;
+public class JavaNetHttpPollingClientTest {
 
     @Mock
-    private HttpClient.Builder httpClientBuilder;
+    private HttpClient httpClient;
 
-    @BeforeAll
-    public static void beforeAll() {
-        httpClientStaticMock = Mockito.mockStatic(HttpClient.class);
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        if (httpClientStaticMock != null) {
-            httpClientStaticMock.close();
-        }
-    }
-
-    @BeforeEach
-    public void setUp() {
-        httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
-        Mockito
-            .when(httpClientBuilder.followRedirects(Mockito.any()))
-            .thenReturn(httpClientBuilder);
-    }
+    @Mock
+    private DeserializationSchema<RowData> decoder;
 
     @Test
     public void shouldBuildClientWithoutHeaders() {
 
-        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(new Properties());
+        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
+            httpClient,
+            decoder,
+            HttpLookupConfig.builder().build());
         assertThat(client.getHeadersAndValues()).isEmpty();
     }
 
@@ -60,20 +41,29 @@ class JavaNetSinkHttpClientTest {
         properties.setProperty("property", "val1");
         properties.setProperty("my.property", "val2");
         properties.setProperty(
-            HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Origin",
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Origin",
             "https://developer.mozilla.org")
         ;
         properties.setProperty(
-            HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Cache-Control",
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Cache-Control",
             "no-cache, no-store, max-age=0, must-revalidate"
         );
         properties.setProperty(
-            HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Access-Control-Allow-Origin",
-            "*"
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX
+                + "Access-Control-Allow-Origin", "*"
         );
 
         // WHEN
-        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties);
+        HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
+            .properties(properties)
+            .build();
+
+        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
+            httpClient,
+            decoder,
+            lookupConfig
+        );
+
         String[] headersAndValues = client.getHeadersAndValues();
         assertThat(headersAndValues).hasSize(6);
 
@@ -86,5 +76,4 @@ class JavaNetSinkHttpClientTest {
         );
         assertPropertyArray(headersAndValues, "Access-Control-Allow-Origin", "*");
     }
-
 }

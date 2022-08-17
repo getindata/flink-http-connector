@@ -21,6 +21,8 @@ public interface SinkHttpClient {
      * @return the new {@link CompletableFuture} wrapping {@link SinkHttpClientResponse} that
      * completes when all requests have been sent and returned their statuses
      */
-    CompletableFuture<SinkHttpClientResponse> putRequests(List<HttpSinkRequestEntry> requestEntries,
-        String endpointUrl);
+    CompletableFuture<SinkHttpClientResponse> putRequests(
+        List<HttpSinkRequestEntry> requestEntries,
+        String endpointUrl
+    );
 }

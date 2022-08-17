@@ -7,22 +7,23 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class RestTablePollingClientFactoryTest {
+class JavaNetHttpPollingClientFactoryTest {
 
-    private RestTablePollingClientFactory factory;
+    private JavaNetHttpPollingClientFactory factory;
 
     @BeforeEach
     public void setUp() {
-        factory = new RestTablePollingClientFactory();
+        factory = new JavaNetHttpPollingClientFactory();
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void shouldCreateClient() {
+
         assertThat(
             factory.createPollClient(
-                mock(HttpLookupConfig.class),
+                HttpLookupConfig.builder().build(),
                 (DeserializationSchema<RowData>) mock(DeserializationSchema.class))
-        ).isInstanceOf(RestTablePollingClient.class);
+        ).isInstanceOf(JavaNetHttpPollingClient.class);
     }
 }
