@@ -40,16 +40,16 @@ Flink SQL table definition:
 Enrichment Lookup Table
 ```roomsql
 CREATE TABLE Customers (
-	id STRING,
-	id2 STRING,
-	msg STRING,
-	uuid STRING,
-	details ROW<
-	  isActive BOOLEAN,
-	  nestedDetails ROW<
-	    balance STRING
-	  >
-	>
+    id STRING,
+    id2 STRING,
+    msg STRING,
+    uuid STRING,
+    details ROW<
+      isActive BOOLEAN,
+      nestedDetails ROW<
+        balance STRING
+      >
+    >
 ) WITH (
 'connector' = 'rest-lookup',
 'format' = 'json',
@@ -57,9 +57,13 @@ CREATE TABLE Customers (
 'asyncPolling' = 'true'
 )
 ```
+
 Data Source Table
 ```roomsql
-CREATE TABLE Orders (id STRING, id2 STRING, proc_time AS PROCTIME()
+CREATE TABLE Orders (
+    id STRING,
+    id2 STRING,
+    proc_time AS PROCTIME()
 ) WITH (
 'connector' = 'datagen',
 'rows-per-second' = '1',
@@ -70,8 +74,9 @@ CREATE TABLE Orders (id STRING, id2 STRING, proc_time AS PROCTIME()
 'fields.id2.start' = '2',
 'fields.id2.end' = '120'
 );
+```
 
-Using _Customers_ table in Flink SQL Lookup Join with Orders table:
+Using _Customers_ table in Flink SQL Lookup Join with _Orders_ table:
 
 ```roomsql
 SELECT o.id, o.id2, c.msg, c.uuid, c.isActive, c.balance FROM Orders AS o 
@@ -83,6 +88,31 @@ For Example:
 ``
 http://localhost:8080/client/service?id=1&uuid=2
 ``
+#### Http headers
+It is possible to set HTTP headers that will be added to HTTP request send by lookup source connector.
+Headers are defined via property key `gid.connector.http.source.lookup.header.HEADER_NAME = header value` for example:
+`gid.connector.http.source.lookup.header.X-Content-Type-Options = nosniff`.
+
+Headers can be set using http lookup source table DDL. In example below, HTTP request done for `http-lookup` table will contain three headers:
+- `Origin`
+- `X-Content-Type-Options`
+- `Content-Type`
+
+```roomsql
+CREATE TABLE http-lookup (
+  id bigint,
+  some_field string
+) WITH (
+  'connector' = 'rest-lookup',
+  'format' = 'json',
+  'url' = 'http://localhost:8080/client',
+  'asyncPolling' = 'true',
+  'gid.connector.http.source.lookup.header.Origin' = '*',
+  'gid.connector.http.source.lookup.header.X-Content-Type-Options' = 'nosniff',
+  'gid.connector.http.source.lookup.header.Content-Type' = 'application/json'
+)
+```
+
 
 ### HTTP Sink
 The following example shows the minimum Table API example to create a [HttpDynamicSink](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicSink.java) that writes JSON values to an HTTP endpoint using POST method, assuming Flink has JAR of [JSON serializer](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/json/) installed:
@@ -108,7 +138,7 @@ Due to the fact that `HttpSink` sends bytes inside HTTP request's body, one can 
 
 Other examples of usage of the Table API can be found in [some tests](src/test/java/com/getindata/connectors/http/table/HttpDynamicSinkInsertTest.java).
 
-#### Http headers (currently supported only for HTTP Sink)
+#### Http headers
 It is possible to set HTTP headers that will be added to HTTP request send by sink connector.
 Headers are defined via property key `gid.connector.http.sink.header.HEADER_NAME = header value` for example:
 `gid.connector.http.sink.header.X-Content-Type-Options = nosniff`.

@@ -5,33 +5,57 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 
 import com.getindata.connectors.http.internal.PollingClient;
+import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX;
 
 /**
  * An implementation of {@link PollingClient} that uses Java 11's {@link HttpClient}.
  * This implementation supports HTTP traffic only.
  */
 @Slf4j
-@RequiredArgsConstructor
-public class RestTablePollingClient implements PollingClient<RowData> {
+public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpClient httpClient;
+
+    public JavaNetHttpPollingClient(
+            HttpClient httpClient,
+            DeserializationSchema<RowData> runtimeDecoder,
+            HttpLookupConfig options) {
+
+        this.httpClient = httpClient;
+        this.runtimeDecoder = runtimeDecoder;
+        this.options = options;
+
+        Map<String, String> headerMap = ConfigUtils.propertiesToMap(
+            options.getProperties(),
+            LOOKUP_SOURCE_HEADER_PREFIX,
+            String.class
+        );
+
+        this.headersAndValues = ConfigUtils.toHeaderAndValueArray(headerMap);
+    }
 
     private final DeserializationSchema<RowData> runtimeDecoder;
 
     private final HttpLookupConfig options;
+
+    private final String[] headersAndValues;
 
     @Override
     public Optional<RowData> pull(List<LookupArg> lookupArgs) {
@@ -45,12 +69,23 @@ public class RestTablePollingClient implements PollingClient<RowData> {
 
     // TODO Add Retry Policy And configure TimeOut from properties
     private Optional<RowData> queryAndProcess(List<LookupArg> params) throws Exception {
-        URI uri = buildUri(params);
-        HttpRequest request =
-            HttpRequest.newBuilder().uri(uri).GET().timeout(Duration.ofMinutes(2)).build();
-        HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
 
+        HttpRequest request = buildHttpRequest(params);
+        HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
         return processHttpResponse(response);
+    }
+
+    private HttpRequest buildHttpRequest(List<LookupArg> params) throws URISyntaxException {
+        URI uri = buildUri(params);
+        Builder requestBuilder = HttpRequest.newBuilder()
+            .uri(uri).GET()
+            .timeout(Duration.ofMinutes(2));
+
+        if (headersAndValues.length != 0) {
+            requestBuilder.headers(headersAndValues);
+        }
+
+        return requestBuilder.build();
     }
 
     private URI buildUri(List<LookupArg> params) throws URISyntaxException {
@@ -77,5 +112,10 @@ public class RestTablePollingClient implements PollingClient<RowData> {
             log.warn("Http Error Body - {}", body);
             return Optional.empty();
         }
+    }
+
+    @VisibleForTesting
+    String[] getHeadersAndValues() {
+        return Arrays.copyOf(headersAndValues, headersAndValues.length);
     }
 }

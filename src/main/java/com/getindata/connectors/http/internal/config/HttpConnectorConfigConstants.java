@@ -23,6 +23,9 @@ public final class HttpConnectorConfigConstants {
      */
     public static final String SINK_HEADER_PREFIX = GID_CONNECTOR_HTTP + "sink.header.";
 
+    public static final String LOOKUP_SOURCE_HEADER_PREFIX = GID_CONNECTOR_HTTP
+        + "source.lookup.header.";
+
     // Error code handling configuration.
     public static final String HTTP_ERROR_CODE_WHITE_LIST =
         GID_CONNECTOR_HTTP + "sink.error.code.exclude";

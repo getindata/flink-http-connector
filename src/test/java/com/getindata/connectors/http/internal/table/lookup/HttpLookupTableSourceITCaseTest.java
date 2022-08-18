@@ -4,11 +4,13 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,6 +56,7 @@ public class HttpLookupTableSourceITCaseTest {
         wireMockServer.start();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setRestartStrategy(RestartStrategies.noRestart());
         tEnv = StreamTableEnvironment.create(env);
     }
 
@@ -98,6 +102,7 @@ public class HttpLookupTableSourceITCaseTest {
                 + "'format' = 'json',"
                 + "'connector' = 'rest-lookup',"
                 + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
                 + "'asyncPolling' = 'true'"
                 + ")";
 
@@ -112,6 +117,7 @@ public class HttpLookupTableSourceITCaseTest {
                 + "AND o.id2 = c.id2";
 
         TableResult result = tEnv.executeSql(joinQuery);
+        result.await(15, TimeUnit.SECONDS);
 
         // We want to have sort the result by "id" to make validation easier.
         SortedSet<Row> collectedRows = new TreeSet<>(rowComparator);
@@ -147,6 +153,7 @@ public class HttpLookupTableSourceITCaseTest {
     private void setupServerStub(WireMockServer wireMockServer) {
         StubMapping stubMapping = wireMockServer.stubFor(
             get(urlPathEqualTo("/client"))
+                .withHeader("Content-Type", equalTo("application/json"))
                 .willReturn(
                     aResponse()
                         .withTransformers(JsonTransform.NAME)));

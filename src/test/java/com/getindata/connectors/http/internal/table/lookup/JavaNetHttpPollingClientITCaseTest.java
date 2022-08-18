@@ -4,6 +4,7 @@ import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -26,14 +27,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
 
 @ExtendWith(MockitoExtension.class)
-class RestTablePollingClientTest {
+class JavaNetHttpPollingClientITCaseTest {
 
     private static final String SAMPLES_FOLDER = "/http/";
 
@@ -76,7 +79,7 @@ class RestTablePollingClientTest {
     void shouldQuery200WithParams() {
         stubMapping = setupServerStub("/service?id=1&uuid=2", 200);
 
-        RestTablePollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
 
         RowData result = pollingClient.pull(
             List.of(
@@ -102,7 +105,7 @@ class RestTablePollingClientTest {
     void shouldHandleNot200() {
         stubMapping = setupServerStub("/service?id=1&uuid=2", 201);
 
-        RestTablePollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
 
         Optional<RowData> poll = pollingClient.pull(
             List.of(
@@ -120,7 +123,7 @@ class RestTablePollingClientTest {
     void shouldHandleServerError() {
         stubMapping = setupServerStub("/service?id=1&uuid=2", 500);
 
-        RestTablePollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
 
         Optional<RowData> poll = pollingClient.pull(
             List.of(
@@ -138,7 +141,7 @@ class RestTablePollingClientTest {
     void shouldProcessWithMissingArguments() {
         stubMapping = setupServerStub("/service?id=1&uuid=2", 200);
 
-        RestTablePollingClient pollingClient =
+        JavaNetHttpPollingClient pollingClient =
             setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
 
         Optional<RowData> poll = pollingClient.pull(Collections.emptyList());
@@ -150,11 +153,17 @@ class RestTablePollingClientTest {
         return wireMockServer.baseUrl() + "/service";
     }
 
-    public RestTablePollingClient setUpPollingClient(String url, List<String> arguments) {
+    public JavaNetHttpPollingClient setUpPollingClient(String url, List<String> arguments) {
 
-        HttpLookupConfig expectedLookupConfig = HttpLookupConfig.builder()
+        Properties properties = new Properties();
+        properties.setProperty(
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Content-Type",
+            "application/json");
+
+        HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(url)
             .arguments(arguments)
+            .properties(properties)
             .build();
 
         DataType physicalDataType = DataTypes.ROW(
@@ -174,16 +183,17 @@ class RestTablePollingClientTest {
                 .createDecodingFormat(dynamicTableFactoryContext, new Configuration())
                 .createRuntimeDecoder(dynamicTableSourceContext, physicalDataType);
 
-        return new RestTablePollingClient(
+        return new JavaNetHttpPollingClient(
             HttpClient.newHttpClient(),
             schemaDecoder,
-            expectedLookupConfig
+            lookupConfig
         );
     }
 
     private StubMapping setupServerStub(String paramsPath, int status) {
         return wireMockServer.stubFor(
             get(urlEqualTo(paramsPath))
+                .withHeader("Content-Type", equalTo("application/json"))
                 .willReturn(
                     aResponse()
                         .withStatus(status)
