@@ -1,4 +1,4 @@
-package com.getindata.connectors.http.internal.sink.httpclient.status;
+package com.getindata.connectors.http.internal.status;
 
 /**
  * Base interface for all classes that would validate HTTP status

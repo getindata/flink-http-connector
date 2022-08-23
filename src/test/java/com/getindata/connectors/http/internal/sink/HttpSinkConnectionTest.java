@@ -32,12 +32,17 @@ import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpCli
 public class HttpSinkConnectionTest {
 
     private static final int SERVER_PORT = 9090;
-    private static final Set<Integer> messageIds =
-        IntStream.range(0, 50).boxed().collect(Collectors.toSet());
-    private static final List<String> messages =
-        messageIds.stream().map(i -> "{\"http-sink-id\":" + i + "}").collect(Collectors.toList());
+
+    private static final Set<Integer> messageIds = IntStream.range(0, 50)
+        .boxed()
+        .collect(Collectors.toSet());
+
+    private static final List<String> messages = messageIds.stream()
+        .map(i -> "{\"http-sink-id\":" + i + "}")
+        .collect(Collectors.toList());
 
     private StreamExecutionEnvironment env;
+
     private WireMockServer wireMockServer;
 
     @BeforeEach

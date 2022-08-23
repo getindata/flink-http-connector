@@ -6,8 +6,9 @@
 - Fix JavaDoc errors.
 
 ### Added
-- Add to Http Sink a new properties `gid.connector.http.sink.error.code` and `gid.connector.http.sink.error.code.exclude`
-  to set HTTP status code that should be interpreted as errors.
+- Add new properties `gid.connector.http.sink.error.code`,`gid.connector.http.sink.error.code.exclude`,
+  `gid.connector.http.source.lookup.error.code` and `gid.connector.http.source.lookup.error.code.exclude`
+  to set HTTP status codes that should be interpreted as errors both for HTTP Sink and HTTP Lookup Source.
 - Use Flink's format support to Http Lookup Source. 
 - Add HTTP Lookup source client header configuration via properties.
 

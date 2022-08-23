@@ -1,4 +1,4 @@
-package com.getindata.connectors.http.internal.sink.httpclient.status;
+package com.getindata.connectors.http.internal.status;
 
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
