@@ -18,8 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.internal.PollingClient;
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
+import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
+import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX;
@@ -32,6 +37,8 @@ import static com.getindata.connectors.http.internal.config.HttpConnectorConfigC
 public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpClient httpClient;
+
+    private final HttpStatusCodeChecker statusCodeChecker;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
@@ -49,6 +56,19 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         );
 
         this.headersAndValues = ConfigUtils.toHeaderAndValueArray(headerMap);
+
+        // TODO Inject this via constructor when implementing a response processor.
+        //  Processor will be injected and it will wrap statusChecker implementation.
+        ComposeHttpStatusCodeCheckerConfig checkerConfig =
+            ComposeHttpStatusCodeCheckerConfig.builder()
+                .properties(options.getProperties())
+                .whiteListPrefix(
+                    HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST
+                )
+                .errorCodePrefix(HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST)
+                .build();
+
+        this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
     }
 
     private final DeserializationSchema<RowData> runtimeDecoder;
@@ -72,7 +92,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         HttpRequest request = buildHttpRequest(params);
         HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-        return processHttpResponse(response);
+        return processHttpResponse(response, request);
     }
 
     private HttpRequest buildHttpRequest(List<LookupArg> params) throws URISyntaxException {
@@ -99,19 +119,36 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     // TODO Think about handling 2xx responses other than 200
-    private Optional<RowData> processHttpResponse(HttpResponse<String> response)
-            throws IOException {
+    private Optional<RowData> processHttpResponse(
+            HttpResponse<String> response,
+            HttpRequest request) throws IOException {
+
+        if (response == null) {
+            log.warn("Null Http response for request " + request.uri().toString());
+            return Optional.empty();
+        }
+
         String body = response.body();
         int statusCode = response.statusCode();
 
         log.debug("Received {} status code for RestTableSource Request", statusCode);
-        if (statusCode == 200) {
+        if (notErrorCodeAndNotEmptyBody(body, statusCode)) {
             log.trace("Server response body" + body);
             return Optional.ofNullable(runtimeDecoder.deserialize(body.getBytes()));
         } else {
-            log.warn("Http Error Body - {}", body);
+            log.warn(
+                String.format("Returned Http status code was invalid or returned body was empty. "
+                + "Status Code [%s], "
+                + "response body [%s]", statusCode, body)
+            );
+
             return Optional.empty();
         }
+    }
+
+    private boolean notErrorCodeAndNotEmptyBody(String body, int statusCode) {
+        return !(StringUtils.isNullOrWhitespaceOnly(body) || statusCodeChecker.isErrorCode(
+            statusCode));
     }
 
     @VisibleForTesting

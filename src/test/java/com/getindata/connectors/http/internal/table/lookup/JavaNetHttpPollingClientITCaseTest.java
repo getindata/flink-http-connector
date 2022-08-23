@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -24,6 +25,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -101,11 +105,26 @@ class JavaNetHttpPollingClientITCaseTest {
         assertThat(nestedDetailsRow.getString(0).toString()).isEqualTo("$1,729.34");
     }
 
-    @Test
-    void shouldHandleNot200() {
+    private static Stream<Arguments> clientErrorCodeConfig() {
+        return Stream.of(
+            Arguments.of(prepareErrorCodeProperties("4XX", ""), false),
+            Arguments.of(prepareErrorCodeProperties("2XX", " "), true),
+            Arguments.of(prepareErrorCodeProperties("2xx", "201"), false)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientErrorCodeConfig")
+    void shouldHandleCodeBasedOnConfiguration(
+            Properties properties,
+            boolean isExpectedResponseEmpty) {
         stubMapping = setupServerStub("/service?id=1&uuid=2", 201);
 
-        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(
+            getBaseUrl(),
+            LOOKUP_KEYS,
+            properties
+        );
 
         Optional<RowData> poll = pollingClient.pull(
             List.of(
@@ -114,9 +133,7 @@ class JavaNetHttpPollingClientITCaseTest {
             )
         );
 
-        wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
-
-        assertThat(poll.isEmpty()).isTrue();
+        assertThat(poll.isEmpty()).isEqualTo(isExpectedResponseEmpty);
     }
 
     @Test
@@ -160,6 +177,11 @@ class JavaNetHttpPollingClientITCaseTest {
             HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Content-Type",
             "application/json");
 
+        return setUpPollingClient(url, arguments, properties);
+    }
+
+    private JavaNetHttpPollingClient setUpPollingClient(String url, List<String> arguments,
+        Properties properties) {
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(url)
             .arguments(arguments)
@@ -198,5 +220,23 @@ class JavaNetHttpPollingClientITCaseTest {
                     aResponse()
                         .withStatus(status)
                         .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
+    }
+
+    private static Properties prepareErrorCodeProperties(String errorCodeList, String whiteList) {
+        Properties properties = new Properties();
+        properties.setProperty(
+            HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST,
+            whiteList
+        );
+        properties.setProperty(
+            HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST,
+            errorCodeList
+        );
+
+        properties.setProperty(
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Content-Type",
+            "application/json");
+
+        return properties;
     }
 }

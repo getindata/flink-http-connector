@@ -184,17 +184,18 @@ CREATE TABLE http (
 )
 ```
 
-#### HTTP status code handler (currently supported only for HTTP Sink)
-Http Sink connector allows defining list of HTTP status codes that should be treated as errors. 
+## HTTP status code handler
+Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
 By default all 400s and 500s response codes will be interpreted as error code.
 
-This behavior can be changed by using below properties in table definition (DDL) or passing it via 
+This behavior can be changed by using below properties in table definition (DDL) for Sink and Lookup Source or passing it via 
 `setProperty' method from Sink's builder. The property names are:
-- `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
+- `gid.connector.http.sink.error.code` and `gid.connector.http.source.lookup.error.code` used to defined HTTP status code value that should be treated as error for example 404.
 Many status codes can be defined in one value, where each code should be separated with comma, for example:
 `401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
 An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors.
-- `gid.connector.http.sink.error.code.exclude` used to exclude a HTTP code from error list. Many status codes can be defined in one value, where each code should be separated with comma, for example:
+- `gid.connector.http.sink.error.code.exclude` and `gid.connector.http.source.lookup.error.code.exclude` used to exclude a HTTP code from error list.
+   Many status codes can be defined in one value, where each code should be separated with comma, for example:
   `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
 
 
@@ -291,21 +292,13 @@ Issue was discussed on Flink's user mailing list - https://lists.apache.org/thre
 Implementation of an HTTP Sink is based on Flink's `AsyncSinkBase` introduced in Flink 1.15 [3, 4].
 
 #### Http Response to Table schema mapping
-The mapping from Http Json Response to SQL table schema is done via Json Paths [5].
-This is achieved thanks to `com.jayway.jsonpath:json-path` library.
-
-If no `root` or `field.#.path` option is defined, the connector will use the column name as json path and will try to look for Json Node with that name in received Json. If no node with a given name is found, the connector will return `null` as value for this field.
-
-If the `field.#.path` option is defined, connector will use given Json path from option's value in order to find Json data that should be used for this column.
-For example `'field.isActive.path' = '$.details.isActive'` - the value for table column `isActive` will be taken from `$.details.isActive` node from received Json.
+The mapping from Http Json Response to SQL table schema is done via Flink's Json Format [5].
 
 ## TODO
 
 ### HTTP TableLookup Source
 - Implement caches.
-- Add support for other Flink types. Currently, STRING type is only fully supported.
 - Think about Retry Policy for Http Request
-- Use Flink Format [7] to parse Json response 
 - Add Configurable Timeout value
 - Check other `//TODO`'s.
 
@@ -321,9 +314,7 @@ For example `'field.isActive.path' = '$.details.isActive'` - the value for table
 </br>
 [4] https://nightlies.apache.org/flink/flink-docs-release-1.15/api/java/org/apache/flink/connector/base/sink/AsyncSinkBase.html
 </br>
-[5] https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html
+[5] https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/
 </br>
 [6] https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sqlclient/
-</br>
-[7] https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/
 </br>

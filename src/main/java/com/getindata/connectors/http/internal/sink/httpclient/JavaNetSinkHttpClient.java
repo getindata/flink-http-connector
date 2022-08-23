@@ -20,9 +20,11 @@ import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
-import com.getindata.connectors.http.internal.sink.httpclient.status.ComposeHttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.sink.httpclient.status.HttpStatusCodeChecker;
+import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
+import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
+import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_HEADER_PREFIX;
 
@@ -51,7 +53,14 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.
-        this.statusCodeChecker = new ComposeHttpStatusCodeChecker(properties);
+        ComposeHttpStatusCodeCheckerConfig checkerConfig =
+            ComposeHttpStatusCodeCheckerConfig.builder()
+                .properties(properties)
+                .whiteListPrefix(HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST)
+                .errorCodePrefix(HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST)
+                .build();
+
+        this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.getindata.connectors.http.internal.sink.httpclient.status;
+package com.getindata.connectors.http.internal.status;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -6,6 +6,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
@@ -36,9 +40,9 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
      */
     private final Set<HttpStatusCodeChecker> errorCodes;
 
-    public ComposeHttpStatusCodeChecker(Properties properties) {
-        excludedCodes = prepareWhiteList(properties);
-        errorCodes = prepareErrorCodes(properties);
+    public ComposeHttpStatusCodeChecker(ComposeHttpStatusCodeCheckerConfig config) {
+        excludedCodes = prepareWhiteList(config);
+        errorCodes = prepareErrorCodes(config);
     }
 
     /**
@@ -68,14 +72,19 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
                 .anyMatch(httpStatusCodeChecker -> httpStatusCodeChecker.isErrorCode(statusCode));
     }
 
-    private Set<HttpStatusCodeChecker> prepareErrorCodes(Properties properties) {
-        String sErrorCodes =
-            properties.getProperty(HttpConnectorConfigConstants.HTTP_ERROR_CODES_LIST, "");
+    private Set<HttpStatusCodeChecker> prepareErrorCodes(
+            ComposeHttpStatusCodeCheckerConfig config) {
 
-        if (StringUtils.isNullOrWhitespaceOnly(sErrorCodes)) {
+        Properties properties = config.getProperties();
+        String errorCodePrefix = config.getErrorCodePrefix();
+
+        String errorCodes =
+            properties.getProperty(errorCodePrefix, "");
+
+        if (StringUtils.isNullOrWhitespaceOnly(errorCodes)) {
             return DEFAULT_ERROR_CODES;
         } else {
-            String[] splitCodes = sErrorCodes.split(HttpConnectorConfigConstants.ERROR_CODE_DELIM);
+            String[] splitCodes = errorCodes.split(HttpConnectorConfigConstants.ERROR_CODE_DELIM);
             return prepareErrorCodes(splitCodes);
         }
     }
@@ -110,9 +119,14 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         return (errorCodes.isEmpty()) ? DEFAULT_ERROR_CODES : errorCodes;
     }
 
-    private Set<WhiteListHttpStatusCodeChecker> prepareWhiteList(Properties properties) {
+    private Set<WhiteListHttpStatusCodeChecker> prepareWhiteList(
+            ComposeHttpStatusCodeCheckerConfig config) {
+
+        Properties properties = config.getProperties();
+        String whiteListPrefix = config.getWhiteListPrefix();
+
         return Arrays.stream(
-                properties.getProperty(HttpConnectorConfigConstants.HTTP_ERROR_CODE_WHITE_LIST, "")
+                properties.getProperty(whiteListPrefix, "")
                     .split(HttpConnectorConfigConstants.ERROR_CODE_DELIM))
             .filter(sCode -> !StringUtils.isNullOrWhitespaceOnly(sCode))
             .map(String::trim)
@@ -131,5 +145,17 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
      */
     private boolean isTypeCode(final String code) {
         return code.charAt(1) == 'X' && code.charAt(2) == 'X';
+    }
+
+    @Data
+    @Builder
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class ComposeHttpStatusCodeCheckerConfig {
+
+        private final String whiteListPrefix;
+
+        private final String errorCodePrefix;
+
+        private final Properties properties;
     }
 }

@@ -26,10 +26,18 @@ public final class HttpConnectorConfigConstants {
     public static final String LOOKUP_SOURCE_HEADER_PREFIX = GID_CONNECTOR_HTTP
         + "source.lookup.header.";
 
-    // Error code handling configuration.
-    public static final String HTTP_ERROR_CODE_WHITE_LIST =
+    // --------- Error code handling configuration ---------
+    public static final String HTTP_ERROR_SINK_CODE_WHITE_LIST =
         GID_CONNECTOR_HTTP + "sink.error.code.exclude";
 
-    public static final String HTTP_ERROR_CODES_LIST = GID_CONNECTOR_HTTP + "sink.error.code";
+    public static final String HTTP_ERROR_SINK_CODES_LIST = GID_CONNECTOR_HTTP + "sink.error.code";
+
+    public static final String HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST =
+        GID_CONNECTOR_HTTP + "source.lookup.error.code.exclude";
+
+    public static final String HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST =
+        GID_CONNECTOR_HTTP + "source.lookup.error.code";
+
+    // -----------------------------------------------------
 
 }
