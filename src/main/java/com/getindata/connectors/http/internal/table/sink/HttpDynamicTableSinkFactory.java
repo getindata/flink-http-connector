@@ -10,10 +10,10 @@ import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfiguration
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.factories.FactoryUtil;
 
+import com.getindata.connectors.http.HttpSinkPostRequestCallbackFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
-import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
-import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
+import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.*;
 
 /**
  * Factory for creating {@link HttpDynamicSink}.
@@ -37,6 +37,13 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         Properties asyncSinkProperties =
             new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
 
+        final HttpSinkPostRequestCallbackFactory postRequestCallbackFactory =
+            FactoryUtil.discoverFactory(
+                context.getClassLoader(),
+                HttpSinkPostRequestCallbackFactory.class,
+                tableOptions.get(REQUEST_CALLBACK_IDENTIFIER)
+            );
+
         Properties httpConnectorProperties =
             ConfigUtils.getHttpConnectorProperties(context.getCatalogTable().getOptions());
 
@@ -44,6 +51,9 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
             new HttpDynamicSink.HttpDynamicTableSinkBuilder()
                 .setTableOptions(tableOptions)
                 .setEncodingFormat(factoryContext.getEncodingFormat())
+                .setHttpSinkPostRequestCallback(
+                    postRequestCallbackFactory.createHttpSinkPostRequestCallback()
+                )
                 .setConsumedDataType(factoryContext.getPhysicalDataType())
                 .setProperties(httpConnectorProperties);
         addAsyncOptionsToBuilder(asyncSinkProperties, builder);
@@ -65,6 +75,7 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
     public Set<ConfigOption<?>> optionalOptions() {
         var options = super.optionalOptions();
         options.add(INSERT_METHOD);
+        options.add(REQUEST_CALLBACK_IDENTIFIER);
         return options;
     }
 

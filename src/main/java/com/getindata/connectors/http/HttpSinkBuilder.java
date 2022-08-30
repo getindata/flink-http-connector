@@ -70,6 +70,8 @@ public class HttpSinkBuilder<InputT> extends
     // If not defined, should be set to DEFAULT_CLIENT_BUILDER
     private SinkHttpClientBuilder sinkHttpClientBuilder;
 
+    private HttpSinkPostRequestCallback httpSinkPostRequestCallback;
+
     HttpSinkBuilder() {
         this.sinkHttpClientBuilder = DEFAULT_CLIENT_BUILDER;
     }
@@ -105,6 +107,13 @@ public class HttpSinkBuilder<InputT> extends
         return this;
     }
 
+    public HttpSinkBuilder<InputT> setHttpSinkPostRequestCallback(
+        HttpSinkPostRequestCallback httpSinkPostRequestCallback
+    ) {
+        this.httpSinkPostRequestCallback = httpSinkPostRequestCallback;
+        return this;
+    }
+
     /**
      * Set property for Http Sink.
      * @param propertyName property name
@@ -137,6 +146,7 @@ public class HttpSinkBuilder<InputT> extends
             Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
             Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
             endpointUrl,
+            httpSinkPostRequestCallback,
             sinkHttpClientBuilder,
             properties
         );

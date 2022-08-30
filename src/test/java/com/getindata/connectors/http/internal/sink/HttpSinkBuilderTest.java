@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.getindata.connectors.http.HttpSink;
+import com.getindata.connectors.http.HttpSinkPostRequestCallback;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 
@@ -55,7 +56,8 @@ public class HttpSinkBuilderTest {
 
     private static class MockHttpClient implements SinkHttpClient {
 
-        MockHttpClient(Properties properties) {
+        MockHttpClient(
+            Properties properties, HttpSinkPostRequestCallback httpSinkPostRequestCallback) {
 
         }
 
