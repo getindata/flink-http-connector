@@ -26,6 +26,7 @@ import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecke
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_HEADER_PREFIX;
 
 /**
@@ -42,9 +43,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private final HttpStatusCodeChecker statusCodeChecker;
 
     public JavaNetSinkHttpClient(Properties properties) {
-        this.httpClient = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
+        this.httpClient = JavaNetHttpClientFactory.createClient(properties);
 
         Map<String, String> headerMap =
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);

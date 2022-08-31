@@ -56,8 +56,8 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     // TODO: Reintroduce retries by adding backoff policy
     @Override
     protected void submitRequestEntries(
-        List<HttpSinkRequestEntry> requestEntries,
-        Consumer<List<HttpSinkRequestEntry>> requestResult) {
+            List<HttpSinkRequestEntry> requestEntries,
+            Consumer<List<HttpSinkRequestEntry>> requestResult) {
         var future = sinkHttpClient.putRequests(requestEntries, endpointUrl);
         future.whenComplete((response, err) -> {
             if (err != null) {

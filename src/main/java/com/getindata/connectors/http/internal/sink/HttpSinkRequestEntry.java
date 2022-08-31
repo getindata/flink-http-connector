@@ -5,7 +5,7 @@ import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-
+import lombok.ToString;
 
 /**
  * Represents a single {@link com.getindata.connectors.http.HttpSink} request. Contains the HTTP
@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 @EqualsAndHashCode
+@ToString
 public final class HttpSinkRequestEntry implements Serializable {
 
     /**

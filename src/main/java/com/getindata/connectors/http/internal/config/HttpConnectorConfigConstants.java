@@ -40,4 +40,11 @@ public final class HttpConnectorConfigConstants {
 
     // -----------------------------------------------------
 
+    // -------------- HTTPS security settings --------------
+    public static final String SELF_SIGNED_CERT =
+        GID_CONNECTOR_HTTP + "sink.security.allowSelfSignedCert";
+
+
+    // -----------------------------------------------------
+
 }
