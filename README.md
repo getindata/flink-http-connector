@@ -184,6 +184,19 @@ CREATE TABLE http (
 )
 ```
 
+#### Custom request/response callback
+Http Sink processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
+behaviour of the additional stage of processing done by Table API Sink by implementing
+[HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
+[HttpPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpPostRequestCallbackFactory.java)
+interfaces. Custom implementations of `HttpSinkRequestCallbackFactory` can be registered along other factories in
+`resources/META-INF.services/org.apache.flink.table.factories.Factory` file and then referenced by their identifiers in
+the HttpSink DDL property field `gid.connector.http.sink.request-callback`.
+
+A default implementation that logs those pairs as *INFO* level logs using Slf4j
+([Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java))
+is provided.
+
 ## HTTP status code handler
 Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
 By default all 400s and 500s response codes will be interpreted as error code.
@@ -201,25 +214,30 @@ An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s
 
 ## Table API Connector Options
 ### HTTP TableLookup Source
-| Option       | Required | Description/Value                                                                                        |
-|--------------|----------|----------------------------------------------------------------------------------------------------------|
-| connector    | required | The Value should be set to _rest-lookup_                                                                 |
-| format       | required | Flink's format name that should be used to decode REST response, Use `json` for a typical REST endpoint. |
-| url          | required | The base URL that should be use for GET requests. For example _http://localhost:8080/client_             |
-| asyncPolling | optional | true/false - determines whether Async Pooling should be used. Mechanism is based on Flink's Async I/O.   |
+| Option                                       | Required | Description/Value                                                                                                             |
+|----------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------|
+| connector                                    | required | The Value should be set to _rest-lookup_                                                                                      |
+| format                                       | required | Flink's format name that should be used to decode REST response, Use `json` for a typical REST endpoint.                      |
+| url                                          | required | The base URL that should be use for GET requests. For example _http://localhost:8080/client_                                  |
+| asyncPolling                                 | optional | true/false - determines whether Async Pooling should be used. Mechanism is based on Flink's Async I/O.                        |
+| gid.connector.http.lookup.error.code         | optional | List of HTTP status codes that should be treated as errors by HTTP Source, separated with comma.                              |
+| gid.connector.http.lookup.error.code.exclude | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma. |
 
 ### HTTP Sink
-| Option                     | Required | Description/Value                                                                                                                                                                                  |
-|----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| connector                  | required | Specify what connector to use. For HTTP Sink it should be set to _'http-sink'_.                                                                                                                    |
-| url                        | required | The base URL that should be use for HTTP requests. For example _http://localhost:8080/client_.                                                                                                     |
-| format                     | required | Specify what format to use.                                                                                                                                                                        |
-| insert-method              | optional | Specify which HTTP method to use in the request. The value should be set either to `POST` or `PUT`.                                                                                                |
-| sink.batch.max-size        | optional | Maximum number of elements that may be passed in a batch to be written downstream.                                                                                                                 |
-| sink.requests.max-inflight | optional | The maximum number of in flight requests that may exist, if any more in flight requests need to be initiated once the maximum has been reached, then it will be blocked until some have completed. |
-| sink.requests.max-buffered | optional | Maximum number of buffered records before applying backpressure.                                                                                                                                   |
-| sink.flush-buffer.size     | optional | The maximum size of a batch of entries that may be sent to the HTTP endpoint measured in bytes.                                                                                                    |
-| sink.flush-buffer.timeout  | optional | Threshold time in milliseconds for an element to be in a buffer before being flushed.                                                                                                              |
+| Option                                     | Required | Description/Value                                                                                                                                                                                  |
+|--------------------------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| connector                                  | required | Specify what connector to use. For HTTP Sink it should be set to _'http-sink'_.                                                                                                                    |
+| url                                        | required | The base URL that should be use for HTTP requests. For example _http://localhost:8080/client_.                                                                                                     |
+| format                                     | required | Specify what format to use.                                                                                                                                                                        |
+| insert-method                              | optional | Specify which HTTP method to use in the request. The value should be set either to `POST` or `PUT`.                                                                                                |
+| sink.batch.max-size                        | optional | Maximum number of elements that may be passed in a batch to be written downstream.                                                                                                                 |
+| sink.requests.max-inflight                 | optional | The maximum number of in flight requests that may exist, if any more in flight requests need to be initiated once the maximum has been reached, then it will be blocked until some have completed. |
+| sink.requests.max-buffered                 | optional | Maximum number of buffered records before applying backpressure.                                                                                                                                   |
+| sink.flush-buffer.size                     | optional | The maximum size of a batch of entries that may be sent to the HTTP endpoint measured in bytes.                                                                                                    |
+| sink.flush-buffer.timeout                  | optional | Threshold time in milliseconds for an element to be in a buffer before being flushed.                                                                                                              |
+| gid.connector.http.sink.request-callback   | optional | Specify which `HttpPostRequestCallback` implementation to use. By default, it is set to `slf4j-logger` corresponding to `Slf4jHttpPostRequestCallback`.                                            |
+| gid.connector.http.sink.error.code         | optional | List of HTTP status codes that should be treated as errors by HTTP Sink, separated with comma.                                                                                                     |
+| gid.connector.http.sink.error.code.exclude | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.sink.error.code` list, separated with comma.                                                                        |
 
 ## Build and deployment
 To build the project locally you need to have `maven 3` and Java 11+. </br>

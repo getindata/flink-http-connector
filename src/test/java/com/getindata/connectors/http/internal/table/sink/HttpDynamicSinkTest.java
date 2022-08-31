@@ -26,6 +26,7 @@ public class HttpDynamicSinkTest {
             .setConsumedDataType(
                 new AtomicDataType(new BooleanType(false)))
             .setEncodingFormat(mockFormat)
+            .setHttpPostRequestCallback(new Slf4jHttpPostRequestCallback())
             .build();
 
         assertThat(dynamicSink.asSummaryString()).isEqualTo("HttpSink");
@@ -48,6 +49,7 @@ public class HttpDynamicSinkTest {
             .setConsumedDataType(
                 new AtomicDataType(new BooleanType(false)))
             .setEncodingFormat(mockFormat)
+            .setHttpPostRequestCallback(new Slf4jHttpPostRequestCallback())
             .build();
 
         assertEquals(sink, sink.copy());
@@ -70,6 +72,7 @@ public class HttpDynamicSinkTest {
             )
             .setConsumedDataType(consumedDataType)
             .setEncodingFormat(mockFormat)
+            .setHttpPostRequestCallback(new Slf4jHttpPostRequestCallback())
             .setMaxBatchSize(1);
     }
 
@@ -90,6 +93,9 @@ public class HttpDynamicSinkTest {
             getSinkBuilder().setConsumedDataType(new AtomicDataType(new BooleanType(true))).build();
         var sinkFormat = getSinkBuilder().setEncodingFormat(
             new TestFormatFactory.EncodingFormatMock(";", ChangelogMode.all())).build();
+        var sinkHttpPostRequestCallback =
+            getSinkBuilder()
+                .setHttpPostRequestCallback(new Slf4jHttpPostRequestCallback()).build();
 
         assertEquals(sink, sink);
         assertNotEquals(null, sink);
@@ -98,5 +104,6 @@ public class HttpDynamicSinkTest {
         assertNotEquals(sink, sinkSinkConfig);
         assertNotEquals(sink, sinkDataType);
         assertNotEquals(sink, sinkFormat);
+        assertNotEquals(sink, sinkHttpPostRequestCallback);
     }
 }

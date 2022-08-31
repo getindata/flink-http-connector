@@ -2,15 +2,17 @@
 
 ## [Unreleased]
 
-### Fixed
-- Fix JavaDoc errors.
-
 ### Added
 - Add new properties `gid.connector.http.sink.error.code`,`gid.connector.http.sink.error.code.exclude`,
   `gid.connector.http.source.lookup.error.code` and `gid.connector.http.source.lookup.error.code.exclude`
   to set HTTP status codes that should be interpreted as errors both for HTTP Sink and HTTP Lookup Source.
-- Use Flink's format support to Http Lookup Source. 
+- Use Flink's format support to Http Lookup Source.
 - Add HTTP Lookup source client header configuration via properties.
+- Add [HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
+  [HttpPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpPostRequestCallbackFactory.java)
+  interfaces (along with a "default"
+  [Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java)
+  implementation) for customizable processing of HTTP Sink requests and responses in Table API.
 
 ### Changed
 - Change dependency scope for `org.apache.flink.flink-connector-base` from `compile` to `provided`.
@@ -19,6 +21,10 @@
 ### Removed
 - Remove dependency on `org.apache.httpcomponents.httpclient`from production code. Dependency is only for test scope.
 - Removed dependency on `com.jayway.jsonpath.json-path`
+
+### Fixed
+
+- Fix JavaDoc errors.
 
 ## [0.3.0] - 2022-07-21
 

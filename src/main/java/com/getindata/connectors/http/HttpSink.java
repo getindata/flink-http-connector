@@ -40,6 +40,7 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             String endpointUrl,
+            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
             SinkHttpClientBuilder sinkHttpClientBuilder,
             Properties properties) {
         super(elementConverter,
@@ -50,6 +51,7 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             maxTimeInBufferMS,
             maxRecordSizeInBytes,
             endpointUrl,
+            httpPostRequestCallback,
             sinkHttpClientBuilder,
             properties
         );

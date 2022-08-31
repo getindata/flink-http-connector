@@ -11,6 +11,7 @@ import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
+import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 
 /**
  * Builder to construct {@link HttpSink}.
@@ -59,6 +60,9 @@ public class HttpSinkBuilder<InputT> extends
 
     private static final SinkHttpClientBuilder DEFAULT_CLIENT_BUILDER = JavaNetSinkHttpClient::new;
 
+    private static final HttpPostRequestCallback<HttpSinkRequestEntry>
+        DEFAULT_POST_REQUEST_CALLBACK = new Slf4jHttpPostRequestCallback();
+
     private final Properties properties = new Properties();
 
     // Mandatory field
@@ -70,8 +74,12 @@ public class HttpSinkBuilder<InputT> extends
     // If not defined, should be set to DEFAULT_CLIENT_BUILDER
     private SinkHttpClientBuilder sinkHttpClientBuilder;
 
+    // If not defined, should be set to DEFAULT_POST_REQUEST_CALLBACK
+    private HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+
     HttpSinkBuilder() {
         this.sinkHttpClientBuilder = DEFAULT_CLIENT_BUILDER;
+        this.httpPostRequestCallback = DEFAULT_POST_REQUEST_CALLBACK;
     }
 
     /**
@@ -102,6 +110,12 @@ public class HttpSinkBuilder<InputT> extends
     public HttpSinkBuilder<InputT> setElementConverter(
         ElementConverter<InputT, HttpSinkRequestEntry> elementConverter) {
         this.elementConverter = elementConverter;
+        return this;
+    }
+
+    public HttpSinkBuilder<InputT> setHttpPostRequestCallback(
+        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {
+        this.httpPostRequestCallback = httpPostRequestCallback;
         return this;
     }
 
@@ -137,6 +151,7 @@ public class HttpSinkBuilder<InputT> extends
             Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
             Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
             endpointUrl,
+            httpPostRequestCallback,
             sinkHttpClientBuilder,
             properties
         );
