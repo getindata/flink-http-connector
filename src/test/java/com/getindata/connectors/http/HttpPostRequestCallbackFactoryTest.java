@@ -81,7 +81,8 @@ public class HttpPostRequestCallbackFactoryTest {
         );
     }
 
-    public static class TestPostRequestCallback implements HttpPostRequestCallback {
+    public static class TestPostRequestCallback
+        implements HttpPostRequestCallback<HttpSinkRequestEntry> {
         @Override
         public void call(
             HttpResponse<String> response,

@@ -5,11 +5,15 @@ import java.util.Set;
 
 import org.apache.flink.configuration.ConfigOption;
 
-public class TestPostRequestCallbackFactory implements HttpPostRequestCallbackFactory {
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+
+public class TestPostRequestCallbackFactory
+    implements HttpPostRequestCallbackFactory<HttpSinkRequestEntry> {
+
     public static final String TEST_POST_REQUEST_CALLBACK_IDENT = "test-request-callback";
 
     @Override
-    public HttpPostRequestCallback createHttpPostRequestCallback() {
+    public HttpPostRequestCallback<HttpSinkRequestEntry> createHttpPostRequestCallback() {
         return new HttpPostRequestCallbackFactoryTest.TestPostRequestCallback();
     }
 

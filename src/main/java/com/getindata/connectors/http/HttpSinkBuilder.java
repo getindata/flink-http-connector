@@ -70,7 +70,7 @@ public class HttpSinkBuilder<InputT> extends
     // If not defined, should be set to DEFAULT_CLIENT_BUILDER
     private SinkHttpClientBuilder sinkHttpClientBuilder;
 
-    private HttpPostRequestCallback httpPostRequestCallback;
+    private HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
     HttpSinkBuilder() {
         this.sinkHttpClientBuilder = DEFAULT_CLIENT_BUILDER;
@@ -108,7 +108,7 @@ public class HttpSinkBuilder<InputT> extends
     }
 
     public HttpSinkBuilder<InputT> setHttpPostRequestCallback(
-        HttpPostRequestCallback httpPostRequestCallback) {
+        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {
         this.httpPostRequestCallback = httpPostRequestCallback;
         return this;
     }

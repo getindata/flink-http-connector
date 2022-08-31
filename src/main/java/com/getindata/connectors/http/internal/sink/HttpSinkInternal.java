@@ -58,7 +58,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
     // makes it possible to serialize `HttpSink`
     private final SinkHttpClientBuilder sinkHttpClientBuilder;
 
-    private final HttpPostRequestCallback httpPostRequestCallback;
+    private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
     private final Properties properties;
 
@@ -71,7 +71,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         long maxTimeInBufferMS,
         long maxRecordSizeInBytes,
         String endpointUrl,
-        HttpPostRequestCallback httpPostRequestCallback,
+        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
         SinkHttpClientBuilder sinkHttpClientBuilder,
         Properties properties
     ) {

@@ -40,14 +40,14 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
-    private final HttpPostRequestCallback httpPostRequestCallback;
+    private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
     public JavaNetSinkHttpClient(Properties properties) {
         this(properties, null);
     }
 
     public JavaNetSinkHttpClient(
-        Properties properties, HttpPostRequestCallback httpPostRequestCallback
+        Properties properties, HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback
     ) {
         this.httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)

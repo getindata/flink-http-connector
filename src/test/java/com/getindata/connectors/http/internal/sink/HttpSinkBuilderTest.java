@@ -57,10 +57,8 @@ public class HttpSinkBuilderTest {
     private static class MockHttpClient implements SinkHttpClient {
 
         MockHttpClient(
-            Properties properties, HttpPostRequestCallback httpPostRequestCallback
-        ) {
-
-        }
+            Properties properties,
+            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {}
 
         @Override
         public CompletableFuture<SinkHttpClientResponse> putRequests(

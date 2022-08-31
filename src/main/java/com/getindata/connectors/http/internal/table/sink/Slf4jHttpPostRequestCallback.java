@@ -17,7 +17,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  * the {@link HttpDynamicSink}.
  */
 @Slf4j
-public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback {
+public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<HttpSinkRequestEntry> {
     @Override
     public void call(
         HttpResponse<String> response,

@@ -29,10 +29,12 @@ import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink;
  *   'gid.connector.http.sink.request-callback' = 'my-callback'
  * )
  * }</pre>
+ *
+ * @param <RequestT> type of the HTTP request wrapper
  */
-public interface HttpPostRequestCallbackFactory extends Factory {
+public interface HttpPostRequestCallbackFactory<RequestT> extends Factory {
     /**
      * @return {@link HttpPostRequestCallback} custom request callback instance
      */
-    HttpPostRequestCallback createHttpPostRequestCallback();
+    HttpPostRequestCallback<RequestT> createHttpPostRequestCallback();
 }
