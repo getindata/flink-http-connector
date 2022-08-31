@@ -5,10 +5,10 @@ import org.apache.flink.table.factories.Factory;
 import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink;
 
 /**
- * The {@link Factory} that dynamically creates and injects {@link HttpSinkPostRequestCallback} to
+ * The {@link Factory} that dynamically creates and injects {@link HttpPostRequestCallback} to
  * {@link HttpDynamicSink}.
  *
- * <p>Custom implementations of {@link HttpSinkPostRequestCallbackFactory} can be registered along
+ * <p>Custom implementations of {@link HttpPostRequestCallbackFactory} can be registered along
  * other factories in
  * <pre>resources/META-INF.services/org.apache.flink.table.factories.Factory</pre>
  * file and then referenced by their identifiers in the HttpSink DDL property field
@@ -30,9 +30,9 @@ import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink;
  * )
  * }</pre>
  */
-public interface HttpSinkPostRequestCallbackFactory extends Factory {
+public interface HttpPostRequestCallbackFactory extends Factory {
     /**
-     * @return {@link HttpSinkPostRequestCallback} custom request callback instance
+     * @return {@link HttpPostRequestCallback} custom request callback instance
      */
-    HttpSinkPostRequestCallback createHttpSinkPostRequestCallback();
+    HttpPostRequestCallback createHttpPostRequestCallback();
 }

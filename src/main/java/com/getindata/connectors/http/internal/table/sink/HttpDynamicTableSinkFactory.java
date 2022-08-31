@@ -10,7 +10,7 @@ import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfiguration
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.factories.FactoryUtil;
 
-import com.getindata.connectors.http.HttpSinkPostRequestCallbackFactory;
+import com.getindata.connectors.http.HttpPostRequestCallbackFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.*;
@@ -37,10 +37,10 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         Properties asyncSinkProperties =
             new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
 
-        final HttpSinkPostRequestCallbackFactory postRequestCallbackFactory =
+        final HttpPostRequestCallbackFactory postRequestCallbackFactory =
             FactoryUtil.discoverFactory(
                 context.getClassLoader(),
-                HttpSinkPostRequestCallbackFactory.class,
+                HttpPostRequestCallbackFactory.class,
                 tableOptions.get(REQUEST_CALLBACK_IDENTIFIER)
             );
 
@@ -51,8 +51,8 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
             new HttpDynamicSink.HttpDynamicTableSinkBuilder()
                 .setTableOptions(tableOptions)
                 .setEncodingFormat(factoryContext.getEncodingFormat())
-                .setHttpSinkPostRequestCallback(
-                    postRequestCallbackFactory.createHttpSinkPostRequestCallback()
+                .setHttpPostRequestCallback(
+                    postRequestCallbackFactory.createHttpPostRequestCallback()
                 )
                 .setConsumedDataType(factoryContext.getPhysicalDataType())
                 .setProperties(httpConnectorProperties);

@@ -5,7 +5,7 @@ import java.util.Properties;
 
 import org.apache.flink.annotation.PublicEvolving;
 
-import com.getindata.connectors.http.HttpSinkPostRequestCallback;
+import com.getindata.connectors.http.HttpPostRequestCallback;
 
 /**
  * Builder building {@link SinkHttpClient}.
@@ -14,6 +14,6 @@ import com.getindata.connectors.http.HttpSinkPostRequestCallback;
 public interface SinkHttpClientBuilder extends Serializable {
     SinkHttpClient build(
         Properties properties,
-        HttpSinkPostRequestCallback httpSinkPostRequestCallback
+        HttpPostRequestCallback httpPostRequestCallback
     );
 }

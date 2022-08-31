@@ -20,7 +20,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory;
 import static com.getindata.connectors.http.TestPostRequestCallbackFactory.TEST_POST_REQUEST_CALLBACK_IDENT;
 
-public class HttpSinkPostRequestCallbackFactoryTest {
+public class HttpPostRequestCallbackFactoryTest {
     private static final int SERVER_PORT = 9090;
 
     private WireMockServer wireMockServer;
@@ -48,7 +48,7 @@ public class HttpSinkPostRequestCallbackFactoryTest {
     }
 
     @Test
-    public void httpSinkPostRequestCallbackFactoryTest()
+    public void httpPostRequestCallbackFactoryTest()
         throws ExecutionException, InterruptedException {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
 
@@ -81,7 +81,7 @@ public class HttpSinkPostRequestCallbackFactoryTest {
         );
     }
 
-    public static class TestPostRequestCallback implements HttpSinkPostRequestCallback {
+    public static class TestPostRequestCallback implements HttpPostRequestCallback {
         @Override
         public void call(
             HttpResponse<String> response,

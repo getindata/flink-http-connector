@@ -8,10 +8,10 @@
   to set HTTP status codes that should be interpreted as errors both for HTTP Sink and HTTP Lookup Source.
 - Use Flink's format support to Http Lookup Source.
 - Add HTTP Lookup source client header configuration via properties.
-- Add [HttpSinkPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpSinkPostRequestCallback.java) and
-  [HttpSinkPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpSinkPostRequestCallbackFactory.java)
+- Add [HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
+  [HttpPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpPostRequestCallbackFactory.java)
   interfaces (along with a "default"
-  [Slf4jHttpSinkPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpSinkPostRequestCallback.java)
+  [Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java)
   implementation) for customizable processing of HTTP Sink requests and responses in Table API.
 
 ### Changed

@@ -23,5 +23,5 @@ public class HttpDynamicSinkConnectorOptions {
     public static final ConfigOption<String> REQUEST_CALLBACK_IDENTIFIER =
         ConfigOptions.key(SINK_REQUEST_CALLBACK_IDENTIFIER)
             .stringType()
-            .defaultValue(Slf4JHttpSinkPostRequestCallbackFactory.IDENTIFIER);
+            .defaultValue(Slf4jHttpPostRequestCallbackFactory.IDENTIFIER);
 }

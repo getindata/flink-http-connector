@@ -5,15 +5,18 @@ import java.util.Set;
 
 import org.apache.flink.configuration.ConfigOption;
 
-import com.getindata.connectors.http.HttpSinkPostRequestCallback;
-import com.getindata.connectors.http.HttpSinkPostRequestCallbackFactory;
+import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.HttpPostRequestCallbackFactory;
 
-public class Slf4JHttpSinkPostRequestCallbackFactory implements HttpSinkPostRequestCallbackFactory {
+/**
+ * Factory for creating {@link Slf4jHttpPostRequestCallback}.
+ */
+public class Slf4jHttpPostRequestCallbackFactory implements HttpPostRequestCallbackFactory {
     public static final String IDENTIFIER = "slf4j-logger";
 
     @Override
-    public HttpSinkPostRequestCallback createHttpSinkPostRequestCallback() {
-        return new Slf4jHttpSinkPostRequestCallback();
+    public HttpPostRequestCallback createHttpPostRequestCallback() {
+        return new Slf4jHttpPostRequestCallback();
     }
 
     @Override

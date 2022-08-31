@@ -12,7 +12,7 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
-import com.getindata.connectors.http.HttpSinkPostRequestCallback;
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 
 
@@ -43,7 +43,7 @@ import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
  *       immediately;</li>
  *   <li>{@code maxRecordSizeInBytes}: the maximum size of a record the sink will accept into the
  *       buffer, a record of size larger than this will be rejected when passed to the sink.</li>
- *   <li>{@code httpSinkPostRequestCallback}: the {@link HttpSinkPostRequestCallback} implementation
+ *   <li>{@code httpPostRequestCallback}: the {@link HttpPostRequestCallback} implementation
  *       for processing of requests and responses;</li>
  *   <li>{@code properties}: properties related to the Http Sink.</li>
  * </ul>
@@ -58,7 +58,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
     // makes it possible to serialize `HttpSink`
     private final SinkHttpClientBuilder sinkHttpClientBuilder;
 
-    private final HttpSinkPostRequestCallback httpSinkPostRequestCallback;
+    private final HttpPostRequestCallback httpPostRequestCallback;
 
     private final Properties properties;
 
@@ -71,7 +71,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         long maxTimeInBufferMS,
         long maxRecordSizeInBytes,
         String endpointUrl,
-        HttpSinkPostRequestCallback httpSinkPostRequestCallback,
+        HttpPostRequestCallback httpPostRequestCallback,
         SinkHttpClientBuilder sinkHttpClientBuilder,
         Properties properties
     ) {
@@ -82,7 +82,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl),
             "The endpoint URL must be set when initializing HTTP Sink.");
         this.endpointUrl = endpointUrl;
-        this.httpSinkPostRequestCallback = httpSinkPostRequestCallback;
+        this.httpPostRequestCallback = httpPostRequestCallback;
         this.sinkHttpClientBuilder =
             Preconditions.checkNotNull(sinkHttpClientBuilder,
                 "The HTTP client builder must not be null when initializing HTTP Sink.");
@@ -103,7 +103,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
             endpointUrl,
-            sinkHttpClientBuilder.build(properties, httpSinkPostRequestCallback),
+            sinkHttpClientBuilder.build(properties, httpPostRequestCallback),
             Collections.emptyList()
         );
     }
@@ -122,7 +122,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
             endpointUrl,
-            sinkHttpClientBuilder.build(properties, httpSinkPostRequestCallback),
+            sinkHttpClientBuilder.build(properties, httpPostRequestCallback),
             recoveredState
         );
     }

@@ -184,17 +184,17 @@ CREATE TABLE http (
 )
 ```
 
-#### Custom request/response processing
+#### Custom request/response callback
 Http Sink processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
-behaviour of the processing done by Table API Sink by implementing
-[HttpSinkPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpSinkPostRequestCallback.java) and
-[HttpSinkPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpSinkPostRequestCallbackFactory.java)
-interfaces. Custom implementations of `HttpSinkPostRequestCallbackFactory` can be registered along other factories in
+behaviour of the additional stage of processing done by Table API Sink by implementing
+[HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
+[HttpPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpPostRequestCallbackFactory.java)
+interfaces. Custom implementations of `HttpSinkRequestCallbackFactory` can be registered along other factories in
 `resources/META-INF.services/org.apache.flink.table.factories.Factory` file and then referenced by their identifiers in
 the HttpSink DDL property field `gid.connector.http.sink.request-callback`.
 
 A default implementation that logs those pairs as *INFO* level logs using Slf4j
-([Slf4jHttpSinkPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpSinkPostRequestCallback.java))
+([Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java))
 is provided.
 
 ## HTTP status code handler
@@ -235,7 +235,7 @@ An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s
 | sink.requests.max-buffered                 | optional | Maximum number of buffered records before applying backpressure.                                                                                                                                   |
 | sink.flush-buffer.size                     | optional | The maximum size of a batch of entries that may be sent to the HTTP endpoint measured in bytes.                                                                                                    |
 | sink.flush-buffer.timeout                  | optional | Threshold time in milliseconds for an element to be in a buffer before being flushed.                                                                                                              |
-| gid.connector.http.sink.request-callback   | optional | Specify which `HttpSinkPostRequestCallback` implementation to use. By default, it is set to `slf4j-logger` corresponding to `Slf4jHttpSinkPostRequestCallback`.                                    |
+| gid.connector.http.sink.request-callback   | optional | Specify which `HttpPostRequestCallback` implementation to use. By default, it is set to `slf4j-logger` corresponding to `Slf4jHttpPostRequestCallback`.                                            |
 | gid.connector.http.sink.error.code         | optional | List of HTTP status codes that should be treated as errors by HTTP Sink, separated with comma.                                                                                                     |
 | gid.connector.http.sink.error.code.exclude | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.sink.error.code` list, separated with comma.                                                                        |
 

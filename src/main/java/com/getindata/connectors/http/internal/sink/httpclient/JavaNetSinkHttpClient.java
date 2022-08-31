@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 
-import com.getindata.connectors.http.HttpSinkPostRequestCallback;
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -40,18 +40,19 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
-    private final HttpSinkPostRequestCallback httpSinkPostRequestCallback;
+    private final HttpPostRequestCallback httpPostRequestCallback;
 
     public JavaNetSinkHttpClient(Properties properties) {
         this(properties, null);
     }
 
     public JavaNetSinkHttpClient(
-        Properties properties, HttpSinkPostRequestCallback httpSinkPostRequestCallback) {
+        Properties properties, HttpPostRequestCallback httpPostRequestCallback
+    ) {
         this.httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
-        this.httpSinkPostRequestCallback = httpSinkPostRequestCallback;
+        this.httpPostRequestCallback = httpPostRequestCallback;
 
         var propertiesHeaderMap =
             ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
@@ -133,8 +134,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             if (optResponse.isEmpty()) {
                 isFailed = true;
             } else {
-                if (httpSinkPostRequestCallback != null) {
-                    httpSinkPostRequestCallback.call(
+                if (httpPostRequestCallback != null) {
+                    httpPostRequestCallback.call(
                         optResponse.get(), sinkRequestEntry, endpointUrl, headerMap);
                 }
                 isFailed = statusCodeChecker.isErrorCode(optResponse.get().statusCode());

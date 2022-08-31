@@ -5,16 +5,14 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
-import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink;
 
 /**
- * An interface for a custom class that logs responses and requests processed by the HTTP Sink.
+ * An interface for post request callback action, processing a response and its respective request.
  *
- * <p>{@link HttpDynamicSink} processes responses that it gets from the HTTP endpoint along their
- * respective requests. One can customize the behaviour of such a processor by implementing both
- * {@link HttpSinkPostRequestCallback} and {@link HttpSinkPostRequestCallbackFactory}.
+ * <p>One can customize the behaviour of such a callback by implementing both
+ * {@link HttpPostRequestCallback} and {@link HttpPostRequestCallbackFactory}.
  */
-public interface HttpSinkPostRequestCallback extends Serializable {
+public interface HttpPostRequestCallback extends Serializable {
     /**
      * Process HTTP request and the matching response.
      *
