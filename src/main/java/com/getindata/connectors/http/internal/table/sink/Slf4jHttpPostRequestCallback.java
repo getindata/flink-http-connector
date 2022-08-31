@@ -24,13 +24,23 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
         HttpSinkRequestEntry requestEntry,
         String _endpointUrl,
         Map<String, String> _headerMap) {
-        log.info(
-            "Got response for a request.\n  Request:\n    " +
+
+        if (response == null) {
+            log.info(
+                "Got response for a request.\n  Request:\n    " +
+                "Method: {}\n    Body: {}\n  Response: null",
+                requestEntry.method,
+                new String(requestEntry.element, StandardCharsets.UTF_8)
+            );
+        } else {
+            log.info(
+                "Got response for a request.\n  Request:\n    " +
                 "Method: {}\n    Body: {}\n  Response: {}\n    Body: {}",
-            requestEntry.method,
-            new String(requestEntry.element, StandardCharsets.UTF_8),
-            response.toString(),
-            response.body()
-        );
+                requestEntry.method,
+                new String(requestEntry.element, StandardCharsets.UTF_8),
+                response.toString(),
+                response.body()
+            );
+        }
     }
 }

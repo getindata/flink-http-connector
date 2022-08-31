@@ -325,6 +325,7 @@ under the License.
             <exclude>**/HttpLookupConnectorOptionsUtil.class</exclude>
             <exclude>**/HttpTableSourceFactoryHelper.class</exclude>
             <exclude>**/HttpPollTableSource.class</exclude>
+            <exclude>**/Slf4jHttpPostRequestCallback.class</exclude>
           </excludes>
         </configuration>
         <executions>
