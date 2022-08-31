@@ -100,7 +100,9 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             Preconditions.checkNotNull(consumedDataType, "Consumed data type must not be null");
         this.encodingFormat =
             Preconditions.checkNotNull(encodingFormat, "Encoding format must not be null");
-        this.httpPostRequestCallback = httpPostRequestCallback;
+        this.httpPostRequestCallback =
+            Preconditions.checkNotNull(httpPostRequestCallback,
+                                       "Post request callback must not be null");
         this.tableOptions =
             Preconditions.checkNotNull(tableOptions, "Table options must not be null");
         this.properties = properties;

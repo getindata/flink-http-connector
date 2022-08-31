@@ -130,10 +130,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             var sinkRequestEntry = response.getSinkRequestEntry();
             var optResponse = response.getResponse();
 
-            if (httpPostRequestCallback != null) {
-                httpPostRequestCallback.call(
-                    optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
-            }
+            httpPostRequestCallback.call(
+                optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
 
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
             if (optResponse.isEmpty() ||

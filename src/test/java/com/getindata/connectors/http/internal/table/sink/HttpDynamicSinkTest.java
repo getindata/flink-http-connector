@@ -26,6 +26,7 @@ public class HttpDynamicSinkTest {
             .setConsumedDataType(
                 new AtomicDataType(new BooleanType(false)))
             .setEncodingFormat(mockFormat)
+            .setHttpPostRequestCallback(new Slf4jHttpPostRequestCallback())
             .build();
 
         assertThat(dynamicSink.asSummaryString()).isEqualTo("HttpSink");
@@ -48,6 +49,7 @@ public class HttpDynamicSinkTest {
             .setConsumedDataType(
                 new AtomicDataType(new BooleanType(false)))
             .setEncodingFormat(mockFormat)
+            .setHttpPostRequestCallback(new Slf4jHttpPostRequestCallback())
             .build();
 
         assertEquals(sink, sink.copy());

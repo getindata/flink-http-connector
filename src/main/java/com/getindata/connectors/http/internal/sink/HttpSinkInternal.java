@@ -82,7 +82,11 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl),
             "The endpoint URL must be set when initializing HTTP Sink.");
         this.endpointUrl = endpointUrl;
-        this.httpPostRequestCallback = httpPostRequestCallback;
+        this.httpPostRequestCallback =
+            Preconditions.checkNotNull(
+                httpPostRequestCallback,
+                "Post request callback must be set when initializing HTTP Sink."
+            );
         this.sinkHttpClientBuilder =
             Preconditions.checkNotNull(sinkHttpClientBuilder,
                 "The HTTP client builder must not be null when initializing HTTP Sink.");
