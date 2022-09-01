@@ -10,29 +10,41 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.flink.util.StringUtils;
+
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.security.SecurityContext;
 import com.getindata.connectors.http.internal.security.SelfSignedTrustManager;
-import com.getindata.connectors.http.internal.security.SslContextFactory;
 
 public class JavaNetHttpClientFactory {
 
     public static HttpClient createClient(Properties properties) {
 
+        SecurityContext securityContext = SecurityContext.contextForLocalStore();
+
         boolean selfSignedCert = Boolean.parseBoolean(
             properties.getProperty(HttpConnectorConfigConstants.SELF_SIGNED_CERT, "false"));
+
+        String caRootPath = properties.getProperty(HttpConnectorConfigConstants.CA_CERT, "");
 
         Builder httpClientBuilder = HttpClient.newBuilder()
             .followRedirects(Redirect.NORMAL);
 
+        if (!StringUtils.isNullOrWhitespaceOnly(caRootPath)) {
+            securityContext.addCertToTrustStore(caRootPath);
+            SSLContext sslContext = securityContext
+                .getSslContext(securityContext.getTrustManagers());
+            httpClientBuilder.sslContext(sslContext);
+        }
+
         if (selfSignedCert) {
-            TrustManager[] trustManagers = SslContextFactory.getTrustManagers();
+            TrustManager[] trustManagers = securityContext.getTrustManagers();
             List<TrustManager> selfSignedManagers = new ArrayList<>(trustManagers.length);
             for (TrustManager trustManager : trustManagers) {
                 selfSignedManagers.add(new SelfSignedTrustManager((X509TrustManager) trustManager));
             }
 
-            SSLContext sslContext = SslContextFactory.getSslContext(null,
-                selfSignedManagers.toArray(new TrustManager[0]));
+            SSLContext sslContext = securityContext.getSslContext(selfSignedManagers);
 
             httpClientBuilder.sslContext(sslContext);
         }
