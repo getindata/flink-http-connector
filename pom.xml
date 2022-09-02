@@ -320,12 +320,9 @@ under the License.
         <version>${jacoco.plugin.version}</version>
         <configuration>
           <excludes>
-            <exclude>**/*Mock*.*</exclude>
             <exclude>**/HttpLookupConnectorOptions.class</exclude>
-            <exclude>**/HttpLookupConnectorOptionsUtil.class</exclude>
-            <exclude>**/HttpTableSourceFactoryHelper.class</exclude>
-            <exclude>**/HttpPollTableSource.class</exclude>
             <exclude>**/Slf4jHttpPostRequestCallback.class</exclude>
+            <exclude>**/SelfSignedTrustManager.class</exclude>
           </excludes>
         </configuration>
         <executions>

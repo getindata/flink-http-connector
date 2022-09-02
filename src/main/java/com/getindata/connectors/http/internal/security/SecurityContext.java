@@ -21,8 +21,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.util.StringUtils;
 
+// TODO Add Javadoc
 @Slf4j
 public class SecurityContext {
 
@@ -32,10 +32,9 @@ public class SecurityContext {
 
     private final KeyStore keystore;
 
-    private SecurityContext(String storePassword) {
+    public SecurityContext() {
 
-        this.storePasswordCharArr = (StringUtils.isNullOrWhitespaceOnly(storePassword)) ?
-            UUID.randomUUID().toString().toCharArray() : storePassword.toCharArray();
+        this.storePasswordCharArr = UUID.randomUUID().toString().toCharArray();
 
         try {
             this.keystore = KeyStore.getInstance(JKS_STORE_TYPE);
@@ -47,10 +46,6 @@ public class SecurityContext {
                 e
             );
         }
-    }
-
-    public static SecurityContext contextForLocalStore() {
-        return new SecurityContext(null);
     }
 
     public SSLContext getSslContext(TrustManager[] trustManagers) {
@@ -135,7 +130,7 @@ public class SecurityContext {
         // private key must be in PKCS8 format, pem or der.
         // openssl pkcs8 -topk8 -inform PEM -outform PEM -in client.pem
         // -out clientPrivateKey.pem -nocrypt
-        if (privateKeyPath.endsWith(".pem") || privateKeyPath.endsWith(".key")) {
+        if (privateKeyPath.endsWith(".pem")) {
             String privateString = new String(privateData, Charset.defaultCharset())
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replaceAll(System.lineSeparator(), "")

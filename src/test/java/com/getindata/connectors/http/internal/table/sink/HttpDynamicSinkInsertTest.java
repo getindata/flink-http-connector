@@ -15,6 +15,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// TODO Add test with https
 public class HttpDynamicSinkInsertTest {
 
     private static final int SERVER_PORT = 9090;

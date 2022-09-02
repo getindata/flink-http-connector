@@ -38,7 +38,7 @@ public class JavaNetHttpClientFactory {
         String clientPrivateKey = properties
             .getProperty(HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY, "");
 
-        SecurityContext securityContext = SecurityContext.contextForLocalStore();
+        SecurityContext securityContext = new SecurityContext();
 
         if (serverTrustedCerts.length > 0) {
             for (String cert : serverTrustedCerts) {

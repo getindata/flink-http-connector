@@ -5,14 +5,13 @@ import java.net.http.HttpClient;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 
-import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
 
 public class JavaNetHttpPollingClientFactory implements PollingClientFactory<RowData> {
 
     @Override
-    public PollingClient<RowData> createPollClient(
+    public JavaNetHttpPollingClient createPollClient(
             HttpLookupConfig options,
             DeserializationSchema<RowData> schemaDecoder) {
 
