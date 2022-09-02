@@ -37,8 +37,10 @@ public final class HttpConnectorConfigConstants {
 
     public static final String HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST =
         GID_CONNECTOR_HTTP + "source.lookup.error.code";
-
     // -----------------------------------------------------
+
+    public static final String SINK_REQUEST_CALLBACK_IDENTIFIER =
+        GID_CONNECTOR_HTTP + "sink.request-callback";
 
     // -------------- HTTPS security settings --------------
     public static final String ALLOW_SELF_SIGNED =
@@ -51,5 +53,4 @@ public final class HttpConnectorConfigConstants {
     public static final String CLIENT_PRIVATE_KEY = GID_CONNECTOR_HTTP + "security.key.client";
 
     // -----------------------------------------------------
-
 }

@@ -1,1 +1,1 @@
-com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory
+com.getindata.connectors.http.TestPostRequestCallbackFactory

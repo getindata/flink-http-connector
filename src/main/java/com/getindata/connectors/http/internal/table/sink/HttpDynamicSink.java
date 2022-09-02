@@ -17,6 +17,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
 
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.HttpSink;
 import com.getindata.connectors.http.HttpSinkBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
@@ -47,10 +48,11 @@ import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkC
  *       immediately;</li>
  *   <li>{@code consumedDataType}: the consumed data type of the table;</li>
  *   <li>{@code encodingFormat}: the format for encoding records;</li>
- *   <li>{@code formatContentTypeMap}: the mapping from 'format' field option to 'Content-Type'
- *   header value;</li>
+ *   <li>{@code httpPostRequestCallback}: the {@link HttpPostRequestCallback} implementation
+ *       for processing of requests and responses;</li>
  *   <li>{@code tableOptions}: the {@link ReadableConfig} instance with values defined in Table
- *   API DDL.</li>
+ *       API DDL;</li>
+ *   <li>{@code properties}: properties related to the Http Sink.</li>
  * </ul>
  *
  * <p>The following example shows the minimum Table API example to create a {@link HttpDynamicSink}
@@ -75,6 +77,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
     private final EncodingFormat<SerializationSchema<RowData>> encodingFormat;
 
+    private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+
     private final ReadableConfig tableOptions;
 
     private final Properties properties;
@@ -87,6 +91,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         @Nullable Long maxTimeInBufferMS,
         DataType consumedDataType,
         EncodingFormat<SerializationSchema<RowData>> encodingFormat,
+        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
         ReadableConfig tableOptions,
         Properties properties) {
         super(maxBatchSize, maxInFlightRequests, maxBufferedRequests, maxBufferSizeInBytes,
@@ -95,6 +100,9 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             Preconditions.checkNotNull(consumedDataType, "Consumed data type must not be null");
         this.encodingFormat =
             Preconditions.checkNotNull(encodingFormat, "Encoding format must not be null");
+        this.httpPostRequestCallback =
+            Preconditions.checkNotNull(httpPostRequestCallback,
+                                       "Post request callback must not be null");
         this.tableOptions =
             Preconditions.checkNotNull(tableOptions, "Table options must not be null");
         this.properties = properties;
@@ -116,6 +124,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             .<RowData>builder()
             .setEndpointUrl(tableOptions.get(URL))
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setHttpPostRequestCallback(httpPostRequestCallback)
             .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
                 insertMethod,
                 serializationSchema.serialize(rowData)
@@ -136,6 +145,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             maxTimeInBufferMS,
             consumedDataType,
             encodingFormat,
+            httpPostRequestCallback,
             tableOptions,
             properties
         );
@@ -160,6 +170,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
 
         private EncodingFormat<SerializationSchema<RowData>> encodingFormat;
 
+        private HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+
         /**
          * @param tableOptions the {@link ReadableConfig} consisting of options listed in table
          *                     creation DDL
@@ -177,6 +189,17 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         public HttpDynamicTableSinkBuilder setEncodingFormat(
             EncodingFormat<SerializationSchema<RowData>> encodingFormat) {
             this.encodingFormat = encodingFormat;
+            return this;
+        }
+
+        /**
+         * @param httpPostRequestCallback the {@link HttpPostRequestCallback} implementation
+         *                                for processing of requests and responses
+         * @return {@link HttpDynamicTableSinkBuilder} itself
+         */
+        public HttpDynamicTableSinkBuilder setHttpPostRequestCallback(
+            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {
+            this.httpPostRequestCallback = httpPostRequestCallback;
             return this;
         }
 
@@ -220,6 +243,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
                 getMaxTimeInBufferMS(),
                 consumedDataType,
                 encodingFormat,
+                httpPostRequestCallback,
                 tableOptions,
                 properties
             );

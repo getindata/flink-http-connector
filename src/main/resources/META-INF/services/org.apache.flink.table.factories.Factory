@@ -1,2 +1,3 @@
 com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory
 com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory
+com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallbackFactory
