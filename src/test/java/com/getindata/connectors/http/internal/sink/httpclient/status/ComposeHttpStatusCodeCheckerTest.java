@@ -26,7 +26,7 @@ class ComposeHttpStatusCodeCheckerTest {
     private static final String STRING_CODES = "403, 100,200, 300, , 303 ,200";
 
     private static final List<Integer> CODES =
-        Arrays.stream(STRING_CODES.split(HttpConnectorConfigConstants.ERROR_CODE_DELIM))
+        Arrays.stream(STRING_CODES.split(HttpConnectorConfigConstants.PROP_DELIM))
             .filter(code -> !StringUtils.isNullOrWhitespaceOnly(code))
             .map(String::trim)
             .mapToInt(Integer::parseInt)

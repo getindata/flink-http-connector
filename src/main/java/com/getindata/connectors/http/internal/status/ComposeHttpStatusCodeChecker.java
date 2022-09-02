@@ -84,7 +84,7 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         if (StringUtils.isNullOrWhitespaceOnly(errorCodes)) {
             return DEFAULT_ERROR_CODES;
         } else {
-            String[] splitCodes = errorCodes.split(HttpConnectorConfigConstants.ERROR_CODE_DELIM);
+            String[] splitCodes = errorCodes.split(HttpConnectorConfigConstants.PROP_DELIM);
             return prepareErrorCodes(splitCodes);
         }
     }
@@ -127,7 +127,7 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
 
         return Arrays.stream(
                 properties.getProperty(whiteListPrefix, "")
-                    .split(HttpConnectorConfigConstants.ERROR_CODE_DELIM))
+                    .split(HttpConnectorConfigConstants.PROP_DELIM))
             .filter(sCode -> !StringUtils.isNullOrWhitespaceOnly(sCode))
             .map(String::trim)
             .mapToInt(Integer::parseInt)

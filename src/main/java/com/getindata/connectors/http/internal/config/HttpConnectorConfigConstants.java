@@ -11,7 +11,7 @@ import lombok.experimental.UtilityClass;
 @NoArgsConstructor(access = AccessLevel.NONE)
 public final class HttpConnectorConfigConstants {
 
-    public static final String ERROR_CODE_DELIM = ",";
+    public static final String PROP_DELIM = ",";
 
     /**
      * A property prefix for http connector.
@@ -41,10 +41,14 @@ public final class HttpConnectorConfigConstants {
     // -----------------------------------------------------
 
     // -------------- HTTPS security settings --------------
-    public static final String SELF_SIGNED_CERT =
-        GID_CONNECTOR_HTTP + "security.allowSelfSignedCert";
+    public static final String ALLOW_SELF_SIGNED =
+        GID_CONNECTOR_HTTP + "security.cert.server.allowSelfSigned";
 
-    public static final String CA_CERT = GID_CONNECTOR_HTTP + "security.ca.root";
+    public static final String SERVER_TRUSTED_CERT = GID_CONNECTOR_HTTP + "security.cert.server";
+
+    public static final String CLIENT_CERT = GID_CONNECTOR_HTTP + "security.cert.client";
+
+    public static final String CLIENT_PRIVATE_KEY = GID_CONNECTOR_HTTP + "security.key.client";
 
     // -----------------------------------------------------
 

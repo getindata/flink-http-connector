@@ -7,7 +7,10 @@ import java.util.concurrent.ExecutionException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -19,6 +22,7 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 
+// TODO Refactor this to be common for Sink and Lookup Source
 class JavaNetSinkHttpClientConnectionTest {
 
     private static final int SERVER_PORT = 9090;
@@ -27,7 +31,22 @@ class JavaNetSinkHttpClientConnectionTest {
 
     private static final String ENDPOINT = "/myendpoint";
 
+    private static final String CERTS_PATH = "src/test/resources/security/certs/";
+
+    private static final String SERVER_KEYSTORE_PATH =
+        "src/test/resources/security/certs/serverKeyStore.jks";
+
+    private static final String SERVER_TRUSTSTORE_PATH =
+        "src/test/resources/security/certs/serverTrustStore.jks";
+
     private WireMockServer wireMockServer;
+
+    private Properties properties;
+
+    @BeforeEach
+    public void setUp() {
+        this.properties = new Properties();
+    }
 
     @AfterEach
     public void tearDown() {
@@ -37,7 +56,7 @@ class JavaNetSinkHttpClientConnectionTest {
     @Test
     public void testHttpConnection() throws ExecutionException, InterruptedException {
 
-        wireMockServer = new WireMockServer(SERVER_PORT, HTTPS_SERVER_PORT);
+        wireMockServer = new WireMockServer(SERVER_PORT);
         wireMockServer.start();
         mockEndPoint(wireMockServer);
 
@@ -56,22 +75,20 @@ class JavaNetSinkHttpClientConnectionTest {
     @Test
     public void testHttpsConnectionWithSelfSignedCert() throws Exception {
 
-        File keyStoreFile = new File("src/test/resources/keystore/myKeystore.jks");
-        File serverCert = new File("src/test/resources/myCerts/cert.pem");
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
 
         wireMockServer = new WireMockServer(options()
-            .port(SERVER_PORT)
             .httpsPort(HTTPS_SERVER_PORT)
+            .httpDisabled(true)
             .keystorePath(keyStoreFile.getAbsolutePath())
             .keystorePassword("password")
             .keyManagerPassword("password")
         );
+
         wireMockServer.start();
         mockEndPoint(wireMockServer);
 
-        Properties properties = new Properties();
-        //properties.setProperty(HttpConnectorConfigConstants.SELF_SIGNED_CERT, "true");
-        properties.setProperty(HttpConnectorConfigConstants.CA_CERT, serverCert.getAbsolutePath());
+        properties.setProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "true");
 
         JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties);
         HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
@@ -85,15 +102,59 @@ class JavaNetSinkHttpClientConnectionTest {
         assertThat(response.getFailedRequests()).isEmpty();
     }
 
-    @Test
-    public void foo() throws ExecutionException, InterruptedException {
+    @ParameterizedTest
+    @ValueSource(strings = {"ca.crt", "server.crt"})
+    public void testHttpsConnectionWithAddedCerts(String certName) throws Exception {
+
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+        File trustedCert = new File(CERTS_PATH + certName);
+
+        wireMockServer = new WireMockServer(options()
+            .httpsPort(HTTPS_SERVER_PORT)
+            .httpDisabled(true)
+            .keystorePath(keyStoreFile.getAbsolutePath())
+            .keystorePassword("password")
+            .keyManagerPassword("password")
+        );
+        wireMockServer.start();
+        mockEndPoint(wireMockServer);
+
+        properties.setProperty(
+            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+            trustedCert.getAbsolutePath()
+        );
+
+        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties);
+        HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
+        SinkHttpClientResponse response =
+            client.putRequests(
+                Collections.singletonList(requestEntry),
+                "https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT
+            ).get();
+
+        assertThat(response.getSuccessfulRequests()).isNotEmpty();
+        assertThat(response.getFailedRequests()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"clientPrivateKey.pem", "clientPrivateKey.der"})
+    public void testMTlsConnection(String clientPrivateKeyName) throws Exception {
+
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+        File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
+        File serverTrustedCert = new File(CERTS_PATH + "ca.crt");
+
+        File clientCert = new File(CERTS_PATH + "client.crt");
+        File clientPrivateKey = new File(CERTS_PATH + clientPrivateKeyName);
 
         this.wireMockServer = new WireMockServer(options()
-            .port(SERVER_PORT)
+            .httpDisabled(true)
             .httpsPort(HTTPS_SERVER_PORT)
+            .keystorePath(keyStoreFile.getAbsolutePath())
+            .keystorePassword("password")
+            .keyManagerPassword("password")
             .needClientAuth(true)
-            // Either a path to a file or a resource on the classpath
-            .trustStorePath("/path/to/truststore.jks")
+            .trustStorePath(trustStoreFile.getAbsolutePath())
             .trustStorePassword("password")
         );
 
@@ -101,8 +162,18 @@ class JavaNetSinkHttpClientConnectionTest {
 
         mockEndPoint(wireMockServer);
 
-        Properties properties = new Properties();
-        properties.setProperty(HttpConnectorConfigConstants.SELF_SIGNED_CERT, "true");
+        properties.setProperty(
+            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+            serverTrustedCert.getAbsolutePath()
+        );
+        properties.setProperty(
+            HttpConnectorConfigConstants.CLIENT_CERT,
+            clientCert.getAbsolutePath()
+        );
+        properties.setProperty(
+            HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
+            clientPrivateKey.getAbsolutePath()
+        );
 
         JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties);
         HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
