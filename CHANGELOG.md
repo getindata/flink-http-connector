@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add TLS and mTLS support for Http Sink and Lookup Source connectors.
+
 ## [0.4.0] - 2022-08-31
 
 ### Added

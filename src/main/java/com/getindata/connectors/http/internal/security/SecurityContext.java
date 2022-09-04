@@ -22,7 +22,11 @@ import javax.net.ssl.TrustManagerFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
-// TODO Add Javadoc
+/**
+ * This class represents a security context for given Http connector instance. The Security context
+ * is backed by in memory instance of Java's {@link KeyStore}. All keys and certificates managed by
+ * instance of this class are only in scope of this object and not entire JVM.
+ */
 @Slf4j
 public class SecurityContext {
 
@@ -32,6 +36,9 @@ public class SecurityContext {
 
     private final KeyStore keystore;
 
+    /**
+     * Creates instance of {@link SecurityContext} and initialize {@link KeyStore} instance.
+     */
     public SecurityContext() {
 
         this.storePasswordCharArr = UUID.randomUUID().toString().toCharArray();
@@ -48,6 +55,13 @@ public class SecurityContext {
         }
     }
 
+    /**
+     * Creates an instance of {@link SSLContext} backed by {@link KeyStore} from this {@link
+     * SSLContext} instance.
+     *
+     * @param trustManagers {@link TrustManager} that should be used to create {@link SSLContext}
+     * @return new sslContext instance.
+     */
     public SSLContext getSslContext(TrustManager[] trustManagers) {
         try {
 
@@ -63,6 +77,13 @@ public class SecurityContext {
         }
     }
 
+    /**
+     * Creates TrustManagers for given {@link KeyStore} managed by this instance of
+     * {@link SSLContext}. It is important that all keys and certificates should be added
+     * before calling this method. Any key/certificate added after calling this method
+     * will not be visible by previously created TrustManager objects.
+     * @return an array of {@link TrustManager}
+     */
     public TrustManager[] getTrustManagers() {
         try {
             String alg = TrustManagerFactory.getDefaultAlgorithm();
@@ -79,6 +100,11 @@ public class SecurityContext {
         }
     }
 
+    /**
+     * Adds certificate to as trusted. Certificate is added only to this Context's {@link KeyStore}
+     * and not for entire JVM.
+     * @param certPath path to certificate that should be added as trusted.
+     */
     public void addCertToTrustStore(String certPath) {
 
         log.info("Trying to add certificate to Security Context - " + certPath);
@@ -96,6 +122,13 @@ public class SecurityContext {
         }
     }
 
+    /**
+     * Add certificate and private key that should be used by anny Http Connector instance that uses
+     * this {@link SSLContext} instance. Certificate and key are added only to this Context's
+     * {@link KeyStore} and not for entire JVM.
+     * @param publicKeyPath path to public key/certificate used for mTLS.
+     * @param privateKeyPath path to private key used for mTLS.
+     */
     public void addMTlsCerts(String publicKeyPath, String privateKeyPath) {
 
         try {
@@ -125,6 +158,12 @@ public class SecurityContext {
         }
     }
 
+    /**
+     * Reads private key data. Key can be in PEM and DER coding and in PKCS8 format.
+     * @param privateKeyPath path to private key.
+     * @param privateData read bytes from private key,
+     * @return decoded key data.
+     */
     private byte[] decodePrivateData(String privateKeyPath, byte[] privateData) {
 
         // private key must be in PKCS8 format, pem or der.

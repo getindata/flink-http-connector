@@ -301,6 +301,26 @@ As a result, you should see a table with joined records like so:
 
 The `msg` column shows parameters used with REST call for given JOIN record.
 
+## TLS and mTLS support
+Both Http Sink and Lookup Source connectors supports Https communication using TLS 1.2 and mTLS.
+To enable Https communication simply use `https` protocol in endpoint's URL.
+If certificate used by HTTP server is self-signed, or it is signed byt not globally recognize CA
+you would have to add this certificate to connector's keystore as trusted certificate.
+In order to do so, use `gid.connector.http.security.cert.server` connector property,
+which value is a path to the certificate. You can also use your organization's CA Root certificate. 
+You can specify many certificate, separating each path with `,`.
+
+You can also configure connector to use mTLS. For this simply use `gid.connector.http.security.cert.client`
+and `gid.connector.http.security.key.client` connector properties to specify path to certificate and
+private key that should be used by connector. Key MUST be in `PCKS8` format. Both PEM and DER keys are
+allowed.
+
+All properties can be set via Sink's builder `.setProperty(...)` method or through Sink and Source table DDL.
+
+For non production environments it is sometimes necessary to use Https connection and accept all certificates.
+In this special case, you can configure connector to trust all certificates without adding them to keystore.
+To enable this option use `gid.connector.http.security.cert.server.allowSelfSigned` property setting its value to `true`.
+
 ## Implementation
 ### HTTP Source
 Implementation of an HTTP source connector is based on Flink's `TableFunction` and `AsyncTableFunction` classes.  
