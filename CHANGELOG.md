@@ -4,8 +4,7 @@
 
 ### Added
 
-- Add TLS and mTLS support for Http Sink and Lookup Source connectors.
-
+- Add TLS and mTLS support for Http Sink and Lookup Source connectors.  
 New properties are:
   - `gid.connector.http.security.cert.server` - path to server's certificate.
   - `gid.connector.http.security.cert.client` - path to connector's certificate.
