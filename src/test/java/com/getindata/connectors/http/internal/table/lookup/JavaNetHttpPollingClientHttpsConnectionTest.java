@@ -149,6 +149,49 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         testPollingClientForHttpConnection();
     }
 
+    @Test
+    public void testMTlsConnectionUsingKeyStore() {
+        String password = "password";
+
+        String clientKeyStoreName = "client_keyStore.p12";
+        String serverKeyStoreName = "serverKeyStore.jks";
+        String serverTrustStoreName = "serverTrustStore.jks";
+
+        File clientKeyStoreFile = new File(CERTS_PATH + clientKeyStoreName);
+        File serverKeyStoreFile = new File(CERTS_PATH + serverKeyStoreName);
+        File serverTrustStoreFile = new File(CERTS_PATH + serverTrustStoreName);
+        File serverTrustedCert = new File(CERTS_PATH + "ca_server_bundle.cert.pem");
+
+        this.wireMockServer = new WireMockServer(options()
+            .httpDisabled(true)
+            .httpsPort(HTTPS_SERVER_PORT)
+            .keystorePath(serverKeyStoreFile.getAbsolutePath())
+            .keystorePassword("password")
+            .keyManagerPassword("password")
+            .needClientAuth(true)
+            .trustStorePath(serverTrustStoreFile.getAbsolutePath())
+            .trustStorePassword("password")
+        );
+
+        wireMockServer.start();
+        setupServerStub();
+
+        properties.setProperty(
+            HttpConnectorConfigConstants.KEY_STORE_PASSWORD,
+            password
+        );
+        properties.setProperty(
+            HttpConnectorConfigConstants.KEY_STORE_PATH,
+            clientKeyStoreFile.getAbsolutePath()
+        );
+        properties.setProperty(
+            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+            serverTrustedCert.getAbsolutePath()
+        );
+
+        testPollingClientForHttpConnection();
+    }
+
 
     @ParameterizedTest
     @CsvSource(value = {

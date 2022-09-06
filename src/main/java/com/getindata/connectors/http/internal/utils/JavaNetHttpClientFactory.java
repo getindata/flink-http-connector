@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -25,6 +24,8 @@ public class JavaNetHttpClientFactory {
 
     public static HttpClient createClient(Properties properties) {
 
+        SecurityContext securityContext = createSecurityContext(properties);
+
         boolean selfSignedCert = Boolean.parseBoolean(
             properties.getProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "false"));
 
@@ -37,8 +38,6 @@ public class JavaNetHttpClientFactory {
 
         String clientPrivateKey = properties
             .getProperty(HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY, "");
-
-        SecurityContext securityContext = new SecurityContext();
 
         if (serverTrustedCerts.length > 0) {
             for (String cert : serverTrustedCerts) {
@@ -57,14 +56,9 @@ public class JavaNetHttpClientFactory {
         TrustManager[] trustManagers = getTrustedManagers(securityContext, selfSignedCert);
         SSLContext sslContext = securityContext.getSslContext(trustManagers);
 
-        // TODO Load security context only if needed.
-        SSLParameters sslParam = new SSLParameters();
-        sslParam.setNeedClientAuth(true);
-
         return HttpClient.newBuilder()
             .followRedirects(Redirect.NORMAL)
             .sslContext(sslContext)
-            .sslParameters(sslParam)
             .build();
     }
 
@@ -91,6 +85,30 @@ public class JavaNetHttpClientFactory {
             selfSignedManagers.add(new SelfSignedTrustManager((X509TrustManager) trustManager));
         }
         return selfSignedManagers;
+    }
+
+    /**
+     * Creates a {@link SecurityContext} with empty {@link java.security.KeyStore}
+     * or loaded from file.
+     * @param properties Properties for creating {@link SecurityContext}
+     * @return new {@link SecurityContext} instance.
+     */
+    private static SecurityContext createSecurityContext(Properties properties) {
+
+        String keyStorePath =
+            properties.getProperty(HttpConnectorConfigConstants.KEY_STORE_PATH, "");
+
+        if (StringUtils.isNullOrWhitespaceOnly(keyStorePath)) {
+            return SecurityContext.create();
+        } else {
+            char[] storePassword =
+                properties.getProperty(HttpConnectorConfigConstants.KEY_STORE_PASSWORD, "")
+                    .toCharArray();
+            if (storePassword.length == 0) {
+                throw new RuntimeException("Missing password for provided KeyStore");
+            }
+            return SecurityContext.createFromKeyStore(keyStorePath, storePassword);
+        }
     }
 
 }

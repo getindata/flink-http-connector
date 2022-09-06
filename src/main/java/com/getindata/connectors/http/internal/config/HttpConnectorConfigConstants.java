@@ -52,5 +52,14 @@ public final class HttpConnectorConfigConstants {
 
     public static final String CLIENT_PRIVATE_KEY = GID_CONNECTOR_HTTP + "security.key.client";
 
+    public static final String KEY_STORE_PATH = GID_CONNECTOR_HTTP
+        + "security.keystore.path";
+
+    public static final String KEY_STORE_PASSWORD = GID_CONNECTOR_HTTP
+        + "security.keystore.password";
+
+    public static final String KEY_STORE_TYPE = GID_CONNECTOR_HTTP
+        + "security.keystore.type";
+
     // -----------------------------------------------------
 }

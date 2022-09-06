@@ -1,7 +1,9 @@
 package com.getindata.connectors.http.internal.security;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,23 +32,74 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SecurityContext {
 
-    public static final String JKS_STORE_TYPE = "jks";
+    private static final String JKS_STORE_TYPE = "JKS";
 
-    private final char[] storePasswordCharArr;
+    private static final String X_509_CERTIFICATE_TYPE = "X.509";
+
+    private static final String KEY_ALGORITHM = "RSA";
+
+    private static final String PRIVATE_KEY_HEADER = "-----BEGIN PRIVATE KEY-----";
+
+    private static final String PRIVATE_KEY_FOOTER = "-----END PRIVATE KEY-----";
+
+    /**
+     * A pattern matcher linebreak regexp that represents any Unicode linebreak sequence making it
+     * effectively equivalent to:
+     * <pre>
+     * {@code
+     * &#92;u000D&#92;u000A|[&#92;u000A&#92;u000B&#92;u000C&#92;u000D&#92;u0085&#92;u2028&#92;u2029]
+     * }
+     * </pre>
+     */
+    public static final String UNIVERSAL_NEW_LINE_REGEXP = "\\R";
+
+    private final char[] storePassword;
 
     private final KeyStore keystore;
 
     /**
      * Creates instance of {@link SecurityContext} and initialize {@link KeyStore} instance.
      */
-    public SecurityContext() {
+    private SecurityContext(KeyStore keystore, char[] storePassword) {
+        this.keystore = keystore;
+        this.storePassword = storePassword;
+    }
 
-        this.storePasswordCharArr = UUID.randomUUID().toString().toCharArray();
+    /**
+     * Creates a {@link SecurityContext} with empty {@link KeyStore}
+     * @return new instance of {@link SecurityContext}
+     */
+    public static SecurityContext create() {
+
+        char[] storePasswordCharArr = UUID.randomUUID().toString().toCharArray();
 
         try {
-            this.keystore = KeyStore.getInstance(JKS_STORE_TYPE);
-            this.keystore.load(null, storePasswordCharArr);
+            KeyStore keystore = KeyStore.getInstance(JKS_STORE_TYPE);
+            keystore.load(null, storePasswordCharArr);
             log.info("Created KeyStore for Http Connector security context.");
+            return new SecurityContext(keystore, storePasswordCharArr);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                "Unable to create KeyStore for Http Connector Security Context.",
+                e
+            );
+        }
+    }
+
+    /**
+     * Creates a {@link SecurityContext} with {@link KeyStore} loaded from provided path.
+     * @param keyStorePath Path to keystore.
+     * @param storePassword password for keystore.
+     * @return new instance of {@link SecurityContext}
+     */
+    public static SecurityContext createFromKeyStore(String keyStorePath, char[] storePassword) {
+        try {
+            log.info("Creating Security Context from keystore " + keyStorePath);
+            File file = new File(keyStorePath);
+            InputStream stream = new FileInputStream(file);
+            KeyStore keystore = KeyStore.getInstance(JKS_STORE_TYPE);
+            keystore.load(stream,storePassword);
+            return new SecurityContext(keystore, storePassword);
         } catch (Exception e) {
             throw new RuntimeException(
                 "Unable to create KeyStore for Http Connector Security Context.",
@@ -66,7 +119,7 @@ public class SecurityContext {
         try {
 
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
-            keyManagerFactory.init(this.keystore, this.storePasswordCharArr);
+            keyManagerFactory.init(this.keystore, this.storePassword);
 
             // populate SSLContext with key manager
             SSLContext sslCtx = SSLContext.getInstance("TLSv1.2");
@@ -109,7 +162,8 @@ public class SecurityContext {
 
         log.info("Trying to add certificate to Security Context - " + certPath);
         try (FileInputStream certInputStream = new FileInputStream(certPath)) {
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            CertificateFactory certificateFactory = CertificateFactory.getInstance(
+                X_509_CERTIFICATE_TYPE);
             Certificate certificate = certificateFactory.generateCertificate(certInputStream);
             this.keystore.setCertificateEntry(UUID.randomUUID().toString(), certificate);
             log.info("Certificated added to keyStore ass trusted - " + certPath);
@@ -136,17 +190,19 @@ public class SecurityContext {
             byte[] privateData = Files.readAllBytes(Path.of(privateKeyPath));
             byte[] decodedPrivateData = decodePrivateData(privateKeyPath, privateData);
 
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            CertificateFactory certificateFactory =
+                CertificateFactory.getInstance(X_509_CERTIFICATE_TYPE);
             Collection<? extends Certificate> chain = certificateFactory.generateCertificates(
                 new ByteArrayInputStream(publicData));
 
-            Key key = KeyFactory.getInstance("RSA")
+            Key key = KeyFactory
+                .getInstance(KEY_ALGORITHM)
                 .generatePrivate(new PKCS8EncodedKeySpec(decodedPrivateData));
 
             this.keystore.setKeyEntry(
                 UUID.randomUUID().toString(),
                 key,
-                this.storePasswordCharArr,
+                this.storePassword,
                 chain.toArray(new Certificate[0])
             );
         } catch (Exception e) {
@@ -171,10 +227,9 @@ public class SecurityContext {
         // -out clientPrivateKey.pem -nocrypt
         if (privateKeyPath.endsWith(".pem")) {
             String privateString = new String(privateData, Charset.defaultCharset())
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replaceAll(System.lineSeparator(), "")
-                .replaceAll("\\n", "")
-                .replace("-----END PRIVATE KEY-----", "");
+                .replace(PRIVATE_KEY_HEADER, "")
+                .replaceAll(UNIVERSAL_NEW_LINE_REGEXP, "")
+                .replace(PRIVATE_KEY_FOOTER, "");
 
             return Base64.getDecoder().decode(privateString);
         } else {
