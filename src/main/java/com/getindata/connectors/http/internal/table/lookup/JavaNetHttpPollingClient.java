@@ -118,7 +118,6 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         return uriBuilder.build();
     }
 
-    // TODO Think about handling 2xx responses other than 200
     private Optional<RowData> processHttpResponse(
             HttpResponse<String> response,
             HttpRequest request) throws IOException {

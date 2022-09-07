@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.internal.table.sink;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -12,12 +13,23 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HttpDynamicSinkInsertTest {
 
     private static final int SERVER_PORT = 9090;
+
+    private static final int HTTPS_SERVER_PORT = 8443;
+
+    private static final String CERTS_PATH = "src/test/resources/security/certs/";
+
+    private static final String SERVER_KEYSTORE_PATH =
+        "src/test/resources/security/certs/serverKeyStore.jks";
+
+    private static final String SERVER_TRUSTSTORE_PATH =
+        "src/test/resources/security/certs/serverTrustStore.jks";
 
     protected StreamExecutionEnvironment env;
 
@@ -27,7 +39,20 @@ public class HttpDynamicSinkInsertTest {
 
     @BeforeEach
     public void setup() {
-        wireMockServer = new WireMockServer(SERVER_PORT);
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+        File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
+
+        this.wireMockServer = new WireMockServer(options()
+            .port(SERVER_PORT)
+            .httpsPort(HTTPS_SERVER_PORT)
+            .keystorePath(keyStoreFile.getAbsolutePath())
+            .keystorePassword("password")
+            .keyManagerPassword("password")
+            .needClientAuth(true)
+            .trustStorePath(trustStoreFile.getAbsolutePath())
+            .trustStorePassword("password")
+        );
+
         wireMockServer.start();
 
         env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -216,5 +241,64 @@ public class HttpDynamicSinkInsertTest {
         assertEquals(contentTypeHeaderValue, request.getHeader("Content-Type"));
         assertEquals(originHeaderValue, request.getHeader("Origin"));
         assertEquals(xContentTypeOptionsHeaderValue, request.getHeader("X-Content-Type-Options"));
+    }
+
+    @Test
+    public void testHttpsWithMTls() throws Exception {
+
+        File serverTrustedCert = new File(CERTS_PATH + "ca.crt");
+
+        File clientCert = new File(CERTS_PATH + "client.crt");
+        File clientPrivateKey = new File(CERTS_PATH + "clientPrivateKey.pem");
+
+        wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+        String contentTypeHeaderValue = "application/json";
+
+        final String createTable =
+            String.format(
+                "CREATE TABLE http (\n"
+                    + "  id bigint,\n"
+                    + "  first_name string,\n"
+                    + "  last_name string,\n"
+                    + "  gender string,\n"
+                    + "  stock string,\n"
+                    + "  currency string,\n"
+                    + "  tx_date timestamp(3)\n"
+                    + ") with (\n"
+                    + "  'connector' = '%s',\n"
+                    + "  'url' = '%s',\n"
+                    + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.header.Content-Type' = '%s',\n"
+                    + "  'gid.connector.http.security.cert.server' = '%s',\n"
+                    + "  'gid.connector.http.security.cert.client' = '%s',\n"
+                    + "  'gid.connector.http.security.key.client' = '%s'\n"
+                    + ")",
+                HttpDynamicTableSinkFactory.IDENTIFIER,
+                "https://localhost:" + HTTPS_SERVER_PORT + "/myendpoint",
+                contentTypeHeaderValue,
+                serverTrustedCert.getAbsolutePath(),
+                clientCert.getAbsolutePath(),
+                clientPrivateKey.getAbsolutePath()
+            );
+
+        tEnv.executeSql(createTable);
+
+        final String insert = "INSERT INTO http\n"
+            + "VALUES (1, 'Ninette', 'Clee', 'Female', 'CDZI', 'RUB', "
+            + "TIMESTAMP '2021-08-24 15:22:59')";
+        tEnv.executeSql(insert).await();
+
+        var postedRequests =
+            wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")));
+        assertEquals(1, postedRequests.size());
+
+        var request = postedRequests.get(0);
+        assertEquals(
+            "{\"id\":1,\"first_name\":\"Ninette\",\"last_name\":\"Clee\","
+                + "\"gender\":\"Female\",\"stock\":\"CDZI\",\"currency\":\"RUB\","
+                + "\"tx_date\":\"2021-08-24 15:22:59\"}",
+            request.getBodyAsString()
+        );
+
     }
 }

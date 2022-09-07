@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
@@ -27,7 +27,7 @@ class JavaNetSinkHttpClientTest {
 
     @BeforeAll
     public static void beforeAll() {
-        httpClientStaticMock = Mockito.mockStatic(HttpClient.class);
+        httpClientStaticMock = mockStatic(HttpClient.class);
     }
 
     @AfterAll
@@ -40,9 +40,8 @@ class JavaNetSinkHttpClientTest {
     @BeforeEach
     public void setUp() {
         httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
-        Mockito
-            .when(httpClientBuilder.followRedirects(Mockito.any()))
-            .thenReturn(httpClientBuilder);
+        when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
+        when(httpClientBuilder.sslContext(any())).thenReturn(httpClientBuilder);
     }
 
     @Test

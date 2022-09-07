@@ -4,6 +4,7 @@ import java.util.List;
 
 import lombok.Data;
 import lombok.NonNull;
+import lombok.ToString;
 
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
@@ -12,6 +13,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  * to write, divided into two lists &mdash; successful and failed ones.
  */
 @Data
+@ToString
 public class SinkHttpClientResponse {
 
     /**

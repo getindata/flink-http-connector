@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +39,7 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 import static com.getindata.connectors.http.TestHelper.readTestFile;
 
 @ExtendWith(MockitoExtension.class)
-class JavaNetHttpPollingClientITCaseTest {
+class JavaNetHttpPollingClientConnectionTest {
 
     private static final String SAMPLES_FOLDER = "/http/";
 
@@ -55,6 +54,8 @@ class JavaNetHttpPollingClientITCaseTest {
 
     private StubMapping stubMapping;
 
+    private JavaNetHttpPollingClientFactory pollingClientFactory;
+
     @BeforeAll
     public static void setUpAll() {
         wireMockServer = new WireMockServer();
@@ -63,25 +64,28 @@ class JavaNetHttpPollingClientITCaseTest {
 
     @AfterAll
     public static void cleanUpAll() {
-        wireMockServer.stop();
+        if (wireMockServer != null) {
+            wireMockServer.stop();
+        }
     }
 
     @BeforeEach
     public void setUp() {
         int[][] lookupKey = {{}};
-        dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+        this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+        this.pollingClientFactory = new JavaNetHttpPollingClientFactory();
     }
 
     @AfterEach
     public void cleanUp() {
-        if (stubMapping != null) {
+        if (stubMapping != null && wireMockServer != null) {
             wireMockServer.removeStub(stubMapping);
         }
     }
 
     @Test
     void shouldQuery200WithParams() {
-        stubMapping = setupServerStub("/service?id=1&uuid=2", 200);
+        stubMapping = setupServerStub(200);
 
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
 
@@ -118,7 +122,7 @@ class JavaNetHttpPollingClientITCaseTest {
     void shouldHandleCodeBasedOnConfiguration(
             Properties properties,
             boolean isExpectedResponseEmpty) {
-        stubMapping = setupServerStub("/service?id=1&uuid=2", 201);
+        stubMapping = setupServerStub(201);
 
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(
             getBaseUrl(),
@@ -138,7 +142,7 @@ class JavaNetHttpPollingClientITCaseTest {
 
     @Test
     void shouldHandleServerError() {
-        stubMapping = setupServerStub("/service?id=1&uuid=2", 500);
+        stubMapping = setupServerStub(500);
 
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
 
@@ -156,7 +160,7 @@ class JavaNetHttpPollingClientITCaseTest {
 
     @Test
     void shouldProcessWithMissingArguments() {
-        stubMapping = setupServerStub("/service?id=1&uuid=2", 200);
+        stubMapping = setupServerStub(200);
 
         JavaNetHttpPollingClient pollingClient =
             setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
@@ -205,16 +209,12 @@ class JavaNetHttpPollingClientITCaseTest {
                 .createDecodingFormat(dynamicTableFactoryContext, new Configuration())
                 .createRuntimeDecoder(dynamicTableSourceContext, physicalDataType);
 
-        return new JavaNetHttpPollingClient(
-            HttpClient.newHttpClient(),
-            schemaDecoder,
-            lookupConfig
-        );
+        return pollingClientFactory.createPollClient(lookupConfig, schemaDecoder);
     }
 
-    private StubMapping setupServerStub(String paramsPath, int status) {
+    private StubMapping setupServerStub(int status) {
         return wireMockServer.stubFor(
-            get(urlEqualTo(paramsPath))
+            get(urlEqualTo("/service?id=1&uuid=2"))
                 .withHeader("Content-Type", equalTo("application/json"))
                 .willReturn(
                     aResponse()

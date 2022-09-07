@@ -22,7 +22,9 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
+import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_HEADER_PREFIX;
 
 /**
@@ -43,15 +45,14 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
     public JavaNetSinkHttpClient(Properties properties) {
-        this(properties, null);
+        this(properties, new Slf4jHttpPostRequestCallback());
     }
 
     public JavaNetSinkHttpClient(
-        Properties properties, HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback
-    ) {
-        this.httpClient = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
+            Properties properties,
+            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {
+
+        this.httpClient = JavaNetHttpClientFactory.createClient(properties);
         this.httpPostRequestCallback = httpPostRequestCallback;
 
         var propertiesHeaderMap =

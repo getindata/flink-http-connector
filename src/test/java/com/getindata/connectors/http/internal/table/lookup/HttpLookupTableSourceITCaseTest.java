@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
+import java.io.File;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.SortedSet;
@@ -31,6 +32,16 @@ public class HttpLookupTableSourceITCaseTest {
 
     private static final int SERVER_PORT = 9090;
 
+    private static final int HTTPS_SERVER_PORT = 8443;
+
+    private static final String CERTS_PATH = "src/test/resources/security/certs/";
+
+    private static final String SERVER_KEYSTORE_PATH =
+        "src/test/resources/security/certs/serverKeyStore.jks";
+
+    private static final String SERVER_TRUSTSTORE_PATH =
+        "src/test/resources/security/certs/serverTrustStore.jks";
+
     /**
      * Comparator for Flink SQL result.
      */
@@ -48,9 +59,20 @@ public class HttpLookupTableSourceITCaseTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     public void setup() {
+
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+        File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
+
         wireMockServer = new WireMockServer(
             WireMockConfiguration.wireMockConfig()
                 .port(SERVER_PORT)
+                .httpsPort(HTTPS_SERVER_PORT)
+                .keystorePath(keyStoreFile.getAbsolutePath())
+                .keystorePassword("password")
+                .keyManagerPassword("password")
+                .needClientAuth(true)
+                .trustStorePath(trustStoreFile.getAbsolutePath())
+                .trustStorePassword("password")
                 .extensions(JsonTransform.class)
         );
         wireMockServer.start();
@@ -70,22 +92,6 @@ public class HttpLookupTableSourceITCaseTest {
 
         setupServerStub(wireMockServer);
 
-        String sourceTable =
-            "CREATE TABLE Orders ("
-                + "id STRING,"
-                + " id2 STRING,"
-                + " proc_time AS PROCTIME()"
-                + ") WITH ("
-                + "'connector' = 'datagen',"
-                + "'rows-per-second' = '1',"
-                + "'fields.id.kind' = 'sequence',"
-                + "'fields.id.start' = '1',"
-                + "'fields.id.end' = '5',"
-                + "'fields.id2.kind' = 'sequence',"
-                + "'fields.id2.start' = '2',"
-                + "'fields.id2.end' = '5'"
-                + ")";
-
         String lookupTable =
             "CREATE TABLE Customers ("
                 + "id STRING,"
@@ -104,6 +110,66 @@ public class HttpLookupTableSourceITCaseTest {
                 + "'url' = 'http://localhost:9090/client',"
                 + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
                 + "'asyncPolling' = 'true'"
+                + ")";
+
+        testLookupJoin(lookupTable);
+    }
+
+    @Test
+    public void testHttpsMTlsLookupJoin() throws Exception {
+
+        File serverTrustedCert = new File(CERTS_PATH + "ca.crt");
+        File clientCert = new File(CERTS_PATH + "client.crt");
+        File clientPrivateKey = new File(CERTS_PATH + "clientPrivateKey.pem");
+
+        setupServerStub(wireMockServer);
+
+        String lookupTable =
+            String.format("CREATE TABLE Customers ("
+                    + "id STRING,"
+                    + "id2 STRING,"
+                    + "msg STRING,"
+                    + "uuid STRING,"
+                    + "details ROW<"
+                    + "isActive BOOLEAN,"
+                    + "nestedDetails ROW<"
+                    + "balance STRING"
+                    + ">"
+                    + ">"
+                    + ") WITH ("
+                    + "'format' = 'json',"
+                    + "'connector' = 'rest-lookup',"
+                    + "'url' = 'https://localhost:" + HTTPS_SERVER_PORT + "/client',"
+                    + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                    + "'asyncPolling' = 'true',"
+                    + "'gid.connector.http.security.cert.server' = '%s',"
+                    + "'gid.connector.http.security.cert.client' = '%s',"
+                    + "'gid.connector.http.security.key.client' = '%s'"
+                    + ")",
+                serverTrustedCert.getAbsolutePath(),
+                clientCert.getAbsolutePath(),
+                clientPrivateKey.getAbsolutePath()
+            );
+
+        testLookupJoin(lookupTable);
+    }
+
+    private void testLookupJoin(String lookupTable) throws Exception {
+
+        String sourceTable =
+            "CREATE TABLE Orders ("
+                + "id STRING,"
+                + " id2 STRING,"
+                + " proc_time AS PROCTIME()"
+                + ") WITH ("
+                + "'connector' = 'datagen',"
+                + "'rows-per-second' = '1',"
+                + "'fields.id.kind' = 'sequence',"
+                + "'fields.id.start' = '1',"
+                + "'fields.id.end' = '5',"
+                + "'fields.id2.kind' = 'sequence',"
+                + "'fields.id2.start' = '2',"
+                + "'fields.id2.end' = '5'"
                 + ")";
 
         tEnv.executeSql(sourceTable);

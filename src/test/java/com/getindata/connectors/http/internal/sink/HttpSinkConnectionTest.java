@@ -33,6 +33,8 @@ public class HttpSinkConnectionTest {
 
     private static final int SERVER_PORT = 9090;
 
+    private static final int HTTPS_SERVER_PORT = 8443;
+
     private static final Set<Integer> messageIds = IntStream.range(0, 50)
         .boxed()
         .collect(Collectors.toSet());
@@ -57,7 +59,7 @@ public class HttpSinkConnectionTest {
             }
         });
 
-        wireMockServer = new WireMockServer(SERVER_PORT);
+        wireMockServer = new WireMockServer(SERVER_PORT, HTTPS_SERVER_PORT);
         wireMockServer.start();
     }
 
