@@ -3,7 +3,6 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 import java.io.File;
 import java.util.Collections;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterEach;
@@ -37,7 +36,7 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
     }
 
     @Test
-    public void testHttpConnection() throws ExecutionException, InterruptedException {
+    public void testHttpConnection() {
 
         wireMockServer = new WireMockServer(SERVER_PORT);
         wireMockServer.start();
@@ -47,7 +46,7 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
     }
 
     @Test
-    public void testHttpsConnectionWithSelfSignedCert() throws Exception {
+    public void testHttpsConnectionWithSelfSignedCert() {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
 
@@ -69,7 +68,7 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
 
     @ParameterizedTest
     @ValueSource(strings = {"ca.crt", "server.crt", "ca_server_bundle.cert.pem"})
-    public void testHttpsConnectionWithAddedCerts(String certName) throws Exception {
+    public void testHttpsConnectionWithAddedCerts(String certName) {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
         File trustedCert = new File(CERTS_PATH + certName);
@@ -95,7 +94,7 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
 
     @ParameterizedTest
     @ValueSource(strings = {"clientPrivateKey.pem", "clientPrivateKey.der"})
-    public void testMTlsConnection(String clientPrivateKeyName) throws Exception {
+    public void testMTlsConnection(String clientPrivateKeyName) {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
         File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
@@ -135,7 +134,7 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
     }
 
     @Test
-    public void testMTlsConnectionUsingKeyStore() throws Exception {
+    public void testMTlsConnectionUsingKeyStore() {
         String password = "password";
 
         String clientKeyStoreName = "client_keyStore.p12";
@@ -206,25 +205,66 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             clientPrivateKey.getAbsolutePath()
         );
 
-        assertThrows(RuntimeException.class, () -> new JavaNetSinkHttpClient(properties));
+        assertThrows(
+            RuntimeException.class,
+            () -> new JavaNetSinkHttpClient(properties, headerPreprocessor)
+        );
     }
 
-    private void testSinkClientForConnection(Properties properties, String x,
-        int httpsServerPort) throws InterruptedException, ExecutionException {
-        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties);
-        HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
-        SinkHttpClientResponse response =
-            client.putRequests(
-                Collections.singletonList(requestEntry),
-                x + httpsServerPort + ENDPOINT
-            ).get();
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "user:password",
+        "Basic dXNlcjpwYXNzd29yZA=="
+    })
+    public void shouldConnectWithBasicAuth(String authorizationHeaderValue) {
 
-        assertThat(response.getSuccessfulRequests()).isNotEmpty();
-        assertThat(response.getFailedRequests()).isEmpty();
+        wireMockServer = new WireMockServer(SERVER_PORT);
+        wireMockServer.start();
+        mockEndPointWithBasicAuth(wireMockServer);
+
+        properties.setProperty(
+            HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Authorization",
+            authorizationHeaderValue
+        );
+
+        testSinkClientForConnection(properties, "http://localhost:", SERVER_PORT);
+    }
+
+    private void testSinkClientForConnection(
+            Properties properties,
+            String endpointUrl,
+            int httpsServerPort) {
+
+        try {
+            JavaNetSinkHttpClient client =
+                new JavaNetSinkHttpClient(properties, headerPreprocessor);
+            HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
+            SinkHttpClientResponse response =
+                client.putRequests(
+                    Collections.singletonList(requestEntry),
+                    endpointUrl + httpsServerPort + ENDPOINT
+                ).get();
+
+            assertThat(response.getSuccessfulRequests()).isNotEmpty();
+            assertThat(response.getFailedRequests()).isEmpty();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void mockEndPoint(WireMockServer wireMockServer) {
         wireMockServer.stubFor(any(urlPathEqualTo(ENDPOINT))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody("{}"))
+        );
+    }
+
+    private void mockEndPointWithBasicAuth(WireMockServer wireMockServer) {
+
+        wireMockServer.stubFor(any(urlPathEqualTo(ENDPOINT))
+            .withBasicAuth("user", "password")
             .willReturn(
                 aResponse()
                     .withStatus(200)

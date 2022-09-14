@@ -18,6 +18,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  */
 @Slf4j
 public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<HttpSinkRequestEntry> {
+
     @Override
     public void call(
         HttpResponse<String> response,
@@ -38,7 +39,7 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
                 "Method: {}\n    Body: {}\n  Response: {}\n    Body: {}",
                 requestEntry.method,
                 new String(requestEntry.element, StandardCharsets.UTF_8),
-                response.toString(),
+                response,
                 response.body()
             );
         }

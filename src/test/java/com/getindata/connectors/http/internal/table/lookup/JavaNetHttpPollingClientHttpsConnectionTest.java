@@ -79,7 +79,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         properties.setProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "true");
 
-        testPollingClientForHttpConnection();
+        testPollingClientConnection();
     }
 
     @ParameterizedTest
@@ -105,7 +105,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
             trustedCert.getAbsolutePath()
         );
 
-        testPollingClientForHttpConnection();
+        testPollingClientConnection();
     }
 
     @ParameterizedTest
@@ -146,7 +146,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
             clientPrivateKey.getAbsolutePath()
         );
 
-        testPollingClientForHttpConnection();
+        testPollingClientConnection();
     }
 
     @Test
@@ -189,9 +189,8 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
             serverTrustedCert.getAbsolutePath()
         );
 
-        testPollingClientForHttpConnection();
+        testPollingClientConnection();
     }
-
 
     @ParameterizedTest
     @CsvSource(value = {
@@ -224,7 +223,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         assertThrows(RuntimeException.class, () -> setUpPollingClient(properties));
     }
 
-    private void testPollingClientForHttpConnection() {
+    private void testPollingClientConnection() {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(properties);
         RowData result = pollingClient.pull(
             List.of(

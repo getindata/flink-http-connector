@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -23,9 +24,8 @@ import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecke
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
-import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_HEADER_PREFIX;
 
 /**
  * An implementation of {@link SinkHttpClient} that uses Java 11's {@link HttpClient}.
@@ -36,32 +36,31 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final HttpClient httpClient;
 
-    private final Map<String, String> headerMap;
-
     private final String[] headersAndValues;
+
+    private final Map<String, String> headerMap;
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
     private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
-    public JavaNetSinkHttpClient(Properties properties) {
-        this(properties, new Slf4jHttpPostRequestCallback());
+    public JavaNetSinkHttpClient(Properties properties, HeaderPreprocessor headerPreprocessor) {
+        this(properties, new Slf4jHttpPostRequestCallback(), headerPreprocessor);
     }
 
     public JavaNetSinkHttpClient(
             Properties properties,
-            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {
+            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+            HeaderPreprocessor headerPreprocessor) {
 
         this.httpClient = JavaNetHttpClientFactory.createClient(properties);
         this.httpPostRequestCallback = httpPostRequestCallback;
-
-        var propertiesHeaderMap =
-            ConfigUtils.propertiesToMap(properties, SINK_HEADER_PREFIX, String.class);
-        this.headersAndValues = ConfigUtils.toHeaderAndValueArray(propertiesHeaderMap);
-        this.headerMap = new HashMap<>();
-        propertiesHeaderMap
-            .forEach((key, value) ->
-                         this.headerMap.put(ConfigUtils.extractPropertyLastElement(key), value));
+        this.headerMap = HttpHeaderUtils.prepareHeaderMap(
+            HttpConnectorConfigConstants.SINK_HEADER_PREFIX,
+            properties,
+            headerPreprocessor
+        );
+        this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(this.headerMap);
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.

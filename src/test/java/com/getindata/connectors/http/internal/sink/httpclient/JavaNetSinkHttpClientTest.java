@@ -14,7 +14,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,11 +26,12 @@ class JavaNetSinkHttpClientTest {
 
     @Mock
     private HttpClient.Builder httpClientBuilder;
-
     @BeforeAll
     public static void beforeAll() {
         httpClientStaticMock = mockStatic(HttpClient.class);
     }
+
+    protected HeaderPreprocessor headerPreprocessor;
 
     @AfterAll
     public static void afterAll() {
@@ -39,6 +42,7 @@ class JavaNetSinkHttpClientTest {
 
     @BeforeEach
     public void setUp() {
+        headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
         httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
         when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
         when(httpClientBuilder.sslContext(any())).thenReturn(httpClientBuilder);
@@ -47,7 +51,8 @@ class JavaNetSinkHttpClientTest {
     @Test
     public void shouldBuildClientWithoutHeaders() {
 
-        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(new Properties());
+        JavaNetSinkHttpClient client =
+            new JavaNetSinkHttpClient(new Properties(), this.headerPreprocessor);
         assertThat(client.getHeadersAndValues()).isEmpty();
     }
 
@@ -72,7 +77,7 @@ class JavaNetSinkHttpClientTest {
         );
 
         // WHEN
-        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties);
+        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties, headerPreprocessor);
         String[] headersAndValues = client.getHeadersAndValues();
         assertThat(headersAndValues).hasSize(6);
 

@@ -7,11 +7,13 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 
 /**
  * Builder to construct {@link HttpSink}.
@@ -63,6 +65,9 @@ public class HttpSinkBuilder<InputT> extends
     private static final HttpPostRequestCallback<HttpSinkRequestEntry>
         DEFAULT_POST_REQUEST_CALLBACK = new Slf4jHttpPostRequestCallback();
 
+    private static final HeaderPreprocessor DEFAULT_HEADER_PREPROCESSOR =
+        HttpHeaderUtils.createDefaultHeaderPreprocessor();
+
     private final Properties properties = new Properties();
 
     // Mandatory field
@@ -77,9 +82,13 @@ public class HttpSinkBuilder<InputT> extends
     // If not defined, should be set to DEFAULT_POST_REQUEST_CALLBACK
     private HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
+    // If not defined, should be set to DEFAULT_HEADER_PREPROCESSOR
+    private HeaderPreprocessor headerPreprocessor;
+
     HttpSinkBuilder() {
         this.sinkHttpClientBuilder = DEFAULT_CLIENT_BUILDER;
         this.httpPostRequestCallback = DEFAULT_POST_REQUEST_CALLBACK;
+        this.headerPreprocessor = DEFAULT_HEADER_PREPROCESSOR;
     }
 
     /**
@@ -119,6 +128,12 @@ public class HttpSinkBuilder<InputT> extends
         return this;
     }
 
+    public HttpSinkBuilder<InputT> setHttpHeaderPreprocessor(
+            HeaderPreprocessor headerPreprocessor) {
+        this.headerPreprocessor = headerPreprocessor;
+        return this;
+    }
+
     /**
      * Set property for Http Sink.
      * @param propertyName property name
@@ -152,6 +167,7 @@ public class HttpSinkBuilder<InputT> extends
             Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
             endpointUrl,
             httpPostRequestCallback,
+            headerPreprocessor,
             sinkHttpClientBuilder,
             properties
         );

@@ -13,8 +13,12 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
  */
 @PublicEvolving
 public interface SinkHttpClientBuilder extends Serializable {
+
+    // TODO Consider moving HttpPostRequestCallback and HeaderPreprocessor to be a
+    //  SinkHttpClientBuilder fields. This method is getting more and more arguments.
     SinkHttpClient build(
         Properties properties,
-        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback
+        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+        HeaderPreprocessor headerPreprocessor
     );
 }

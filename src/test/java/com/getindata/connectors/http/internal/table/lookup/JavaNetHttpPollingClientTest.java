@@ -5,13 +5,16 @@ import java.util.Properties;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,13 +26,22 @@ public class JavaNetHttpPollingClientTest {
     @Mock
     private DeserializationSchema<RowData> decoder;
 
+    private HeaderPreprocessor headerPreprocessor;
+
+    @BeforeEach
+    public void setUp() {
+        this.headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+    }
+
     @Test
     public void shouldBuildClientWithoutHeaders() {
 
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
             decoder,
-            HttpLookupConfig.builder().build());
+            HttpLookupConfig.builder().build(),
+            headerPreprocessor
+        );
         assertThat(client.getHeadersAndValues()).isEmpty();
     }
 
@@ -61,7 +73,8 @@ public class JavaNetHttpPollingClientTest {
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
             decoder,
-            lookupConfig
+            lookupConfig,
+            headerPreprocessor
         );
 
         String[] headersAndValues = client.getHeadersAndValues();

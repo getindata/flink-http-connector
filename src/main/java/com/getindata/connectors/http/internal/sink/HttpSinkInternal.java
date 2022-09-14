@@ -13,8 +13,8 @@ import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
-
 
 /**
  * An internal implementation of HTTP Sink that performs async requests against a specified HTTP
@@ -60,6 +60,8 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
 
+    private final HeaderPreprocessor headerPreprocessor;
+
     private final Properties properties;
 
     protected HttpSinkInternal(
@@ -72,13 +74,20 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         long maxRecordSizeInBytes,
         String endpointUrl,
         HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+        HeaderPreprocessor headerPreprocessor,
         SinkHttpClientBuilder sinkHttpClientBuilder,
-        Properties properties
-    ) {
-        super(elementConverter, maxBatchSize, maxInFlightRequests, maxBufferedRequests,
+        Properties properties) {
+
+        super(
+            elementConverter,
+            maxBatchSize,
+            maxInFlightRequests,
+            maxBufferedRequests,
             maxBatchSizeInBytes,
-            maxTimeInBufferMS, maxRecordSizeInBytes
+            maxTimeInBufferMS,
+            maxRecordSizeInBytes
         );
+
         Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl),
             "The endpoint URL must be set when initializing HTTP Sink.");
         this.endpointUrl = endpointUrl;
@@ -87,6 +96,10 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
                 httpPostRequestCallback,
                 "Post request callback must be set when initializing HTTP Sink."
             );
+        this.headerPreprocessor = Preconditions.checkNotNull(
+            headerPreprocessor,
+            "Header Preprocessor must be set when initializing HTTP Sink."
+        );
         this.sinkHttpClientBuilder =
             Preconditions.checkNotNull(sinkHttpClientBuilder,
                 "The HTTP client builder must not be null when initializing HTTP Sink.");
@@ -107,7 +120,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
             endpointUrl,
-            sinkHttpClientBuilder.build(properties, httpPostRequestCallback),
+            sinkHttpClientBuilder.build(properties, httpPostRequestCallback, headerPreprocessor),
             Collections.emptyList()
         );
     }
@@ -126,7 +139,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
             endpointUrl,
-            sinkHttpClientBuilder.build(properties, httpPostRequestCallback),
+            sinkHttpClientBuilder.build(properties, httpPostRequestCallback, headerPreprocessor),
             recoveredState
         );
     }

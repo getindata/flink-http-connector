@@ -11,7 +11,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +19,14 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX;
 
 /**
  * An implementation of {@link PollingClient} that uses Java 11's {@link HttpClient}.
@@ -40,22 +39,29 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
+    private final DeserializationSchema<RowData> runtimeDecoder;
+
+    private final HttpLookupConfig options;
+
+    private final String[] headersAndValues;
+
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
             DeserializationSchema<RowData> runtimeDecoder,
-            HttpLookupConfig options) {
+            HttpLookupConfig options,
+            HeaderPreprocessor headerPreprocessor) {
 
         this.httpClient = httpClient;
         this.runtimeDecoder = runtimeDecoder;
         this.options = options;
 
-        Map<String, String> headerMap = ConfigUtils.propertiesToMap(
-            options.getProperties(),
-            LOOKUP_SOURCE_HEADER_PREFIX,
-            String.class
-        );
-
-        this.headersAndValues = ConfigUtils.toHeaderAndValueArray(headerMap);
+        var headerMap = HttpHeaderUtils
+            .prepareHeaderMap(
+                HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX,
+                options.getProperties(),
+                headerPreprocessor
+            );
+        this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(headerMap);
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.
@@ -70,12 +76,6 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
     }
-
-    private final DeserializationSchema<RowData> runtimeDecoder;
-
-    private final HttpLookupConfig options;
-
-    private final String[] headersAndValues;
 
     @Override
     public Optional<RowData> pull(List<LookupArg> lookupArgs) {

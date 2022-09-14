@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -170,6 +171,53 @@ class JavaNetHttpPollingClientConnectionTest {
         assertThat(poll.isEmpty()).isTrue();
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "user:password",
+        "Basic dXNlcjpwYXNzd29yZA=="
+    })
+    public void shouldConnectWithBasicAuth(String authorizationHeaderValue) {
+
+        stubMapping = setupServerStubForBasicAuth();
+
+        Properties properties = new Properties();
+
+        properties.setProperty(
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Content-Type",
+            "application/json"
+        );
+
+        properties.setProperty(
+            HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Authorization",
+            authorizationHeaderValue
+        );
+
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(
+            getBaseUrl(),
+            LOOKUP_KEYS,
+            properties
+        );
+
+        RowData result = pollingClient.pull(
+            List.of(
+                new LookupArg("id", "1"),
+                new LookupArg("uuid", "2")
+            )
+        ).orElseThrow();
+
+        wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
+
+        assertThat(result.getArity()).isEqualTo(4);
+        assertThat(result.getString(1)
+            .toString()).isEqualTo("Returned HTTP message for parameter PARAM, COUNTER");
+
+        RowData detailsRow = result.getRow(3, 2);
+        assertThat(detailsRow.getBoolean(0)).isEqualTo(true);
+
+        RowData nestedDetailsRow = detailsRow.getRow(1, 1);
+        assertThat(nestedDetailsRow.getString(0).toString()).isEqualTo("$1,729.34");
+    }
+
     private String getBaseUrl() {
         return wireMockServer.baseUrl() + "/service";
     }
@@ -179,13 +227,16 @@ class JavaNetHttpPollingClientConnectionTest {
         Properties properties = new Properties();
         properties.setProperty(
             HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Content-Type",
-            "application/json");
+            "application/json"
+        );
 
         return setUpPollingClient(url, arguments, properties);
     }
 
-    private JavaNetHttpPollingClient setUpPollingClient(String url, List<String> arguments,
-        Properties properties) {
+    private JavaNetHttpPollingClient setUpPollingClient(
+            String url,
+            List<String> arguments,
+            Properties properties) {
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(url)
             .arguments(arguments)
@@ -219,6 +270,16 @@ class JavaNetHttpPollingClientConnectionTest {
                 .willReturn(
                     aResponse()
                         .withStatus(status)
+                        .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
+    }
+
+    private StubMapping setupServerStubForBasicAuth() {
+        return wireMockServer.stubFor(get(urlEqualTo("/service?id=1&uuid=2"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withBasicAuth("user", "password")
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
                         .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
     }
 
