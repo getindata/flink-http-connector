@@ -234,7 +234,7 @@ To enable this option use `gid.connector.http.security.cert.server.allowSelfSign
 ## Basic Authentication
 Connector supports Basic Authentication mechanism using HTTP `Authorization` header.
 The header value can set via properties same as other headers. Connector will convert passed value to Base64 and use it for request.
-If used value starts from `Basic `, connector will assume that provided value is already converted and will use it as is.
+If the used value starts from prefix `Basic `, it will be used as header value as is, without any extra modification.
 
 ## Table API Connector Options
 ### HTTP TableLookup Source

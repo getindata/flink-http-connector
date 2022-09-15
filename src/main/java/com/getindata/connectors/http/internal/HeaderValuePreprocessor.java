@@ -3,7 +3,7 @@ package com.getindata.connectors.http.internal;
 import java.io.Serializable;
 
 /**
- * Processor interface that its job is to modify header value based on implemented logic.
+ * Processor interface which modifies header value based on implemented logic.
  * An example would be calculation of Value of Authorization header.
  */
 public interface HeaderValuePreprocessor extends Serializable {

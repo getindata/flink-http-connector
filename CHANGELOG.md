@@ -5,8 +5,8 @@
 ### Added
 
 - Add Http Header value preprocessor mechanism, that can preprocess defined header value before setting it on the request.
-- Allow user to specify `Autorization` header for Basic Authentication. The value will be converted to Base64,
-  or it will be used is if the valued is starting from `Basic ` prefix.
+- Allow user to specify `Authorization` header for Basic Authentication. The value will be converted to Base64,
+  or if it starts from prefix `Basic `, it will be used as is (without any extra modification).
 - Add TLS and mTLS support for Http Sink and Lookup Source connectors.  
 New properties are:
   - `gid.connector.http.security.cert.server` - path to server's certificate.
