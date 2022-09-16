@@ -94,11 +94,11 @@ class ConfigUtilsTest {
     public void flatMapPropertyMap() {
         Map<String, String> propertyMap = Map.of(
             "propertyOne", "val1",
-            "my.propertyTwo", "val2",
-            "my.super.propertyThree", "val3"
+            "propertyTwo", "val2",
+            "propertyThree", "val3"
         );
 
-        String[] propertyArray = ConfigUtils.toHeaderAndValueArray(propertyMap);
+        String[] propertyArray = HttpHeaderUtils.toHeaderAndValueArray(propertyMap);
 
         // size is == propertyMap.key size + propertyMap.value.size
         assertThat(propertyArray).hasSize(6);

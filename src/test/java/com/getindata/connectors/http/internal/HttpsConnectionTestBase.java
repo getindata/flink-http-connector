@@ -4,6 +4,8 @@ import java.util.Properties;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
+
 public abstract class HttpsConnectionTestBase {
 
     protected static final int SERVER_PORT = 9090;
@@ -24,8 +26,11 @@ public abstract class HttpsConnectionTestBase {
 
     protected Properties properties;
 
+    protected HeaderPreprocessor headerPreprocessor;
+
     public void setUp() {
         this.properties = new Properties();
+        this.headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
     }
 
     public void tearDown() {

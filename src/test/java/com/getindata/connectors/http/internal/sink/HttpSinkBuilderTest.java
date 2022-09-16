@@ -2,14 +2,12 @@ package com.getindata.connectors.http.internal.sink;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.HttpSink;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
@@ -25,7 +23,9 @@ public class HttpSinkBuilderTest {
             IllegalArgumentException.class,
             () -> HttpSink.<String>builder()
                 .setElementConverter(ELEMENT_CONVERTER)
-                .setSinkHttpClientBuilder(MockHttpClient::new)
+                .setSinkHttpClientBuilder(
+                    (properties, httpPostRequestCallback, headerPreprocessor)
+                        -> new MockHttpClient())
                 .setEndpointUrl("")
                 .build()
         );
@@ -37,7 +37,9 @@ public class HttpSinkBuilderTest {
             IllegalArgumentException.class,
             () -> HttpSink.<String>builder()
                 .setElementConverter(ELEMENT_CONVERTER)
-                .setSinkHttpClientBuilder(MockHttpClient::new)
+                .setSinkHttpClientBuilder(
+                    (properties, httpPostRequestCallback, headerPreprocessor)
+                        -> new MockHttpClient())
                 .build()
         );
     }
@@ -56,14 +58,11 @@ public class HttpSinkBuilderTest {
 
     private static class MockHttpClient implements SinkHttpClient {
 
-        MockHttpClient(
-            Properties properties,
-            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {}
+        MockHttpClient() {}
 
         @Override
         public CompletableFuture<SinkHttpClientResponse> putRequests(
-            List<HttpSinkRequestEntry> requestEntries, String endpointUrl
-        ) {
+            List<HttpSinkRequestEntry> requestEntries, String endpointUrl) {
             throw new RuntimeException("Mock implementation of HttpClient");
         }
     }

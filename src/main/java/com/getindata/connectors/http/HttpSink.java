@@ -5,6 +5,7 @@ import java.util.Properties;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkInternal;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
@@ -41,8 +42,10 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             long maxRecordSizeInBytes,
             String endpointUrl,
             HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+            HeaderPreprocessor headerPreprocessor,
             SinkHttpClientBuilder sinkHttpClientBuilder,
             Properties properties) {
+
         super(elementConverter,
             maxBatchSize,
             maxInFlightRequests,
@@ -52,6 +55,7 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             maxRecordSizeInBytes,
             endpointUrl,
             httpPostRequestCallback,
+            headerPreprocessor,
             sinkHttpClientBuilder,
             properties
         );

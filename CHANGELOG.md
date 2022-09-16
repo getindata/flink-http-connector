@@ -4,12 +4,15 @@
 
 ### Added
 
+- Add Http Header value preprocessor mechanism, that can preprocess defined header value before setting it on the request.
+- Allow user to specify `Authorization` header for Basic Authentication. The value will be converted to Base64,
+  or if it starts from prefix `Basic `, it will be used as is (without any extra modification).
 - Add TLS and mTLS support for Http Sink and Lookup Source connectors.  
 New properties are:
   - `gid.connector.http.security.cert.server` - path to server's certificate.
   - `gid.connector.http.security.cert.client` - path to connector's certificate.
   - `gid.connector.http.security.key.client` - path to connector's private key.
-  - `gid.connector.http.security.cert.server.allowSelfSigned` - allowing for self signed certificates without adding them to KeyStore (not recommended for a production).
+  - `gid.connector.http.security.cert.server.allowSelfSigned` - allowing for self-signed certificates without adding them to KeyStore (not recommended for a production).
 
 ## [0.4.0] - 2022-08-31
 
