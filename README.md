@@ -113,6 +113,18 @@ CREATE TABLE http-lookup (
 )
 ```
 
+#### Custom REST query
+Http Lookup Source builds queries out of `JOIN` clauses. One can customize how those queries are built by implementing
+[LookupQueryCreator](src/main/java/com/getindata/connectors/http/LookupQueryCreator.java) and
+[LookupQueryCreatorFactory](src/main/java/com/getindata/connectors/http/LookupQueryCreatorFactory.java) interfaces.
+Custom implementations of `LookupQueryCreatorFactory` can be registered along other factories in
+`resources/META-INF.services/org.apache.flink.table.factories.Factory` file and then referenced by their identifiers in
+the Http Lookup Source DDL property field `gid.connector.http.source.lookup.query-creator`.
+
+A default implementation that builds an "ordinary" GET query, i.e. adds `?joinColumn1=value1&joinColumn2=value2&...`
+to the URI of the endpoint,
+([GenericGetQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericGetQueryCreator.java))
+is provided and set as a default.
 
 ### HTTP Sink
 The following example shows the minimum Table API example to create a [HttpDynamicSink](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicSink.java) that writes JSON values to an HTTP endpoint using POST method, assuming Flink has JAR of [JSON serializer](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/json/) installed:

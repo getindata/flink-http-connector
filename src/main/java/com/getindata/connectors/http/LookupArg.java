@@ -1,4 +1,4 @@
-package com.getindata.connectors.http.internal.table.lookup;
+package com.getindata.connectors.http;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

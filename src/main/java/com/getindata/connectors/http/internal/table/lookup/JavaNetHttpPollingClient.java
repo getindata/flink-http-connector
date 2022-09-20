@@ -19,6 +19,8 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
+import com.getindata.connectors.http.LookupArg;
+import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -43,17 +45,21 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpLookupConfig options;
 
+    private final LookupQueryCreator lookupQueryCreator;
+
     private final String[] headersAndValues;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
             DeserializationSchema<RowData> runtimeDecoder,
             HttpLookupConfig options,
+            LookupQueryCreator lookupQueryCreator,
             HeaderPreprocessor headerPreprocessor) {
 
         this.httpClient = httpClient;
         this.runtimeDecoder = runtimeDecoder;
         this.options = options;
+        this.lookupQueryCreator = lookupQueryCreator;
 
         var headerMap = HttpHeaderUtils
             .prepareHeaderMap(
@@ -96,7 +102,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     private HttpRequest buildHttpRequest(List<LookupArg> params) throws URISyntaxException {
-        URI uri = buildUri(params);
+        var lookupQuery = lookupQueryCreator.createLookupQuery(params);
+        URI uri = new URIBuilder(options.getUrl() + "?" + lookupQuery).build();
+
         Builder requestBuilder = HttpRequest.newBuilder()
             .uri(uri).GET()
             .timeout(Duration.ofMinutes(2));
@@ -106,16 +114,6 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         }
 
         return requestBuilder.build();
-    }
-
-    private URI buildUri(List<LookupArg> params) throws URISyntaxException {
-
-        URIBuilder uriBuilder = new URIBuilder(options.getUrl());
-        for (LookupArg arg : params) {
-            uriBuilder.addParameter(arg.getArgName(), arg.getArgValue());
-        }
-
-        return uriBuilder.build();
     }
 
     private Optional<RowData> processHttpResponse(

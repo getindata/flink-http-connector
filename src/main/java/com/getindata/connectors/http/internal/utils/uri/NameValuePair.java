@@ -36,7 +36,7 @@ import lombok.Data;
 import org.apache.flink.util.Preconditions;
 
 @Data
-class NameValuePair {
+public class NameValuePair {
 
     private final String name;
 
@@ -48,7 +48,7 @@ class NameValuePair {
      * @param name The name.
      * @param value The value.
      */
-    NameValuePair(final String name, final String value) {
+    public NameValuePair(final String name, final String value) {
         super();
         this.name = Preconditions.checkNotNull(name, "Name may not be null");
         this.value = value;

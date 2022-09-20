@@ -13,6 +13,11 @@ New properties are:
   - `gid.connector.http.security.cert.client` - path to connector's certificate.
   - `gid.connector.http.security.key.client` - path to connector's private key.
   - `gid.connector.http.security.cert.server.allowSelfSigned` - allowing for self-signed certificates without adding them to KeyStore (not recommended for a production).
+- Add [LookupQueryCreator](src/main/java/com/getindata/connectors/http/LookupQueryCreator.java) and
+  [LookupQueryCreatorFactory](src/main/java/com/getindata/connectors/http/LookupQueryCreatorFactory.java) interfaces 
+  (along with a "default"
+  [GenericGetQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericGetQueryCreator.java)
+  implementation) for customization of queries prepared by Lookup Source for its HTTP requests.
 
 ## [0.4.0] - 2022-08-31
 
