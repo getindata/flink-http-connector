@@ -18,6 +18,10 @@ New properties are:
   (along with a "default"
   [GenericGetQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericGetQueryCreator.java)
   implementation) for customization of queries prepared by Lookup Source for its HTTP requests.
+- Add [ElasticSearchLiteQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/ElasticSearchLiteQueryCreator.java)
+  that prepares [`q` parameter query](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html#search-api-query-params-q)
+  using Lucene query string syntax (in first versions of ElasticSearch called
+  [Search _Lite_](https://www.elastic.co/guide/en/elasticsearch/guide/current/search-lite.html)).
 
 ## [0.4.0] - 2022-08-31
 
