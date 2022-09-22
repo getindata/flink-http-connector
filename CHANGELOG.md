@@ -2,26 +2,28 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-09-22
+
 ### Added
 
-- Add Http Header value preprocessor mechanism, that can preprocess defined header value before setting it on the request.
-- Allow user to specify `Authorization` header for Basic Authentication. The value will be converted to Base64,
-  or if it starts from prefix `Basic `, it will be used as is (without any extra modification).
-- Add TLS and mTLS support for Http Sink and Lookup Source connectors.  
-New properties are:
-  - `gid.connector.http.security.cert.server` - path to server's certificate.
-  - `gid.connector.http.security.cert.client` - path to connector's certificate.
-  - `gid.connector.http.security.key.client` - path to connector's private key.
-  - `gid.connector.http.security.cert.server.allowSelfSigned` - allowing for self-signed certificates without adding them to KeyStore (not recommended for a production).
-- Add [LookupQueryCreator](src/main/java/com/getindata/connectors/http/LookupQueryCreator.java) and
-  [LookupQueryCreatorFactory](src/main/java/com/getindata/connectors/http/LookupQueryCreatorFactory.java) interfaces 
-  (along with a "default"
-  [GenericGetQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericGetQueryCreator.java)
-  implementation) for customization of queries prepared by Lookup Source for its HTTP requests.
-- Add [ElasticSearchLiteQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/ElasticSearchLiteQueryCreator.java)
-  that prepares [`q` parameter query](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html#search-api-query-params-q)
-  using Lucene query string syntax (in first versions of ElasticSearch called
-  [Search _Lite_](https://www.elastic.co/guide/en/elasticsearch/guide/current/search-lite.html)).
+-   Add Http Header value preprocessor mechanism, that can preprocess defined header value before setting it on the request.
+-   Allow user to specify `Authorization` header for Basic Authentication. The value will be converted to Base64,
+    or if it starts from prefix `Basic `, it will be used as is (without any extra modification).
+-   Add TLS and mTLS support for Http Sink and Lookup Source connectors.  
+    New properties are:
+    -   `gid.connector.http.security.cert.server` - path to server's certificate.
+    -   `gid.connector.http.security.cert.client` - path to connector's certificate.
+    -   `gid.connector.http.security.key.client` - path to connector's private key.
+    -   `gid.connector.http.security.cert.server.allowSelfSigned` - allowing for self-signed certificates without adding them to KeyStore (not recommended for a production).
+-   Add [LookupQueryCreator](src/main/java/com/getindata/connectors/http/LookupQueryCreator.java) and
+    [LookupQueryCreatorFactory](src/main/java/com/getindata/connectors/http/LookupQueryCreatorFactory.java) interfaces 
+    (along with a "default"
+    [GenericGetQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericGetQueryCreator.java)
+    implementation) for customization of queries prepared by Lookup Source for its HTTP requests.
+-   Add [ElasticSearchLiteQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/ElasticSearchLiteQueryCreator.java)
+    that prepares [`q` parameter query](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html#search-api-query-params-q)
+    using Lucene query string syntax (in first versions of ElasticSearch called
+    [Search _Lite_](https://www.elastic.co/guide/en/elasticsearch/guide/current/search-lite.html)).
 
 ## [0.4.0] - 2022-08-31
 
@@ -69,7 +71,9 @@ New properties are:
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.5.0...HEAD
+
+[0.5.0]: https://github.com/getindata/flink-http-connector/compare/0.4.0...0.5.0
 
 [0.4.0]: https://github.com/getindata/flink-http-connector/compare/0.3.0...0.4.0
 
