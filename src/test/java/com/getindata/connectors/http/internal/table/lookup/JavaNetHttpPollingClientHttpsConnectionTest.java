@@ -30,8 +30,10 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -260,7 +262,8 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
                 .createDecodingFormat(dynamicTableFactoryContext, new Configuration())
                 .createRuntimeDecoder(dynamicTableSourceContext, physicalDataType);
 
-        return pollingClientFactory.createPollClient(lookupConfig, schemaDecoder);
+        return pollingClientFactory
+            .createPollClient(lookupConfig, schemaDecoder, new GenericGetQueryCreator());
     }
 
     private void setupServerStub() {

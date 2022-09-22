@@ -3,6 +3,9 @@ package com.getindata.connectors.http.internal.table.lookup;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreatorFactory;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER;
+
 public class HttpLookupConnectorOptions {
 
     public static final ConfigOption<String> URL =
@@ -22,4 +25,9 @@ public class HttpLookupConnectorOptions {
             .booleanType()
             .defaultValue(false)
             .withDescription("Whether to use Sync and Async polling mechanism");
+
+    public static final ConfigOption<String> LOOKUP_QUERY_CREATOR_IDENTIFIER =
+        ConfigOptions.key(SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER)
+            .stringType()
+            .defaultValue(GenericGetQueryCreatorFactory.IDENTIFIER);
 }

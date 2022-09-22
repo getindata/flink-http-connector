@@ -46,7 +46,7 @@ import org.apache.flink.util.Preconditions;
 /**
  * A collection of utilities for encoding URLs.
  */
-class URLEncodedUtils {
+public class URLEncodedUtils {
 
     private static final char QP_SEP_A = '&';
 
@@ -310,9 +310,10 @@ class URLEncodedUtils {
      * @param charset    The encoding to use.
      * @return An {@code application/x-www-form-urlencoded} string
      */
-    static String format(
+    public static String format(
         final Iterable<? extends NameValuePair> parameters,
-        final Charset charset) {
+        final Charset charset
+    ) {
         return format(parameters, QP_SEP_A, charset);
     }
 

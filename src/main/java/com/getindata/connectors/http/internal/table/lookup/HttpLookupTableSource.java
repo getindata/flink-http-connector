@@ -15,6 +15,7 @@ import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushD
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 
+import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction.ColumnData;
 
@@ -30,6 +31,8 @@ public class HttpLookupTableSource
     private final HttpLookupConfig lookupConfig;
 
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
+
+    private final LookupQueryCreator lookupQueryCreator;
 
     @Override
     public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext context) {
@@ -50,7 +53,8 @@ public class HttpLookupTableSource
             physicalRowDataType,
             pollingClientFactory,
             lookupConfig,
-            decodingFormat
+            decodingFormat,
+            lookupQueryCreator
         );
     }
 
@@ -80,6 +84,7 @@ public class HttpLookupTableSource
                 .pollingClientFactory(pollingClientFactory)
                 .schemaDecoder(schemaDecoder)
                 .columnData(columnData)
+                .lookupQueryCreator(lookupQueryCreator)
                 .options(lookupConfig)
                 .build();
 

@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
 
@@ -40,6 +41,7 @@ public class JavaNetHttpPollingClientTest {
             httpClient,
             decoder,
             HttpLookupConfig.builder().build(),
+            new GenericGetQueryCreator(),
             headerPreprocessor
         );
         assertThat(client.getHeadersAndValues()).isEmpty();
@@ -74,6 +76,7 @@ public class JavaNetHttpPollingClientTest {
             httpClient,
             decoder,
             lookupConfig,
+            new GenericGetQueryCreator(),
             headerPreprocessor
         );
 

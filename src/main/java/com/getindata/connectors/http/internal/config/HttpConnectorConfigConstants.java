@@ -42,6 +42,9 @@ public final class HttpConnectorConfigConstants {
     public static final String SINK_REQUEST_CALLBACK_IDENTIFIER =
         GID_CONNECTOR_HTTP + "sink.request-callback";
 
+    public static final String SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER =
+        GID_CONNECTOR_HTTP + "source.lookup.query-creator";
+
     // -------------- HTTPS security settings --------------
     public static final String ALLOW_SELF_SIGNED =
         GID_CONNECTOR_HTTP + "security.cert.server.allowSelfSigned";

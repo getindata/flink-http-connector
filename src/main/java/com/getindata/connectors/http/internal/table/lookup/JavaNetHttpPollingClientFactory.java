@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 
+import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
@@ -14,8 +15,9 @@ public class JavaNetHttpPollingClientFactory implements PollingClientFactory<Row
 
     @Override
     public JavaNetHttpPollingClient createPollClient(
-            HttpLookupConfig options,
-            DeserializationSchema<RowData> schemaDecoder) {
+        HttpLookupConfig options,
+        DeserializationSchema<RowData> schemaDecoder,
+        LookupQueryCreator lookupQueryCreator) {
 
         HttpClient httpClient = JavaNetHttpClientFactory.createClient(options.getProperties());
 
@@ -23,7 +25,12 @@ public class JavaNetHttpPollingClientFactory implements PollingClientFactory<Row
         //  so user could set this using API.
         HeaderPreprocessor headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
 
-
-        return new JavaNetHttpPollingClient(httpClient, schemaDecoder, options, headerPreprocessor);
+        return new JavaNetHttpPollingClient(
+            httpClient,
+            schemaDecoder,
+            options,
+            lookupQueryCreator,
+            headerPreprocessor
+        );
     }
 }

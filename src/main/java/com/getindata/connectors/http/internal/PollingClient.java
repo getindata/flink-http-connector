@@ -3,7 +3,7 @@ package com.getindata.connectors.http.internal;
 import java.util.List;
 import java.util.Optional;
 
-import com.getindata.connectors.http.internal.table.lookup.LookupArg;
+import com.getindata.connectors.http.LookupArg;
 
 /**
  * A client that is used to get enrichment data from external component.

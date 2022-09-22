@@ -25,12 +25,11 @@ import org.apache.flink.table.types.DataType;
 import static org.apache.flink.table.api.DataTypes.FIELD;
 import static org.apache.flink.table.types.utils.DataTypeUtils.removeTimeAttribute;
 
+import com.getindata.connectors.http.LookupQueryCreatorFactory;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.ASYNC_POLLING;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.URL;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.URL_ARGS;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.*;
 
 public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
@@ -61,6 +60,13 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
                 FactoryUtil.FORMAT
             );
 
+        final LookupQueryCreatorFactory lookupQueryCreatorFactory =
+            FactoryUtil.discoverFactory(
+                context.getClassLoader(),
+                LookupQueryCreatorFactory.class,
+                readableConfig.get(LOOKUP_QUERY_CREATOR_IDENTIFIER)
+            );
+
         PollingClientFactory<RowData> pollingClientFactory = new JavaNetHttpPollingClientFactory();
         HttpLookupConfig lookupConfig = getHttpLookupOptions(context, readableConfig);
 
@@ -73,7 +79,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             physicalRowDataType,
             pollingClientFactory,
             lookupConfig,
-            decodingFormat
+            decodingFormat,
+            lookupQueryCreatorFactory.createLookupQueryCreator()
         );
     }
 

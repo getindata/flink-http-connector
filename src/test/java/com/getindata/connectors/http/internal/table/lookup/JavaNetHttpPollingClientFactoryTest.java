@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
+
 class JavaNetHttpPollingClientFactoryTest {
 
     private JavaNetHttpPollingClientFactory factory;
@@ -23,7 +25,8 @@ class JavaNetHttpPollingClientFactoryTest {
         assertThat(
             factory.createPollClient(
                 HttpLookupConfig.builder().build(),
-                (DeserializationSchema<RowData>) mock(DeserializationSchema.class))
+                (DeserializationSchema<RowData>) mock(DeserializationSchema.class),
+                new GenericGetQueryCreator())
         ).isInstanceOf(JavaNetHttpPollingClient.class);
     }
 }
