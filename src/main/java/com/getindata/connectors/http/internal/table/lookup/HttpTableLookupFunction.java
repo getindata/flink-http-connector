@@ -20,7 +20,6 @@ import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.table.functions.TableFunction;
 
 import com.getindata.connectors.http.LookupArg;
-import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 
@@ -30,8 +29,6 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
     private final PollingClientFactory<RowData> pollingClientFactory;
 
     private final DeserializationSchema<RowData> schemaDecoder;
-
-    private final LookupQueryCreator lookupQueryCreator;
 
     @Getter
     private final ColumnData columnData;
@@ -48,14 +45,12 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
         PollingClientFactory<RowData> pollingClientFactory,
         DeserializationSchema<RowData> schemaDecoder,
         ColumnData columnData,
-        HttpLookupConfig options,
-        LookupQueryCreator lookupQueryCreator) {
+        HttpLookupConfig options) {
 
         this.pollingClientFactory = pollingClientFactory;
         this.schemaDecoder = schemaDecoder;
         this.columnData = columnData;
         this.options = options;
-        this.lookupQueryCreator = lookupQueryCreator;
     }
 
     @Override
@@ -63,7 +58,7 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
         super.open(context);
         this.localHttpCallCounter = new AtomicInteger(0);
         this.client = pollingClientFactory
-            .createPollClient(options, schemaDecoder, lookupQueryCreator);
+            .createPollClient(options, schemaDecoder);
 
         context
             .getMetricGroup()

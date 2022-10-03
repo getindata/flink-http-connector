@@ -34,6 +34,7 @@ import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +43,8 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
     private static final String SAMPLES_FOLDER = "/http/";
 
     private static final List<String> LOOKUP_KEYS = List.of("id", "uuid");
+
+    private static final String ENDPOINT = "/service";
 
     @Mock
     private Context dynamicTableFactoryContext;
@@ -55,7 +58,6 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         super.setUp();
         int[][] lookupKey = {{}};
         this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
-        this.pollingClientFactory = new JavaNetHttpPollingClientFactory();
     }
 
     @AfterEach
@@ -78,6 +80,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
+        setUpPollingClientFactory(wireMockServer.baseUrl());
 
         properties.setProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "true");
 
@@ -101,6 +104,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
+        setUpPollingClientFactory(wireMockServer.baseUrl());
 
         properties.setProperty(
             HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
@@ -134,6 +138,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
+        setUpPollingClientFactory(wireMockServer.baseUrl());
 
         properties.setProperty(
             HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
@@ -177,6 +182,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
+        setUpPollingClientFactory(wireMockServer.baseUrl());
 
         properties.setProperty(
             HttpConnectorConfigConstants.KEY_STORE_PASSWORD,
@@ -240,7 +246,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
     private JavaNetHttpPollingClient setUpPollingClient(Properties properties) {
 
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
-            .url("https://localhost:" + HTTPS_SERVER_PORT + "/service")
+            .url("https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT)
             .arguments(LOOKUP_KEYS)
             .properties(properties)
             .build();
@@ -262,8 +268,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
                 .createDecodingFormat(dynamicTableFactoryContext, new Configuration())
                 .createRuntimeDecoder(dynamicTableSourceContext, physicalDataType);
 
-        return pollingClientFactory
-            .createPollClient(lookupConfig, schemaDecoder, new GenericGetQueryCreator());
+        return pollingClientFactory.createPollClient(lookupConfig, schemaDecoder);
     }
 
     private void setupServerStub() {
@@ -273,6 +278,17 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
                     aResponse()
                         .withStatus(200)
                         .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
+    }
+
+    private void setUpPollingClientFactory(String baseUrl) {
+        GetRequestFactory requestFactory = new GetRequestFactory(
+            new GenericGetQueryCreator(),
+            HttpHeaderUtils.createDefaultHeaderPreprocessor(),
+            HttpLookupConfig.builder()
+                .url(baseUrl + ENDPOINT)
+                .build()
+        );
+        this.pollingClientFactory = new JavaNetHttpPollingClientFactory(requestFactory);
     }
 
     private void assertResult(RowData result) {

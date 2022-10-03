@@ -30,6 +30,7 @@ import com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSource
  * }</pre>
  */
 public interface LookupQueryCreatorFactory extends Factory {
+
     /**
      * @return {@link LookupQueryCreator} custom lookup query creator instance
      */

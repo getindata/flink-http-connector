@@ -11,6 +11,7 @@ import java.util.List;
  * {@link LookupQueryCreatorFactory}.
  */
 public interface LookupQueryCreator extends Serializable {
+
     /**
      * Create a lookup query (like the query appended to path in GET request)
      * out of the provided arguments.
