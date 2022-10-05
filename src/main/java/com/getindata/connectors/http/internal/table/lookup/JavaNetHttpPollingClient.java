@@ -1,15 +1,10 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,15 +15,11 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.LookupArg;
-import com.getindata.connectors.http.LookupQueryCreator;
-import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 
 /**
  * An implementation of {@link PollingClient} that uses Java 11's {@link HttpClient}.
@@ -43,31 +34,17 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final DeserializationSchema<RowData> runtimeDecoder;
 
-    private final HttpLookupConfig options;
-
-    private final LookupQueryCreator lookupQueryCreator;
-
-    private final String[] headersAndValues;
+    private final HttpRequestFactory requestFactory;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
             DeserializationSchema<RowData> runtimeDecoder,
             HttpLookupConfig options,
-            LookupQueryCreator lookupQueryCreator,
-            HeaderPreprocessor headerPreprocessor) {
+            HttpRequestFactory requestFactory) {
 
         this.httpClient = httpClient;
         this.runtimeDecoder = runtimeDecoder;
-        this.options = options;
-        this.lookupQueryCreator = lookupQueryCreator;
-
-        var headerMap = HttpHeaderUtils
-            .prepareHeaderMap(
-                HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX,
-                options.getProperties(),
-                headerPreprocessor
-            );
-        this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(headerMap);
+        this.requestFactory = requestFactory;
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.
@@ -96,24 +73,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     // TODO Add Retry Policy And configure TimeOut from properties
     private Optional<RowData> queryAndProcess(List<LookupArg> params) throws Exception {
 
-        HttpRequest request = buildHttpRequest(params);
+        HttpRequest request = requestFactory.buildLookupRequest(params);
         HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
         return processHttpResponse(response, request);
-    }
-
-    private HttpRequest buildHttpRequest(List<LookupArg> params) throws URISyntaxException {
-        var lookupQuery = lookupQueryCreator.createLookupQuery(params);
-        URI uri = new URIBuilder(options.getUrl() + "?" + lookupQuery).build();
-
-        Builder requestBuilder = HttpRequest.newBuilder()
-            .uri(uri).GET()
-            .timeout(Duration.ofMinutes(2));
-
-        if (headersAndValues.length != 0) {
-            requestBuilder.headers(headersAndValues);
-        }
-
-        return requestBuilder.build();
     }
 
     private Optional<RowData> processHttpResponse(
@@ -149,7 +111,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     @VisibleForTesting
-    String[] getHeadersAndValues() {
-        return Arrays.copyOf(headersAndValues, headersAndValues.length);
+    HttpRequestFactory getRequestFactory() {
+        return this.requestFactory;
     }
 }

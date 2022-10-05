@@ -14,6 +14,7 @@ import com.getindata.connectors.http.internal.utils.uri.URLEncodedUtils;
  * <code>joinColumn1=value1&amp;joinColumn2=value2&amp;...</code> to the URI of the endpoint.
  */
 public class GenericGetQueryCreator implements LookupQueryCreator {
+
     @Override
     public String createLookupQuery(List<LookupArg> params) {
         return URLEncodedUtils.format(

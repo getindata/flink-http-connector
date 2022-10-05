@@ -83,11 +83,21 @@ SELECT o.id, o.id2, c.msg, c.uuid, c.isActive, c.balance FROM Orders AS o
 JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c ON o.id = c.id AND o.id2 = c.id2
 ```
 
-The columns and their values used for JOIN `ON` condition will be used as HTTP get parameters where the column name will be used as a request parameter name. 
+The columns and their values used for JOIN `ON` condition will be used as HTTP GET parameters where the column name will be used as a request parameter name. 
+
 For Example: 
 ``
 http://localhost:8080/client/service?id=1&uuid=2
 ``
+
+Or for REST POST method they will be converted to Json and used as request body. In this case, json request body will look like this:
+```json
+{
+    "id": "1",
+    "uuid": "2"
+}
+```
+
 #### Http headers
 It is possible to set HTTP headers that will be added to HTTP request send by lookup source connector.
 Headers are defined via property key `gid.connector.http.source.lookup.header.HEADER_NAME = header value` for example:
@@ -256,6 +266,7 @@ If the used value starts from prefix `Basic `, it will be used as header value a
 | format                                                  | required | Flink's format name that should be used to decode REST response, Use `json` for a typical REST endpoint.                                             |
 | url                                                     | required | The base URL that should be use for GET requests. For example _http://localhost:8080/client_                                                         |
 | asyncPolling                                            | optional | true/false - determines whether Async Pooling should be used. Mechanism is based on Flink's Async I/O.                                               |
+| lookup-method                                           | optional | GET/POST/PUT (and any other) - determines what REST method should be used for lookup REST query. If not specified, `GET` method will be used.        |
 | gid.connector.http.lookup.error.code                    | optional | List of HTTP status codes that should be treated as errors by HTTP Source, separated with comma.                                                     |
 | gid.connector.http.lookup.error.code.exclude            | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma.                        |
 | gid.connector.http.security.cert.server                 | optional | Path to trusted HTTP server certificate that should be add to connectors key store. More than one path can be specified using `,` as path delimiter. |

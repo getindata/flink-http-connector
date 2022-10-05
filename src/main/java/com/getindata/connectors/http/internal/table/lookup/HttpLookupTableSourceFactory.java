@@ -26,9 +26,13 @@ import static org.apache.flink.table.api.DataTypes.FIELD;
 import static org.apache.flink.table.types.utils.DataTypeUtils.removeTimeAttribute;
 
 import com.getindata.connectors.http.LookupQueryCreatorFactory;
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreatorFactory;
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreatorFactory;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.*;
 
 public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
@@ -60,15 +64,25 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
                 FactoryUtil.FORMAT
             );
 
-        final LookupQueryCreatorFactory lookupQueryCreatorFactory =
+        String lookupMethod = readableConfig.get(LOOKUP_METHOD);
+
+        LookupQueryCreatorFactory lookupQueryCreatorFactory =
             FactoryUtil.discoverFactory(
                 context.getClassLoader(),
                 LookupQueryCreatorFactory.class,
-                readableConfig.get(LOOKUP_QUERY_CREATOR_IDENTIFIER)
+                readableConfig.getOptional(LOOKUP_QUERY_CREATOR_IDENTIFIER).orElse(
+                    (lookupMethod.equalsIgnoreCase("GET") ?
+                        GenericGetQueryCreatorFactory.IDENTIFIER :
+                        GenericJsonQueryCreatorFactory.IDENTIFIER)
+                )
             );
 
-        PollingClientFactory<RowData> pollingClientFactory = new JavaNetHttpPollingClientFactory();
         HttpLookupConfig lookupConfig = getHttpLookupOptions(context, readableConfig);
+
+        // TODO Consider this to be injected as method argument or factory field
+        //  so user could set this using API.
+        PollingClientFactory<RowData> pollingClientFactory =
+            createPollingClientFactory(lookupMethod, lookupQueryCreatorFactory, lookupConfig);
 
         ResolvedSchema resolvedSchema = context.getCatalogTable().getResolvedSchema();
 
@@ -79,8 +93,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             physicalRowDataType,
             pollingClientFactory,
             lookupConfig,
-            decodingFormat,
-            lookupQueryCreatorFactory.createLookupQueryCreator()
+            decodingFormat
         );
     }
 
@@ -96,7 +109,29 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return Set.of(URL_ARGS, ASYNC_POLLING);
+        return Set.of(URL_ARGS, ASYNC_POLLING, LOOKUP_METHOD);
+    }
+
+    private PollingClientFactory<RowData> createPollingClientFactory(
+        String lookupMethod,
+        LookupQueryCreatorFactory lookupQueryCreatorFactory,
+        HttpLookupConfig lookupConfig) {
+
+        HeaderPreprocessor headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+
+        HttpRequestFactory requestFactory = (lookupMethod.equalsIgnoreCase("GET")) ?
+            new GetRequestFactory(
+                lookupQueryCreatorFactory.createLookupQueryCreator(),
+                headerPreprocessor,
+                lookupConfig) :
+            new BodyBasedRequestFactory(
+                lookupMethod,
+                lookupQueryCreatorFactory.createLookupQueryCreator(),
+                headerPreprocessor,
+                lookupConfig
+            );
+
+        return new JavaNetHttpPollingClientFactory(requestFactory);
     }
 
     private HttpLookupConfig getHttpLookupOptions(Context context, ReadableConfig config) {

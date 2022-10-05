@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+- Add support for other REST methods like PUT and POST to lookup source connector. The request method can be set using
+  new optional lookup-source property `lookup-method`. If property is not specified in table DDL, GET method will be used for
+  lookup queries.
+
 ## [0.5.0] - 2022-09-22
 
 ### Added

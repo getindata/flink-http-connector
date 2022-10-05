@@ -11,6 +11,7 @@ import com.getindata.connectors.http.LookupQueryCreatorFactory;
  * Factory for creating {@link ElasticSearchLiteQueryCreator}.
  */
 public class ElasticSearchLiteQueryCreatorFactory implements LookupQueryCreatorFactory {
+
     public static final String IDENTIFIER = "elasticsearch-lite";
 
     @Override

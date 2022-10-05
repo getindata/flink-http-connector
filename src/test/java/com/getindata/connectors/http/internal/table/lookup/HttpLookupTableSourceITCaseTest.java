@@ -8,6 +8,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.slf4j.Slf4j;
@@ -17,12 +18,19 @@ import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.flink.util.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -41,6 +49,8 @@ public class HttpLookupTableSourceITCaseTest {
 
     private static final String SERVER_TRUSTSTORE_PATH =
         "src/test/resources/security/certs/serverTrustStore.jks";
+
+    private static final String ENDPOINT = "/client";
 
     /**
      * Comparator for Flink SQL result.
@@ -87,10 +97,15 @@ public class HttpLookupTableSourceITCaseTest {
         wireMockServer.stop();
     }
 
-    @Test
-    public void testHttpLookupJoin() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"", "GET", "POST", "PUT"})
+    public void testHttpLookupJoin(String methodName) throws Exception {
 
-        setupServerStub(wireMockServer);
+        if (StringUtils.isNullOrWhitespaceOnly(methodName) || methodName.equalsIgnoreCase("GET")) {
+            setupServerStub(wireMockServer);
+        } else {
+            setUpServerBodyStub(methodName, wireMockServer);
+        }
 
         String lookupTable =
             "CREATE TABLE Customers ("
@@ -107,6 +122,9 @@ public class HttpLookupTableSourceITCaseTest {
                 + ") WITH ("
                 + "'format' = 'json',"
                 + "'connector' = 'rest-lookup',"
+                + ((StringUtils.isNullOrWhitespaceOnly(methodName)) ?
+                    "" :
+                    "'lookup-method' = '" + methodName + "',")
                 + "'url' = 'http://localhost:9090/client',"
                 + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
                 + "'asyncPolling' = 'true'"
@@ -218,8 +236,26 @@ public class HttpLookupTableSourceITCaseTest {
 
     private void setupServerStub(WireMockServer wireMockServer) {
         StubMapping stubMapping = wireMockServer.stubFor(
-            get(urlPathEqualTo("/client"))
+            get(urlPathEqualTo(ENDPOINT))
                 .withHeader("Content-Type", equalTo("application/json"))
+                .willReturn(
+                    aResponse()
+                        .withTransformers(JsonTransform.NAME)));
+
+        wireMockServer.addStubMapping(stubMapping);
+    }
+
+    private void setUpServerBodyStub(String methodName, WireMockServer wireMockServer) {
+
+        MappingBuilder methodStub = (methodName.equalsIgnoreCase("PUT") ?
+            put(urlEqualTo(ENDPOINT)) :
+            post(urlEqualTo(ENDPOINT)));
+
+        StubMapping stubMapping = wireMockServer.stubFor(
+            methodStub
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withRequestBody(matchingJsonPath("$.id"))
+                .withRequestBody(matchingJsonPath("$.id2"))
                 .willReturn(
                     aResponse()
                         .withTransformers(JsonTransform.NAME)));

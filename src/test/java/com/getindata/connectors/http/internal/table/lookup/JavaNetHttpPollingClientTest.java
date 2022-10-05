@@ -29,9 +29,12 @@ public class JavaNetHttpPollingClientTest {
 
     private HeaderPreprocessor headerPreprocessor;
 
+    private HttpLookupConfig options;
+
     @BeforeEach
     public void setUp() {
         this.headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+        this.options = HttpLookupConfig.builder().build();
     }
 
     @Test
@@ -40,11 +43,13 @@ public class JavaNetHttpPollingClientTest {
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
             decoder,
-            HttpLookupConfig.builder().build(),
-            new GenericGetQueryCreator(),
-            headerPreprocessor
+            options,
+            new GetRequestFactory(new GenericGetQueryCreator(), headerPreprocessor, options)
         );
-        assertThat(client.getHeadersAndValues()).isEmpty();
+
+        assertThat(
+            ((GetRequestFactory) client.getRequestFactory()).getHeadersAndValues())
+            .isEmpty();
     }
 
     @Test
@@ -76,11 +81,11 @@ public class JavaNetHttpPollingClientTest {
             httpClient,
             decoder,
             lookupConfig,
-            new GenericGetQueryCreator(),
-            headerPreprocessor
+            new GetRequestFactory(new GenericGetQueryCreator(), headerPreprocessor, lookupConfig)
         );
 
-        String[] headersAndValues = client.getHeadersAndValues();
+        String[] headersAndValues =
+            ((GetRequestFactory) client.getRequestFactory()).getHeadersAndValues();
         assertThat(headersAndValues).hasSize(6);
 
         // THEN

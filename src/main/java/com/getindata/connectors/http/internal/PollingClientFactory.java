@@ -4,14 +4,12 @@ import java.io.Serializable;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 
-import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
 
 public interface PollingClientFactory<OUT> extends Serializable {
 
     PollingClient<OUT> createPollClient(
         HttpLookupConfig options,
-        DeserializationSchema<OUT> schemaDecoder,
-        LookupQueryCreator lookupQueryCreator
+        DeserializationSchema<OUT> schemaDecoder
     );
 }

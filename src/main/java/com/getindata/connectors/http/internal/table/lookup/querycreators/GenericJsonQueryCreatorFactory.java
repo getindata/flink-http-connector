@@ -8,15 +8,15 @@ import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.LookupQueryCreatorFactory;
 
 /**
- * Factory for creating {@link GenericGetQueryCreator}.
+ * Factory for creating {@link GenericJsonQueryCreatorFactory}.
  */
-public class GenericGetQueryCreatorFactory implements LookupQueryCreatorFactory {
+public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory {
 
-    public static final String IDENTIFIER = "generic-get-query";
+    public static final String IDENTIFIER = "generic-json-query";
 
     @Override
     public LookupQueryCreator createLookupQueryCreator() {
-        return new GenericGetQueryCreator();
+        return new GenericJsonQueryCreator();
     }
 
     @Override

@@ -21,11 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.getindata.connectors.http.LookupArg;
-import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction.ColumnData;
-import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
 
 @ExtendWith(MockitoExtension.class)
 class HttpRowDataLookupFunctionTest {
@@ -53,7 +51,6 @@ class HttpRowDataLookupFunctionTest {
     @BeforeEach
     void setUp() throws Exception {
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder().build();
-        LookupQueryCreator lookupQueryCreator = new GenericGetQueryCreator();
 
         ColumnData columnData =
             ColumnData.builder()
@@ -61,7 +58,7 @@ class HttpRowDataLookupFunctionTest {
                 .build();
 
         when(functionContext.getMetricGroup()).thenReturn(mock(MetricGroup.class));
-        when(pollingClientFactory.createPollClient(lookupConfig, schemaDecoder, lookupQueryCreator))
+        when(pollingClientFactory.createPollClient(lookupConfig, schemaDecoder))
             .thenReturn(client);
 
         lookupFunction = HttpTableLookupFunction.builder()
@@ -69,7 +66,6 @@ class HttpRowDataLookupFunctionTest {
             .schemaDecoder(schemaDecoder)
             .columnData(columnData)
             .options(lookupConfig)
-            .lookupQueryCreator(lookupQueryCreator)
             .build();
 
         lookupFunction.open(functionContext);
