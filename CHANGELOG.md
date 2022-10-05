@@ -2,10 +2,13 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2022-10-05
+
 ### Added
-- Add support for other REST methods like PUT and POST to lookup source connector. The request method can be set using
-  new optional lookup-source property `lookup-method`. If property is not specified in table DDL, GET method will be used for
-  lookup queries.
+
+-   Add support for other REST methods like PUT and POST to lookup source connector. The request method can be set using
+    new optional lookup-source property `lookup-method`. If property is not specified in table DDL, GET method will be used for
+    lookup queries.
 
 ## [0.5.0] - 2022-09-22
 
@@ -76,7 +79,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.6.0...HEAD
+
+[0.6.0]: https://github.com/getindata/flink-http-connector/compare/0.5.0...0.6.0
 
 [0.5.0]: https://github.com/getindata/flink-http-connector/compare/0.4.0...0.5.0
 
