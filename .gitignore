@@ -7,3 +7,5 @@ target
 /src/test/test.iml
 /flink-http-connector.iml
 /dependency-reduced-pom.xml
+
+.DS_Store
