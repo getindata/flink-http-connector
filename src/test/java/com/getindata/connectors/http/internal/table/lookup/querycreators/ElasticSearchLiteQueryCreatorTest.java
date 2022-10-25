@@ -1,33 +1,116 @@
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Stream;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.data.DecimalData;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
+import org.apache.flink.table.types.DataType;
+import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.getindata.connectors.http.LookupArg;
+import com.getindata.connectors.http.internal.table.lookup.LookupRow;
+import com.getindata.connectors.http.internal.table.lookup.RowDataSingleValueLookupSchemaEntry;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 public class ElasticSearchLiteQueryCreatorTest {
-    static Stream<Arguments> queryArguments() {
-        return Stream.of(
-            Arguments.of(List.of(), ""),
-            Arguments.of(List.of(new LookupArg("key1", "val1")), "q=key1:%22val1%22"),
-            Arguments.of(List.of(
-                new LookupArg("key1", "val1"),
-                new LookupArg("key2", "val2"),
-                new LookupArg("key3", "3")
-            ), "q=key1:%22val1%22%20AND%20key2:%22val2%22%20AND%20key3:%223%22")
-        );
+
+    @Test
+    public void testQueryCreationForSingleQueryStringParam() {
+
+        // GIVEN
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("key1",
+                    RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 0))
+            );
+        lookupRow.setLookupPhysicalRowDataType(DataTypes.STRING());
+
+        GenericRowData lookupDataRow = GenericRowData.of(StringData.fromString("val1"));
+
+        // WHEN
+        var queryCreator = new ElasticSearchLiteQueryCreator(lookupRow);
+        var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
+
+        // THEN
+        assertThat(createdQuery).isEqualTo("q=key1:%22val1%22");
     }
 
-    @ParameterizedTest
-    @MethodSource("queryArguments")
-    public void testGenericGetQueryCreation(List<LookupArg> args, String expectedQuery) {
-        var queryCreator = new ElasticSearchLiteQueryCreator();
-        var createdQuery = queryCreator.createLookupQuery(args);
-        assertThat(createdQuery).isEqualTo(expectedQuery);
+    @Test
+    public void testQueryCreationForSingleQueryIntParam() {
+
+        // GIVEN
+        BigDecimal decimalValue = BigDecimal.valueOf(10);
+        DataType decimalValueType = DataTypes.DECIMAL(
+            decimalValue.precision(),
+            decimalValue.scale()
+        );
+
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("key1",
+                    RowData.createFieldGetter(
+                        decimalValueType.getLogicalType(),
+                        0)
+                )
+            );
+        lookupRow.setLookupPhysicalRowDataType(decimalValueType);
+
+        GenericRowData lookupDataRow = GenericRowData.of(
+            DecimalData.fromBigDecimal(decimalValue, decimalValue.precision(),
+                decimalValue.scale()));
+
+        // WHEN
+        var queryCreator = new ElasticSearchLiteQueryCreator(lookupRow);
+        var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
+
+        // THEN
+        assertThat(createdQuery).isEqualTo("q=key1:%2210%22");
+    }
+
+    @Test
+    public void testGenericGetQueryCreationForMultipleQueryParam() {
+
+        // GIVEN
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry(
+                    "key1",
+                    RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 0)
+                ))
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry(
+                    "key2",
+                    RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 1)
+                ))
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry(
+                    "key3",
+                    RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 2)
+                ));
+
+        lookupRow.setLookupPhysicalRowDataType(
+            row(List.of(
+                DataTypes.FIELD("key1", DataTypes.STRING()),
+                DataTypes.FIELD("key2", DataTypes.STRING()),
+                DataTypes.FIELD("key3", DataTypes.STRING())
+            )));
+
+        GenericRowData lookupDataRow = GenericRowData.of(
+            StringData.fromString("val1"),
+            StringData.fromString("val2"),
+            StringData.fromString("3")
+        );
+
+        // WHEN
+        var queryCreator = new ElasticSearchLiteQueryCreator(lookupRow);
+        var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
+
+        // THEN
+        assertThat(createdQuery)
+            .isEqualTo("q=key1:%22val1%22%20AND%20key2:%22val2%22%20AND%20key3:%223%22");
     }
 }

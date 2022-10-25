@@ -5,7 +5,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.List;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +13,6 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
-import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
@@ -32,18 +30,18 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
-    private final DeserializationSchema<RowData> runtimeDecoder;
+    private final DeserializationSchema<RowData> responseBodyDecoder;
 
     private final HttpRequestFactory requestFactory;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
-            DeserializationSchema<RowData> runtimeDecoder,
+            DeserializationSchema<RowData> responseBodyDecoder,
             HttpLookupConfig options,
             HttpRequestFactory requestFactory) {
 
         this.httpClient = httpClient;
-        this.runtimeDecoder = runtimeDecoder;
+        this.responseBodyDecoder = responseBodyDecoder;
         this.requestFactory = requestFactory;
 
         // TODO Inject this via constructor when implementing a response processor.
@@ -61,9 +59,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     @Override
-    public Optional<RowData> pull(List<LookupArg> lookupArgs) {
+    public Optional<RowData> pull(RowData lookupRow) {
         try {
-            return queryAndProcess(lookupArgs);
+            return queryAndProcess(lookupRow);
         } catch (Exception e) {
             log.error("Exception during HTTP request.", e);
             return Optional.empty();
@@ -71,9 +69,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     // TODO Add Retry Policy And configure TimeOut from properties
-    private Optional<RowData> queryAndProcess(List<LookupArg> params) throws Exception {
+    private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
 
-        HttpRequest request = requestFactory.buildLookupRequest(params);
+        HttpRequest request = requestFactory.buildLookupRequest(lookupData);
         HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
         return processHttpResponse(response, request);
     }
@@ -87,18 +85,18 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
             return Optional.empty();
         }
 
-        String body = response.body();
+        String responseBody = response.body();
         int statusCode = response.statusCode();
 
         log.debug("Received {} status code for RestTableSource Request", statusCode);
-        if (notErrorCodeAndNotEmptyBody(body, statusCode)) {
-            log.trace("Server response body" + body);
-            return Optional.ofNullable(runtimeDecoder.deserialize(body.getBytes()));
+        if (notErrorCodeAndNotEmptyBody(responseBody, statusCode)) {
+            log.trace("Server response body" + responseBody);
+            return Optional.ofNullable(responseBodyDecoder.deserialize(responseBody.getBytes()));
         } else {
             log.warn(
                 String.format("Returned Http status code was invalid or returned body was empty. "
                 + "Status Code [%s], "
-                + "response body [%s]", statusCode, body)
+                + "response body [%s]", statusCode, responseBody)
             );
 
             return Optional.empty();

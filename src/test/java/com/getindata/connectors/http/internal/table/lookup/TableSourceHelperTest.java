@@ -29,6 +29,6 @@ class TableSourceHelperTest {
     void testNotComposite() {
         when(logicalType.getTypeRoot()).thenReturn(LogicalTypeRoot.BIGINT);
 
-        assertThat(TableSourceHelper.getFieldNames(dataType)).isEmpty();
+        assertThat(TableSourceHelper.getFieldNames(dataType.getLogicalType())).isEmpty();
     }
 }

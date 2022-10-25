@@ -6,6 +6,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.time.Duration;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
@@ -13,6 +16,7 @@ import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 /**
  * Implementation of {@link HttpRequestFactory} for GET REST calls.
  */
+@Slf4j
 public class GetRequestFactory extends RequestFactoryBase {
 
     public GetRequestFactory(
@@ -21,6 +25,11 @@ public class GetRequestFactory extends RequestFactoryBase {
             HttpLookupConfig options) {
 
         super(lookupQueryCreator, headerPreprocessor, options);
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 
     /**

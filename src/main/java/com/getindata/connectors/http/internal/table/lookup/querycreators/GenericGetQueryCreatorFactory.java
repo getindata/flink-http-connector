@@ -3,9 +3,11 @@ package com.getindata.connectors.http.internal.table.lookup.querycreators;
 import java.util.Set;
 
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ReadableConfig;
 
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.LookupQueryCreatorFactory;
+import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 
 /**
  * Factory for creating {@link GenericGetQueryCreator}.
@@ -15,8 +17,10 @@ public class GenericGetQueryCreatorFactory implements LookupQueryCreatorFactory 
     public static final String IDENTIFIER = "generic-get-query";
 
     @Override
-    public LookupQueryCreator createLookupQueryCreator() {
-        return new GenericGetQueryCreator();
+    public LookupQueryCreator createLookupQueryCreator(
+            ReadableConfig readableConfig,
+            LookupRow lookupRow) {
+        return new GenericGetQueryCreator(lookupRow);
     }
 
     @Override

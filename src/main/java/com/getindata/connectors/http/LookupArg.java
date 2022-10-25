@@ -4,19 +4,19 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Transfer object that contains Http request argument and value.
+ * Transfer object that contains single lookup argument (column name) and its value.
  */
 @Data
 @RequiredArgsConstructor
 public class LookupArg {
 
     /**
-     * HTTP request argument's name.
+     * Lookup argument name.
      */
     private final String argName;
 
     /**
-     * HTTP request argument's value.
+     * Lookup argument value.
      */
     private final String argValue;
 }

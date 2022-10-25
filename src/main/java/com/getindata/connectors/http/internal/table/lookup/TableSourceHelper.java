@@ -23,11 +23,10 @@ public final class TableSourceHelper {
      * composite
      * type.
      */
-    public static List<String> getFieldNames(DataType dataType) {
-        final LogicalType type = dataType.getLogicalType();
+    public static List<String> getFieldNames(LogicalType type) {
 
         if (type.getTypeRoot() == LogicalTypeRoot.DISTINCT_TYPE) {
-            return getFieldNames(dataType.getChildren().get(0));
+            return getFieldNames(type.getChildren().get(0));
         } else if (isCompositeType(type)) {
             return LogicalTypeChecks.getFieldNames(type);
         }

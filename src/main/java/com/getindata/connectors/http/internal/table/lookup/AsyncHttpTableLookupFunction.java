@@ -14,7 +14,6 @@ import org.apache.flink.table.functions.AsyncTableFunction;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
-import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction.ColumnData;
 import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 @Slf4j
@@ -81,8 +80,8 @@ public class AsyncHttpTableLookupFunction extends AsyncTableFunction<RowData> {
             publishingThreadPool);
     }
 
-    public ColumnData getColumnData() {
-        return decorate.getColumnData();
+    public LookupRow getLookupRow() {
+        return decorate.getLookupRow();
     }
 
     public HttpLookupConfig getOptions() {

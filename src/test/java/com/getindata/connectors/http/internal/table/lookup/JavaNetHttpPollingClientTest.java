@@ -27,6 +27,9 @@ public class JavaNetHttpPollingClientTest {
     @Mock
     private DeserializationSchema<RowData> decoder;
 
+    @Mock
+    private LookupRow lookupRow;
+
     private HeaderPreprocessor headerPreprocessor;
 
     private HttpLookupConfig options;
@@ -44,7 +47,11 @@ public class JavaNetHttpPollingClientTest {
             httpClient,
             decoder,
             options,
-            new GetRequestFactory(new GenericGetQueryCreator(), headerPreprocessor, options)
+            new GetRequestFactory(
+                new GenericGetQueryCreator(lookupRow),
+                headerPreprocessor,
+                options
+            )
         );
 
         assertThat(
@@ -61,8 +68,8 @@ public class JavaNetHttpPollingClientTest {
         properties.setProperty("my.property", "val2");
         properties.setProperty(
             HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Origin",
-            "https://developer.mozilla.org")
-        ;
+            "https://developer.mozilla.org");
+
         properties.setProperty(
             HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Cache-Control",
             "no-cache, no-store, max-age=0, must-revalidate"
@@ -81,7 +88,11 @@ public class JavaNetHttpPollingClientTest {
             httpClient,
             decoder,
             lookupConfig,
-            new GetRequestFactory(new GenericGetQueryCreator(), headerPreprocessor, lookupConfig)
+            new GetRequestFactory(
+                new GenericGetQueryCreator(lookupRow),
+                headerPreprocessor,
+                lookupConfig
+            )
         );
 
         String[] headersAndValues =

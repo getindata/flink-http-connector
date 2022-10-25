@@ -35,4 +35,9 @@ public class HttpLookupConnectorOptions {
         ConfigOptions.key(SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER)
             .stringType()
             .noDefaultValue();
+
+    public static final ConfigOption<String> LOOKUP_REQUEST_FORMAT =
+        ConfigOptions.key("lookup-request.format")
+            .stringType()
+            .defaultValue("json");
 }

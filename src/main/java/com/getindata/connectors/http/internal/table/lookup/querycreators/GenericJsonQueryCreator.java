@@ -1,11 +1,10 @@
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.table.data.RowData;
 
-import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.LookupQueryCreator;
 
 /**
@@ -13,37 +12,24 @@ import com.getindata.connectors.http.LookupQueryCreator;
  */
 public class GenericJsonQueryCreator implements LookupQueryCreator {
 
-    private final ObjectMapper objectMapper;
+    /**
+     * The {@link SerializationSchema} to serialize {@link RowData} object.
+     */
+    private final SerializationSchema<RowData> jsonSerialization;
 
-    public GenericJsonQueryCreator() {
-        this.objectMapper = new ObjectMapper();
+    public GenericJsonQueryCreator(SerializationSchema<RowData> jsonSerialization) {
+
+        this.jsonSerialization = jsonSerialization;
     }
 
     /**
-     * Creates a Jason string from given List of {@link LookupArg}.
-     * The list is converted to a Json objects containing pairs of {@code LookupArg.getArgName()}
-     * and {@code LookupArg.getArgValue()} from params parameter.
-     * <p>
-     * A two element array of {@link LookupArg} objects, were first element contains a pair of
-     * {@code "id" -> "1"} and second element contains a pair of {@code "uuid" -> "2"}
-     * will be converted to below Json:
-     * <pre>
-     *     {
-     *         "id": "1",
-     *         "uuid": "2"
-     *     }
-     * </pre>
+     * Creates a Jason string from given {@link RowData}.
      *
-     * @param params the list of {@link LookupArg} containing request parameters that will be
-     *               converted to Json string.
-     * @return Json string created from param argument.
+     * @param lookupDataRow {@link RowData} to serialize into Json string.
+     * @return Json string created from lookupDataRow argument.
      */
     @Override
-    public String createLookupQuery(List<LookupArg> params) {
-        ObjectNode root = this.objectMapper.createObjectNode();
-        for (LookupArg arg : params) {
-            root.put(arg.getArgName(), arg.getArgValue());
-        }
-        return root.toString();
+    public String createLookupQuery(RowData lookupDataRow) {
+        return new String(jsonSerialization.serialize(lookupDataRow), StandardCharsets.UTF_8);
     }
 }

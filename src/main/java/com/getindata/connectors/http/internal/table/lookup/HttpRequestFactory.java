@@ -2,7 +2,8 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.Serializable;
 import java.net.http.HttpRequest;
-import java.util.List;
+
+import org.apache.flink.table.data.RowData;
 
 import com.getindata.connectors.http.LookupArg;
 
@@ -14,8 +15,8 @@ public interface HttpRequestFactory extends Serializable {
     /**
      * Creates {@link HttpRequest} from given List of {@link LookupArg} objects.
      *
-     * @param params {@link LookupArg} objects used for building http request.
+     * @param lookupRow {@link LookupArg} objects used for building http request.
      * @return {@link HttpRequest} created from {@link LookupArg}
      */
-    HttpRequest buildLookupRequest(List<LookupArg> params);
+    HttpRequest buildLookupRequest(RowData lookupRow);
 }
