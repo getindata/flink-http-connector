@@ -17,7 +17,7 @@ public interface LookupQueryCreator extends Serializable {
      * Create a lookup query (like the query appended to path in GET request)
      * out of the provided arguments.
      *
-     * @param lookupDataRow the list of {@link LookupArg} containing request parameters.
+     * @param lookupDataRow a {@link RowData} containing request parameters.
      * @return a lookup query.
      */
     String createLookupQuery(RowData lookupDataRow);

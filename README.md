@@ -145,7 +145,7 @@ To create a custom format user has to implement Flink's `SerializationSchema` an
 In order to use custom format, user has to specify option `'lookup-request.format' = 'customFormatName'`, where `customFormatName` is the identifier of our custom format factory.
 
 Additionally, it is possible to pass query format options from table's DDL.
-This can be done by using option like so: `'lookup-request.format.customFormatName.cotom_formatProperty' = 'propertyValue'`, for example
+This can be done by using option like so: `'lookup-request.format.customFormatName.customFormatProperty' = 'propertyValue'`, for example
 `'lookup-request.format.customFormatName.fail-on-missing-field' = 'true'`. It is important that `customFormatName` part must match `SerializationFormatFactory` identifier used for custom format implementation.
 In this case, the `fail-on-missing-field` will be passed to `SerializationFormatFactory::createEncodingFormat(
 DynamicTableFactory.Context context, ReadableConfig formatOptions)` method in `ReadableConfig` object.
