@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.table.lookup.RowDataSingleValueLookupSchemaEntry;
+import com.getindata.connectors.http.internal.table.lookup.RowTypeLookupSchemaEntry;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 public class GenericGetQueryCreatorTest {
@@ -72,7 +73,7 @@ public class GenericGetQueryCreatorTest {
     }
 
     @Test
-    public void testGenericGetQueryCreationForMultipleQueryParam() {
+    public void testQueryCreationForMultipleQueryParam() {
 
         // GIVEN
         LookupRow lookupRow = new LookupRow()
@@ -111,5 +112,66 @@ public class GenericGetQueryCreatorTest {
 
         // THEN
         assertThat(createdQuery).isEqualTo("key1=val1&key2=val2&key3=3");
+    }
+
+    @Test
+    public void testQueryCreationForRowType() {
+
+        // GIVEN
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(new RowDataSingleValueLookupSchemaEntry(
+                "col1",
+                RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 0)
+            ))
+            .addLookupEntry(
+                new RowTypeLookupSchemaEntry(
+                    "aRow",
+                    RowData.createFieldGetter(
+                        DataTypes.FIELD("aRow", DataTypes.ROW(
+                                DataTypes.FIELD("col2", DataTypes.STRING()),
+                                DataTypes.FIELD("col3", DataTypes.STRING())
+                            )
+                        ).getDataType().getLogicalType(),
+                        1
+                    ))
+                    .addLookupEntry(new RowDataSingleValueLookupSchemaEntry(
+                        "col2",
+                        RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 0))
+                    )
+                    .addLookupEntry(new RowDataSingleValueLookupSchemaEntry(
+                        "col3",
+                        RowData.createFieldGetter(DataTypes.STRING().getLogicalType(), 1))
+                    )
+            );
+
+        // ROW<col1, Row<col2, col3>>
+        lookupRow.setLookupPhysicalRowDataType(
+            row(List.of(
+                    DataTypes.FIELD("col1", DataTypes.STRING()),
+                    DataTypes.FIELD(
+                        "aRow",
+                        DataTypes.ROW(
+                            DataTypes.FIELD("col2", DataTypes.STRING()),
+                            DataTypes.FIELD("col3", DataTypes.STRING())
+                        )
+                    )
+                )
+            )
+        );
+
+        GenericRowData lookupDataRow = GenericRowData.of(
+            StringData.fromString("val1"),
+            GenericRowData.of(
+                StringData.fromString("val2"),
+                StringData.fromString("val3")
+            )
+        );
+
+        // WHEN
+        var queryCreator = new GenericGetQueryCreator(lookupRow);
+        var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
+
+        // THEN
+        assertThat(createdQuery).isEqualTo("col1=val1&col2=val2&col3=val3");
     }
 }
