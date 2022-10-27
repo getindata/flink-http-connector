@@ -10,7 +10,9 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.formats.json.JsonFormatFactory;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.connector.source.DynamicTableSource;
+import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory.Context;
 import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
 import org.apache.flink.table.types.DataType;
@@ -30,19 +32,17 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 @ExtendWith(MockitoExtension.class)
 public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnectionTestBase {
 
     private static final String SAMPLES_FOLDER = "/http/";
-
-    private static final List<String> LOOKUP_KEYS = List.of("id", "uuid");
 
     private static final String ENDPOINT = "/service";
 
@@ -53,11 +53,26 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
     private JavaNetHttpPollingClientFactory pollingClientFactory;
 
+    private RowData lookupRowData;
+
+    private DataType lookupPhysicalDataType;
+
     @BeforeEach
     public void setUp() {
         super.setUp();
-        int[][] lookupKey = {{}};
+        int[][] lookupKey = {{0, 1}};
         this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+
+        this.lookupRowData = GenericRowData.of(
+            StringData.fromString("1"),
+            StringData.fromString("2")
+        );
+
+        this.lookupPhysicalDataType = row(List.of(
+                DataTypes.FIELD("id", DataTypes.STRING()),
+                DataTypes.FIELD("uuid", DataTypes.STRING())
+            )
+        );
     }
 
     @AfterEach
@@ -233,12 +248,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
     private void testPollingClientConnection() {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(properties);
-        RowData result = pollingClient.pull(
-            List.of(
-                new LookupArg("id", "1"),
-                new LookupArg("uuid", "2")
-            )
-        ).orElseThrow();
+        RowData result = pollingClient.pull(lookupRowData).orElseThrow();
 
         assertResult(result);
     }
@@ -247,7 +257,6 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url("https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT)
-            .arguments(LOOKUP_KEYS)
             .properties(properties)
             .build();
 
@@ -281,8 +290,23 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
     }
 
     private void setUpPollingClientFactory(String baseUrl) {
+
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("id",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        0)))
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("uuid",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        1))
+            );
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
         GetRequestFactory requestFactory = new GetRequestFactory(
-            new GenericGetQueryCreator(),
+            new GenericGetQueryCreator(lookupRow),
             HttpHeaderUtils.createDefaultHeaderPreprocessor(),
             HttpLookupConfig.builder()
                 .url(baseUrl + ENDPOINT)

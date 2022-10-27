@@ -133,8 +133,26 @@ the Http Lookup Source DDL property field `gid.connector.http.source.lookup.quer
 
 A default implementation that builds an "ordinary" GET query, i.e. adds `?joinColumn1=value1&joinColumn2=value2&...`
 to the URI of the endpoint,
+
+For body based queries such as POST/PUT requests, the 
 ([GenericGetQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericGetQueryCreator.java))
-is provided and set as a default.
+is provided as a default query creator. This implementation uses Flink's [json-format](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/)  to convert RowData object into Json String.
+
+The important thing worth knowing is that `GenericGetQueryCreator` allows for using custom formats that will perform serialization to Json. Thanks to this, users can create their own logic for converting RowData to Json Strings that will match their requirements
+and use it in HTTP Lookup connector and SQL queries.
+To create a custom format user has to implement Flink's `SerializationSchema` and `SerializationFormatFactory` interfaces and register custom format factory along other factories in
+`resources/META-INF.services/org.apache.flink.table.factories.Factory` file. This is common Flink mechanism for providing custom implementations for various factories.
+In order to use custom format, user has to specify option `'lookup-request.format' = 'customFormatName'`, where `customFormatName` is the identifier of our custom format factory.
+
+Additionally, it is possible to pass query format options from table's DDL.
+This can be done by using option like so: `'lookup-request.format.customFormatName.customFormatProperty' = 'propertyValue'`, for example
+`'lookup-request.format.customFormatName.fail-on-missing-field' = 'true'`. It is important that `customFormatName` part must match `SerializationFormatFactory` identifier used for custom format implementation.
+In this case, the `fail-on-missing-field` will be passed to `SerializationFormatFactory::createEncodingFormat(
+DynamicTableFactory.Context context, ReadableConfig formatOptions)` method in `ReadableConfig` object.
+
+In configuration when default, Flink-Json format is used for `GenericGetQueryCreator`, all options defined in [json-format](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/)
+can be passed through table DDL. For example `'lookup-request.format.json.fail-on-missing-field' = 'true'`. In this case, format identifier is `json`.
+
 
 ### HTTP Sink
 The following example shows the minimum Table API example to create a [HttpDynamicSink](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicSink.java) that writes JSON values to an HTTP endpoint using POST method, assuming Flink has JAR of [JSON serializer](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/json/) installed:

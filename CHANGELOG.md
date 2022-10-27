@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Add to Lookup Source support for performing lookup on columns with complex types such as ROW, Map etc.
+- Add support for custom Json Serialization format for SQL Lookup Source when using [GenericJsonQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericJsonQueryCreator.java)
+  The custom format can be defined using Flink's Factory mechanism. The format name can be defined using
+  `lookup-request.format` option. The default format is `json` which means that connector will use FLink's [json-format](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/) 
+
 ## [0.6.0] - 2022-10-05
 
 ### Added

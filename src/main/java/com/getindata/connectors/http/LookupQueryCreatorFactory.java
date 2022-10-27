@@ -1,8 +1,12 @@
 package com.getindata.connectors.http;
 
+import java.io.Serializable;
+
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.factories.Factory;
 
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSource;
+import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 
 /**
  * The {@link Factory} that dynamically creates and injects {@link LookupQueryCreator} to
@@ -29,10 +33,12 @@ import com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSource
  * )
  * }</pre>
  */
-public interface LookupQueryCreatorFactory extends Factory {
+public interface LookupQueryCreatorFactory extends Factory, Serializable {
 
     /**
      * @return {@link LookupQueryCreator} custom lookup query creator instance
      */
-    LookupQueryCreator createLookupQueryCreator();
+    LookupQueryCreator createLookupQueryCreator(
+        ReadableConfig readableConfig,
+        LookupRow lookupRow);
 }

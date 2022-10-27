@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -11,11 +10,14 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.formats.json.JsonFormatFactory;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.connector.source.DynamicTableSource;
+import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory.Context;
 import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
 import org.apache.flink.table.types.DataType;
@@ -43,19 +45,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreator;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 @ExtendWith(MockitoExtension.class)
 class JavaNetHttpPollingClientConnectionTest {
 
     private static final String SAMPLES_FOLDER = "/http/";
-
-    private static final List<String> LOOKUP_KEYS = List.of("id", "uuid");
 
     private static final String ENDPOINT = "/service";
 
@@ -69,6 +69,10 @@ class JavaNetHttpPollingClientConnectionTest {
     private StubMapping stubMapping;
 
     private Properties properties;
+
+    private RowData lookupRowData;
+
+    private DataType lookupPhysicalDataType;
 
     @BeforeAll
     public static void setUpAll() {
@@ -87,6 +91,17 @@ class JavaNetHttpPollingClientConnectionTest {
     public void setUp() {
         int[][] lookupKey = {{}};
         this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+
+        this.lookupRowData = GenericRowData.of(
+            StringData.fromString("1"),
+            StringData.fromString("2")
+        );
+
+        this.lookupPhysicalDataType = row(List.of(
+                DataTypes.FIELD("id", DataTypes.STRING()),
+                DataTypes.FIELD("uuid", DataTypes.STRING())
+            )
+        );
 
         this.properties = new Properties();
         this.properties.setProperty(
@@ -107,15 +122,10 @@ class JavaNetHttpPollingClientConnectionTest {
 
         // GIVEN
         this.stubMapping = setUpServerStub(200);
-        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl());
 
         // WHEN
-        RowData result = pollingClient.pull(
-            List.of(
-                new LookupArg("id", "1"),
-                new LookupArg("uuid", "2")
-            )
-        ).orElseThrow();
+        RowData result = pollingClient.pull(lookupRowData).orElseThrow();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -140,18 +150,12 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient =
             setUpPollingClient(
                 getBaseUrl(),
-                LOOKUP_KEYS,
                 properties,
                 setUpBodyRequestFactory(methodName, properties)
             );
 
         // WHEN
-        RowData result = pollingClient.pull(
-            List.of(
-                new LookupArg("id", "1"),
-                new LookupArg("uuid", "2")
-            )
-        ).orElseThrow();
+        RowData result = pollingClient.pull(lookupRowData).orElseThrow();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -192,18 +196,12 @@ class JavaNetHttpPollingClientConnectionTest {
         this.stubMapping = setUpServerStub(201);
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(
             getBaseUrl(),
-            LOOKUP_KEYS,
             properties,
             setUpGetRequestFactory(properties)
         );
 
         // WHEN
-        Optional<RowData> poll = pollingClient.pull(
-            List.of(
-                new LookupArg("id", "1"),
-                new LookupArg("uuid", "2")
-            )
-        );
+        Optional<RowData> poll = pollingClient.pull(lookupRowData);
 
         // THEN
         assertThat(poll.isEmpty()).isEqualTo(isExpectedResponseEmpty);
@@ -214,15 +212,10 @@ class JavaNetHttpPollingClientConnectionTest {
 
         // GIVEN
         this.stubMapping = setUpServerStub(500);
-        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl());
 
         // WHEN
-        Optional<RowData> poll = pollingClient.pull(
-            List.of(
-                new LookupArg("id", "1"),
-                new LookupArg("uuid", "2")
-            )
-        );
+        Optional<RowData> poll = pollingClient.pull(lookupRowData);
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -235,11 +228,10 @@ class JavaNetHttpPollingClientConnectionTest {
 
         // GIVEN
         this.stubMapping = setUpServerStub(200);
-        JavaNetHttpPollingClient pollingClient =
-            setUpPollingClient(getBaseUrl(), LOOKUP_KEYS);
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl());
 
         // WHEN
-        Optional<RowData> poll = pollingClient.pull(Collections.emptyList());
+        Optional<RowData> poll = pollingClient.pull(null);
 
         // THEN
         assertThat(poll.isEmpty()).isTrue();
@@ -268,18 +260,12 @@ class JavaNetHttpPollingClientConnectionTest {
 
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(
             getBaseUrl(),
-            LOOKUP_KEYS,
             properties,
             setUpGetRequestFactory(properties)
         );
 
         // WHEN
-        RowData result = pollingClient.pull(
-            List.of(
-                new LookupArg("id", "1"),
-                new LookupArg("uuid", "2")
-            )
-        ).orElseThrow();
+        RowData result = pollingClient.pull(lookupRowData).orElseThrow();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -299,7 +285,7 @@ class JavaNetHttpPollingClientConnectionTest {
         return wireMockServer.baseUrl() + ENDPOINT;
     }
 
-    public JavaNetHttpPollingClient setUpPollingClient(String url, List<String> arguments) {
+    public JavaNetHttpPollingClient setUpPollingClient(String url) {
 
         Properties properties = new Properties();
         properties.setProperty(
@@ -307,12 +293,26 @@ class JavaNetHttpPollingClientConnectionTest {
             "application/json"
         );
 
-        return setUpPollingClient(url, arguments, properties, setUpGetRequestFactory(properties));
+        return setUpPollingClient(url, properties, setUpGetRequestFactory(properties));
     }
 
     private GetRequestFactory setUpGetRequestFactory(Properties properties) {
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("id",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        0)))
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("uuid",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        1))
+            );
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
         return new GetRequestFactory(
-            new GenericGetQueryCreator(),
+            new GenericGetQueryCreator(lookupRow),
             HttpHeaderUtils.createDefaultHeaderPreprocessor(),
             HttpLookupConfig.builder()
                 .url(getBaseUrl())
@@ -324,9 +324,15 @@ class JavaNetHttpPollingClientConnectionTest {
     private BodyBasedRequestFactory setUpBodyRequestFactory(
             String methodName,
             Properties properties) {
+
+        SerializationSchema<RowData> jsonSerializer =
+            new JsonFormatFactory()
+                .createEncodingFormat(dynamicTableFactoryContext, new Configuration())
+                .createRuntimeEncoder(null, lookupPhysicalDataType);
+
         return new BodyBasedRequestFactory(
             methodName,
-            new GenericJsonQueryCreator(),
+            new GenericJsonQueryCreator(jsonSerializer),
             HttpHeaderUtils.createDefaultHeaderPreprocessor(),
             HttpLookupConfig.builder()
                 .url(getBaseUrl())
@@ -337,13 +343,11 @@ class JavaNetHttpPollingClientConnectionTest {
 
     private JavaNetHttpPollingClient setUpPollingClient(
             String url,
-            List<String> arguments,
             Properties properties,
             HttpRequestFactory requestFactory) {
 
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(url)
-            .arguments(arguments)
             .properties(properties)
             .build();
 
@@ -366,6 +370,7 @@ class JavaNetHttpPollingClientConnectionTest {
 
         JavaNetHttpPollingClientFactory pollingClientFactory =
             new JavaNetHttpPollingClientFactory(requestFactory);
+
         return pollingClientFactory.createPollClient(lookupConfig, schemaDecoder);
     }
 

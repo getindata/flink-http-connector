@@ -7,6 +7,9 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
 import java.time.Duration;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
@@ -15,6 +18,7 @@ import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
  * Implementation of {@link HttpRequestFactory} for REST calls that sends their parameters using
  * request body.
  */
+@Slf4j
 public class BodyBasedRequestFactory extends RequestFactoryBase {
 
     private final String methodName;
@@ -42,6 +46,11 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
             .uri(constructGetUri())
             .method(methodName, BodyPublishers.ofString(lookupQuery))
             .timeout(Duration.ofMinutes(2));
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return log;
     }
 
     private URI constructGetUri() {

@@ -3,11 +3,11 @@ package com.getindata.connectors.http.internal.table.lookup;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.table.data.RowData;
+import org.slf4j.Logger;
 
-import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -49,9 +49,11 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
     }
 
     @Override
-    public HttpRequest buildLookupRequest(List<LookupArg> params) {
+    public HttpRequest buildLookupRequest(RowData lookupRow) {
 
-        var lookupQuery = lookupQueryCreator.createLookupQuery(params);
+        String lookupQuery = lookupQueryCreator.createLookupQuery(lookupRow);
+        getLogger().debug("Created Http lookup query: " + lookupQuery);
+
         Builder requestBuilder = setUpRequestMethod(lookupQuery);
 
         if (headersAndValues.length != 0) {
@@ -60,6 +62,8 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
 
         return requestBuilder.build();
     }
+
+    protected abstract Logger getLogger();
 
     /**
      * Method for preparing {@link HttpRequest.Builder} for concrete REST method.

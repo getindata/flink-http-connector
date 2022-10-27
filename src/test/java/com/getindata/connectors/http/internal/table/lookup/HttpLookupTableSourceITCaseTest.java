@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.File;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -10,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -19,6 +21,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
@@ -55,7 +59,7 @@ public class HttpLookupTableSourceITCaseTest {
     /**
      * Comparator for Flink SQL result.
      */
-    private final Comparator<Row> rowComparator = (row1, row2) -> {
+    private static final Comparator<Row> ROW_COMPARATOR = (row1, row2) -> {
         String row1Id = (String) Objects.requireNonNull(row1.getField("id"));
         String row2Id = (String) Objects.requireNonNull(row2.getField("id"));
 
@@ -101,10 +105,15 @@ public class HttpLookupTableSourceITCaseTest {
     @ValueSource(strings = {"", "GET", "POST", "PUT"})
     public void testHttpLookupJoin(String methodName) throws Exception {
 
+        // GIVEN
         if (StringUtils.isNullOrWhitespaceOnly(methodName) || methodName.equalsIgnoreCase("GET")) {
             setupServerStub(wireMockServer);
         } else {
-            setUpServerBodyStub(methodName, wireMockServer);
+            setUpServerBodyStub(
+                methodName,
+                wireMockServer,
+                List.of(matchingJsonPath("$.id"), matchingJsonPath("$.id2"))
+            );
         }
 
         String lookupTable =
@@ -123,19 +132,21 @@ public class HttpLookupTableSourceITCaseTest {
                 + "'format' = 'json',"
                 + "'connector' = 'rest-lookup',"
                 + ((StringUtils.isNullOrWhitespaceOnly(methodName)) ?
-                    "" :
-                    "'lookup-method' = '" + methodName + "',")
+                "" :
+                "'lookup-method' = '" + methodName + "',")
                 + "'url' = 'http://localhost:9090/client',"
                 + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
                 + "'asyncPolling' = 'true'"
                 + ")";
 
+        // WHEN/THEN
         testLookupJoin(lookupTable);
     }
 
     @Test
     public void testHttpsMTlsLookupJoin() throws Exception {
 
+        // GIVEN
         File serverTrustedCert = new File(CERTS_PATH + "ca.crt");
         File clientCert = new File(CERTS_PATH + "client.crt");
         File clientPrivateKey = new File(CERTS_PATH + "clientPrivateKey.pem");
@@ -169,7 +180,339 @@ public class HttpLookupTableSourceITCaseTest {
                 clientPrivateKey.getAbsolutePath()
             );
 
+        // WHEN/THEN
         testLookupJoin(lookupTable);
+    }
+
+    @Test
+    public void testLookupJoinOnRowType() throws Exception {
+
+        // GIVEN
+        setUpServerBodyStub(
+            "POST",
+            wireMockServer,
+            List.of(
+                matchingJsonPath("$.row.aStringColumn"),
+                matchingJsonPath("$.row.anIntColumn"),
+                matchingJsonPath("$.row.aFloatColumn")
+            )
+        );
+
+        String fields =
+            "`row` ROW<`aStringColumn` STRING, `anIntColumn` INT, `aFloatColumn` FLOAT>\n";
+
+        String sourceTable =
+            "CREATE TABLE Orders (\n"
+                + "  proc_time AS PROCTIME(),\n"
+                + "  id STRING,\n"
+                + fields
+                + ") WITH ("
+                + "'connector' = 'datagen',"
+                + "'rows-per-second' = '1',"
+                + "'fields.id.kind' = 'sequence',"
+                + "'fields.id.start' = '1',"
+                + "'fields.id.end' = '5'"
+                + ")";
+
+        String lookupTable =
+            "CREATE TABLE Customers (\n" +
+                "  `enrichedInt` INT,\n" +
+                "  `enrichedString` STRING,\n" +
+                "  \n"
+                + fields
+                + ") WITH ("
+                + "'format' = 'json',"
+                + "'lookup-request.format' = 'json',"
+                + "'lookup-request.format.json.fail-on-missing-field' = 'true',"
+                + "'connector' = 'rest-lookup',"
+                + "'lookup-method' = 'POST',"
+                + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + "'asyncPolling' = 'true'"
+                + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
+
+        // WHEN
+        // SQL query that performs JOIN on both tables.
+        String joinQuery =
+            "SELECT o.id, o.`row`, c.enrichedInt, c.enrichedString FROM Orders AS o"
+                + " JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c"
+                + " ON (\n"
+                + "  o.`row` = c.`row`\n"
+                + ")";
+
+        TableResult result = tEnv.executeSql(joinQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
+
+        // TODO add assert on values
+        assertThat(collectedRows.size()).isEqualTo(5);
+    }
+
+    @Test
+    public void testLookupJoinOnRowTypeAndRootColumn() throws Exception {
+
+        // GIVEN
+        setUpServerBodyStub(
+            "POST",
+            wireMockServer,
+            List.of(
+                matchingJsonPath("$.enrichedString"),
+                matchingJsonPath("$.row.aStringColumn"),
+                matchingJsonPath("$.row.anIntColumn"),
+                matchingJsonPath("$.row.aFloatColumn")
+            )
+        );
+
+        String fields =
+            "`row` ROW<`aStringColumn` STRING, `anIntColumn` INT, `aFloatColumn` FLOAT>\n";
+
+        String sourceTable =
+            "CREATE TABLE Orders (\n"
+                + "  proc_time AS PROCTIME(),\n"
+                + "  id STRING,\n"
+                + fields
+                + ") WITH ("
+                + "'connector' = 'datagen',"
+                + "'rows-per-second' = '1',"
+                + "'fields.id.kind' = 'sequence',"
+                + "'fields.id.start' = '1',"
+                + "'fields.id.end' = '5'"
+                + ")";
+
+        String lookupTable =
+            "CREATE TABLE Customers (\n" +
+                "  `enrichedInt` INT,\n" +
+                "  `enrichedString` STRING,\n" +
+                "  \n"
+                + fields
+                + ") WITH ("
+                + "'format' = 'json',"
+                + "'lookup-request.format' = 'json',"
+                + "'lookup-request.format.json.fail-on-missing-field' = 'true',"
+                + "'connector' = 'rest-lookup',"
+                + "'lookup-method' = 'POST',"
+                + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + "'asyncPolling' = 'true'"
+                + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
+
+        // WHEN
+        // SQL query that performs JOIN on both tables.
+        String joinQuery =
+            "SELECT o.id, o.`row`, c.enrichedInt, c.enrichedString FROM Orders AS o"
+                + " JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c"
+                + " ON (\n"
+                + "  o.id = c.enrichedString AND\n"
+                + "  o.`row` = c.`row`\n"
+                + ")";
+
+        TableResult result = tEnv.executeSql(joinQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
+
+        // TODO add assert on values
+        assertThat(collectedRows.size()).isEqualTo(5);
+    }
+
+    @Test
+    public void testLookupJoinOnRowWithRowType() throws Exception {
+
+        // GIVEN
+        setUpServerBodyStub(
+            "POST",
+            wireMockServer,
+            List.of(
+                matchingJsonPath("$.nestedRow.aStringColumn"),
+                matchingJsonPath("$.nestedRow.anIntColumn"),
+                matchingJsonPath("$.nestedRow.aRow.anotherStringColumn"),
+                matchingJsonPath("$.nestedRow.aRow.anotherIntColumn")
+            )
+        );
+
+        String fields =
+            "  `nestedRow` ROW<" +
+            "    `aStringColumn` STRING," +
+            "    `anIntColumn` INT," +
+            "    `aRow` ROW<`anotherStringColumn` STRING, `anotherIntColumn` INT>" +
+            "   >\n";
+
+        String sourceTable =
+            "CREATE TABLE Orders (\n"
+                + "  proc_time AS PROCTIME(),\n"
+                + "  id STRING,\n"
+                + fields
+                + ") WITH ("
+                + "'connector' = 'datagen',"
+                + "'rows-per-second' = '1',"
+                + "'fields.id.kind' = 'sequence',"
+                + "'fields.id.start' = '1',"
+                + "'fields.id.end' = '5'"
+                + ")";
+
+        String lookupTable =
+            "CREATE TABLE Customers (\n" +
+                "  `enrichedInt` INT,\n" +
+                "  `enrichedString` STRING,\n" +
+                "  \n"
+                + fields
+                + ") WITH ("
+                + "'format' = 'json',"
+                + "'connector' = 'rest-lookup',"
+                + "'lookup-method' = 'POST',"
+                + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + "'asyncPolling' = 'true'"
+                + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
+
+        // SQL query that performs JOIN on both tables.
+        String joinQuery =
+            "SELECT o.id, o.`nestedRow`, c.enrichedInt, c.enrichedString FROM Orders AS o"
+                + " JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c"
+                + " ON (\n"
+                + "  o.`nestedRow` = c.`nestedRow`\n"
+                + ")";
+
+        TableResult result = tEnv.executeSql(joinQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
+
+        // TODO add assert on values
+        assertThat(collectedRows.size()).isEqualTo(5);
+    }
+
+    @Test
+    public void testNestedLookupJoinWithoutCast() throws Exception {
+
+        // TODO ADD MORE ASSERTS
+        // GIVEN
+        setUpServerBodyStub(
+            "POST",
+            wireMockServer,
+            List.of(
+                matchingJsonPath("$.bool"),
+                matchingJsonPath("$.tinyint"),
+                matchingJsonPath("$.smallint"),
+                matchingJsonPath("$.map"),
+                matchingJsonPath("$.doubles"),
+                matchingJsonPath("$.multiSet"),
+                matchingJsonPath("$.time"),
+                matchingJsonPath("$.map2map")
+            )
+        );
+
+        String fields =
+            "  `bool` BOOLEAN,\n" +
+                "  `tinyint` TINYINT,\n" +
+                "  `smallint` SMALLINT,\n" +
+                "  `idInt` INT,\n" +
+                "  `bigint` BIGINT,\n" +
+                "  `float` FLOAT,\n" +
+                "  `name` STRING,\n" +
+                "  `decimal` DECIMAL(9, 6),\n" +
+                "  `doubles` ARRAY<DOUBLE>,\n" +
+                "  `date` DATE,\n" +
+                "  `time` TIME(0),\n" +
+                "  `timestamp3` TIMESTAMP(3),\n" +
+                "  `timestamp9` TIMESTAMP(9),\n" +
+                "  `timestampWithLocalZone` TIMESTAMP_LTZ(9),\n" +
+                "  `map` MAP<STRING, BIGINT>,\n" +
+                "  `multiSet` MULTISET<STRING>,\n" +
+                "  `map2map` MAP<STRING, MAP<STRING, INT>>,\n" +
+                "  `row` ROW<`aStringColumn` STRING, `anIntColumn` INT, `aFloatColumn` FLOAT>,\n" +
+                "  `nestedRow` ROW<" +
+                "    `aStringColumn` STRING," +
+                "    `anIntColumn` INT," +
+                "    `aRow` ROW<`anotherStringColumn` STRING, `anotherIntColumn` INT>" +
+                "   >,\n" +
+                "  `aTable` ARRAY<ROW<" +
+                "      `aStringColumn` STRING," +
+                "      `anIntColumn` INT," +
+                "      `aFloatColumn` FLOAT" +
+                "  >>\n";
+
+        String sourceTable =
+            "CREATE TABLE Orders (\n"
+                + "id STRING,"
+                + "  proc_time AS PROCTIME(),\n"
+                + fields
+                + ") WITH ("
+                + "'connector' = 'datagen',"
+                + "'rows-per-second' = '1',"
+                + "'fields.id.kind' = 'sequence',"
+                + "'fields.id.start' = '1',"
+                + "'fields.id.end' = '5'"
+                + ")";
+
+        String lookupTable =
+            "CREATE TABLE Customers (\n" +
+                "  `enrichedInt` INT,\n" +
+                "  `enrichedString` STRING,\n" +
+                "  \n"
+                + fields
+                + ") WITH ("
+                + "'format' = 'json',"
+                + "'lookup-request.format' = 'json',"
+                + "'lookup-request.format.json.fail-on-missing-field' = 'true',"
+                + "'lookup-method' = 'POST',"
+                + "'connector' = 'rest-lookup',"
+                + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + "'asyncPolling' = 'true'"
+                + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
+
+        // SQL query that performs JOIN on both tables.
+        String joinQuery =
+            "SELECT o.id, o.name, c.enrichedInt, c.enrichedString FROM Orders AS o"
+                + " JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c"
+                + " ON (\n"
+                + "  o.`bool` = c.`bool` AND\n"
+                + "  o.`tinyint` = c.`tinyint` AND\n"
+                + "  o.`smallint` = c.`smallint` AND\n"
+                + "  o.idInt = c.idInt AND\n"
+                + "  o.`bigint` = c.`bigint` AND\n"
+                + "  o.`float` = c.`float` AND\n"
+                + "  o.name = c.name AND\n"
+                + "  o.`decimal` = c.`decimal` AND\n"
+                + "  o.doubles = c.doubles AND\n"
+                + "  o.`date` = c.`date` AND\n"
+                + "  o.`time` = c.`time` AND\n"
+                + "  o.timestamp3 = c.timestamp3 AND\n"
+                + "  o.timestamp9 = c.timestamp9 AND\n"
+                + "  o.timestampWithLocalZone = c.timestampWithLocalZone AND\n"
+                + "  o.`map` = c.`map` AND\n"
+                + "  o.`multiSet` = c.`multiSet` AND\n"
+                + "  o.map2map = c.map2map AND\n"
+                + "  o.`row` = c.`row` AND\n"
+                + "  o.nestedRow = c.nestedRow AND\n"
+                + "  o.aTable = c.aTable\n"
+                + ")";
+
+        TableResult result = tEnv.executeSql(joinQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
+
+        // TODO add assert on values
+        assertThat(collectedRows.size()).isEqualTo(5);
     }
 
     private void testLookupJoin(String lookupTable) throws Exception {
@@ -193,6 +536,7 @@ public class HttpLookupTableSourceITCaseTest {
         tEnv.executeSql(sourceTable);
         tEnv.executeSql(lookupTable);
 
+        // WHEN
         // SQL query that performs JOIN on both tables.
         String joinQuery =
             "SELECT o.id, o.id2, c.msg, c.uuid, c.isActive, c.balance FROM Orders AS o "
@@ -203,15 +547,8 @@ public class HttpLookupTableSourceITCaseTest {
         TableResult result = tEnv.executeSql(joinQuery);
         result.await(15, TimeUnit.SECONDS);
 
-        // We want to have sort the result by "id" to make validation easier.
-        SortedSet<Row> collectedRows = new TreeSet<>(rowComparator);
-        try (CloseableIterator<Row> joinResult = result.collect()) {
-            while (joinResult.hasNext()) {
-                Row row = joinResult.next();
-                log.info("Collected row " + row);
-                collectedRows.add(row);
-            }
-        }
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
 
         // validate every row and its column.
         assertAll(() -> {
@@ -234,10 +571,27 @@ public class HttpLookupTableSourceITCaseTest {
         );
     }
 
+    @NotNull
+    private SortedSet<Row> getCollectedRows(TableResult result) throws Exception {
+
+        // We want to sort the result by "id" to make validation easier.
+        SortedSet<Row> collectedRows = new TreeSet<>(ROW_COMPARATOR);
+        try (CloseableIterator<Row> joinResult = result.collect()) {
+            while (joinResult.hasNext()) {
+                Row row = joinResult.next();
+                log.info("Collected row " + row);
+                collectedRows.add(row);
+            }
+        }
+        return collectedRows;
+    }
+
     private void setupServerStub(WireMockServer wireMockServer) {
         StubMapping stubMapping = wireMockServer.stubFor(
             get(urlPathEqualTo(ENDPOINT))
                 .withHeader("Content-Type", equalTo("application/json"))
+                .withQueryParam("id", matching("[0-9]+"))
+                .withQueryParam("id2", matching("[0-9]+"))
                 .willReturn(
                     aResponse()
                         .withTransformers(JsonTransform.NAME)));
@@ -245,20 +599,32 @@ public class HttpLookupTableSourceITCaseTest {
         wireMockServer.addStubMapping(stubMapping);
     }
 
-    private void setUpServerBodyStub(String methodName, WireMockServer wireMockServer) {
+    private void setUpServerBodyStub(
+            String methodName,
+            WireMockServer wireMockServer,
+            List<StringValuePattern> matchingJsonPaths) {
 
         MappingBuilder methodStub = (methodName.equalsIgnoreCase("PUT") ?
             put(urlEqualTo(ENDPOINT)) :
-            post(urlEqualTo(ENDPOINT)));
+            post(urlEqualTo(ENDPOINT))
+        );
 
-        StubMapping stubMapping = wireMockServer.stubFor(
-            methodStub
-                .withHeader("Content-Type", equalTo("application/json"))
-                .withRequestBody(matchingJsonPath("$.id"))
-                .withRequestBody(matchingJsonPath("$.id2"))
-                .willReturn(
-                    aResponse()
-                        .withTransformers(JsonTransform.NAME)));
+        methodStub
+            .withHeader("Content-Type", equalTo("application/json"));
+
+        // TODO think about writing custom matcher that will check node values against regexp
+        //  or real values. Currently we check only if JsonPath exists. Alo we should check if there
+        //  are no extra fields.
+        for (StringValuePattern pattern : matchingJsonPaths) {
+            methodStub.withRequestBody(pattern);
+        }
+
+        methodStub
+            .willReturn(
+                aResponse()
+                    .withTransformers(JsonTransform.NAME));
+
+        StubMapping stubMapping = wireMockServer.stubFor(methodStub);
 
         wireMockServer.addStubMapping(stubMapping);
     }

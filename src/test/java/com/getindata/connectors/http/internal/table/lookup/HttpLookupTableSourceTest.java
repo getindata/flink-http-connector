@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
@@ -14,14 +15,18 @@ import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.connector.source.TableFunctionProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
+import org.apache.flink.table.types.DataType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.getindata.connectors.http.internal.table.lookup.HttpTableLookupFunction.ColumnData;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 class HttpLookupTableSourceTest {
+
+    public static final DataType PHYSICAL_ROW_DATA_TYPE =
+        row(List.of(DataTypes.FIELD("id", DataTypes.STRING().notNull())));
 
     private static final ResolvedSchema SCHEMA =
         new ResolvedSchema(
@@ -41,21 +46,20 @@ class HttpLookupTableSourceTest {
             UniqueConstraint.primaryKey("id", List.of("id"))
         );
 
+    // lookupKey index {{0}} means first column.
     private final int[][] lookupKey = {{0}};
-
-    private ColumnData expectedColumnData;
-
-    private HttpLookupConfig expectedLookupConfig;
 
     @BeforeEach
     public void setUp() {
-        expectedColumnData =
-            ColumnData.builder().keyNames(List.of("id").toArray(new String[1])).build();
 
-        expectedLookupConfig =
-            HttpLookupConfig.builder()
-                .url("http://localhost:8080/service")
-                .build();
+        LookupRow expectedLookupRow = new LookupRow();
+        expectedLookupRow.addLookupEntry(
+            new RowDataSingleValueLookupSchemaEntry(
+                "id",
+                RowData.createFieldGetter(DataTypes.STRING().notNull().getLogicalType(), 0)
+            )
+        );
+        expectedLookupRow.setLookupPhysicalRowDataType(PHYSICAL_ROW_DATA_TYPE);
     }
 
     @Test
@@ -71,8 +75,21 @@ class HttpLookupTableSourceTest {
         HttpTableLookupFunction tableFunction =
             (HttpTableLookupFunction) lookupProvider.createTableFunction();
 
-        assertThat(tableFunction.getColumnData()).isEqualTo(expectedColumnData);
-        assertThat(tableFunction.getOptions()).isEqualTo(expectedLookupConfig);
+        LookupRow actualLookupRow = tableFunction.getLookupRow();
+        assertThat(actualLookupRow).isNotNull();
+        assertThat(actualLookupRow.getLookupEntries()).isNotEmpty();
+        assertThat(actualLookupRow.getLookupPhysicalRowDataType())
+            .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
+
+        HttpLookupConfig actualLookupConfig = tableFunction.getOptions();
+        assertThat(actualLookupConfig).isNotNull();
+        assertThat(
+            actualLookupConfig.getReadableConfig().get(
+                ConfigOptions.key("connector").stringType().noDefaultValue())
+        )
+            .withFailMessage(
+                "Readable config probably was not passed from Table Factory or it is empty.")
+            .isNotNull();
     }
 
     @Test
@@ -90,14 +107,21 @@ class HttpLookupTableSourceTest {
         AsyncHttpTableLookupFunction tableFunction =
             (AsyncHttpTableLookupFunction) lookupProvider.createAsyncTableFunction();
 
-        expectedLookupConfig =
-            HttpLookupConfig.builder()
-                .useAsync(true)
-                .url("http://localhost:8080/service")
-                .build();
+        LookupRow actualLookupRow = tableFunction.getLookupRow();
+        assertThat(actualLookupRow).isNotNull();
+        assertThat(actualLookupRow.getLookupEntries()).isNotEmpty();
+        assertThat(actualLookupRow.getLookupPhysicalRowDataType())
+            .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
 
-        assertThat(tableFunction.getColumnData()).isEqualTo(expectedColumnData);
-        assertThat(tableFunction.getOptions()).isEqualTo(expectedLookupConfig);
+        HttpLookupConfig actualLookupConfig = tableFunction.getOptions();
+        assertThat(actualLookupConfig).isNotNull();
+        assertThat(actualLookupConfig.isUseAsync()).isTrue();
+        assertThat(
+            actualLookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.ASYNC_POLLING)
+        )
+            .withFailMessage(
+                "Readable config probably was not passed from Table Factory or it is empty.")
+            .isTrue();
     }
 
     private Map<String, String> getOptionsWithAsync() {
