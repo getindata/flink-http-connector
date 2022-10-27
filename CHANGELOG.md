@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
-- Add to Lookup Source support for performing lookup on columns with complex types such as ROW, Map etc.
-- Add support for custom Json Serialization format for SQL Lookup Source when using [GenericJsonQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericJsonQueryCreator.java)
-  The custom format can be defined using Flink's Factory mechanism. The format name can be defined using
-  `lookup-request.format` option. The default format is `json` which means that connector will use FLink's [json-format](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/) 
+## [0.7.0] - 2022-10-27
+
+-   Add to Lookup Source support for performing lookup on columns with complex types such as ROW, Map etc.
+-   Add support for custom Json Serialization format for SQL Lookup Source when using [GenericJsonQueryCreator](src/main/java/com/getindata/connectors/http/internal/table/lookup/querycreators/GenericJsonQueryCreator.java)
+    The custom format can be defined using Flink's Factory mechanism. The format name can be defined using
+    `lookup-request.format` option. The default format is `json` which means that connector will use FLink's [json-format](https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/) 
 
 ## [0.6.0] - 2022-10-05
 
@@ -84,7 +86,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.7.0...HEAD
+
+[0.7.0]: https://github.com/getindata/flink-http-connector/compare/0.6.0...0.7.0
 
 [0.6.0]: https://github.com/getindata/flink-http-connector/compare/0.5.0...0.6.0
 
