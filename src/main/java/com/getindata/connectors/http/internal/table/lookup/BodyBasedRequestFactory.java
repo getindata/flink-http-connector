@@ -45,7 +45,7 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
         return HttpRequest.newBuilder()
             .uri(constructGetUri())
             .method(methodName, BodyPublishers.ofString(lookupQuery))
-            .timeout(Duration.ofMinutes(2));
+            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
 
     @Override

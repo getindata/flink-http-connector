@@ -100,4 +100,9 @@ public class JsonTransform extends ResponseTransformer {
             .replaceAll("&COUNTER&", String.valueOf(counter))
             .replaceAll("&COUNTER_2&", String.valueOf(counter + 1));
     }
+
+    @Override
+    public boolean applyGlobally() {
+        return false;
+    }
 }

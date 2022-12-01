@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.utils.ConfigUtils;
 
 /**
  * A {@link HttpPostRequestCallback} that logs pairs of request and response as <i>INFO</i> level
@@ -23,8 +24,8 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
     public void call(
         HttpResponse<String> response,
         HttpSinkRequestEntry requestEntry,
-        String _endpointUrl,
-        Map<String, String> _headerMap) {
+        String endpointUrl,
+        Map<String, String> headerMap) {
 
         if (response == null) {
             log.info(
@@ -40,7 +41,7 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
                 requestEntry.method,
                 new String(requestEntry.element, StandardCharsets.UTF_8),
                 response,
-                response.body()
+                response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );
         }
     }

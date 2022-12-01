@@ -108,8 +108,8 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     @Override
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> createWriter(
-        InitContext context
-    ) throws IOException {
+            InitContext context) throws IOException {
+
         return new HttpSinkWriter<>(
             getElementConverter(),
             context,
@@ -121,14 +121,17 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxRecordSizeInBytes(),
             endpointUrl,
             sinkHttpClientBuilder.build(properties, httpPostRequestCallback, headerPreprocessor),
-            Collections.emptyList()
+            Collections.emptyList(),
+            properties
         );
     }
 
     @Override
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> restoreWriter(
-        InitContext context, Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState
-    ) throws IOException {
+            InitContext context,
+            Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState)
+            throws IOException {
+
         return new HttpSinkWriter<>(
             getElementConverter(),
             context,
@@ -140,7 +143,8 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxRecordSizeInBytes(),
             endpointUrl,
             sinkHttpClientBuilder.build(properties, httpPostRequestCallback, headerPreprocessor),
-            recoveredState
+            recoveredState,
+            properties
         );
     }
 

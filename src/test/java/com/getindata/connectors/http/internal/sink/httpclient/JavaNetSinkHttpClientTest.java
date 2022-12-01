@@ -46,6 +46,7 @@ class JavaNetSinkHttpClientTest {
         httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
         when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
         when(httpClientBuilder.sslContext(any())).thenReturn(httpClientBuilder);
+        when(httpClientBuilder.executor(any())).thenReturn(httpClientBuilder);
     }
 
     @Test

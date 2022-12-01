@@ -24,6 +24,8 @@ import javax.net.ssl.TrustManagerFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
+import com.getindata.connectors.http.internal.utils.ConfigUtils;
+
 /**
  * This class represents a security context for given Http connector instance. The Security context
  * is backed by in memory instance of Java's {@link KeyStore}. All keys and certificates managed by
@@ -41,17 +43,6 @@ public class SecurityContext {
     private static final String PRIVATE_KEY_HEADER = "-----BEGIN PRIVATE KEY-----";
 
     private static final String PRIVATE_KEY_FOOTER = "-----END PRIVATE KEY-----";
-
-    /**
-     * A pattern matcher linebreak regexp that represents any Unicode linebreak sequence making it
-     * effectively equivalent to:
-     * <pre>
-     * {@code
-     * &#92;u000D&#92;u000A|[&#92;u000A&#92;u000B&#92;u000C&#92;u000D&#92;u0085&#92;u2028&#92;u2029]
-     * }
-     * </pre>
-     */
-    public static final String UNIVERSAL_NEW_LINE_REGEXP = "\\R";
 
     private final char[] storePassword;
 
@@ -228,7 +219,7 @@ public class SecurityContext {
         if (privateKeyPath.endsWith(".pem")) {
             String privateString = new String(privateData, Charset.defaultCharset())
                 .replace(PRIVATE_KEY_HEADER, "")
-                .replaceAll(UNIVERSAL_NEW_LINE_REGEXP, "")
+                .replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
                 .replace(PRIVATE_KEY_FOOTER, "");
 
             return Base64.getDecoder().decode(privateString);

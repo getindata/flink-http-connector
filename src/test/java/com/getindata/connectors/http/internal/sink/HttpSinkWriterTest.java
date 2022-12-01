@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -65,11 +66,12 @@ class HttpSinkWriterTest {
             10,
             "http://localhost/client",
             httpClient,
-            stateBuffer);
+            stateBuffer,
+            new Properties());
     }
 
     @Test
-    public void testErrorMetric() {
+    public void testErrorMetric() throws InterruptedException {
 
         CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
         future.completeExceptionally(new Exception("Test Exception"));
@@ -83,6 +85,8 @@ class HttpSinkWriterTest {
         List<HttpSinkRequestEntry> requestEntries = Collections.singletonList(request);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
+        // would be good to use Countdown Latch instead sleep...
+        Thread.sleep(2000);
         verify(errorCounter).inc(requestEntries.size());
     }
 }
