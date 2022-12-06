@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+-   Add new parameters for HTTP timeout configuration and thread pool size for Sink and Lookup source http requests.
+
+### Fixed
+-  Fix issue with not cleaning Flink's internal task queue for AsyncIO requests after HTTP timeout in
+   Lookup source - https://github.com/getindata/flink-http-connector/issues/38
+
 ## [0.7.0] - 2022-10-27
 
 -   Add to Lookup Source support for performing lookup on columns with complex types such as ROW, Map etc.

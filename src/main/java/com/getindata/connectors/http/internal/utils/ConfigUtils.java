@@ -14,6 +14,17 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 @NoArgsConstructor(access = AccessLevel.NONE)
 public final class ConfigUtils {
 
+    /**
+     * A pattern matcher linebreak regexp that represents any Unicode linebreak sequence making it
+     * effectively equivalent to:
+     * <pre>
+     * {@code
+     * &#92;u000D&#92;u000A|[&#92;u000A&#92;u000B&#92;u000C&#92;u000D&#92;u0085&#92;u2028&#92;u2029]
+     * }
+     * </pre>
+     */
+    public static final String UNIVERSAL_NEW_LINE_REGEXP = "\\R";
+
     private static final String PROPERTY_NAME_DELIMITER = ".";
 
     /**

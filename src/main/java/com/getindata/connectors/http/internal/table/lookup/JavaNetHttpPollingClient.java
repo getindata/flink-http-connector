@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Collections;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
@@ -34,6 +36,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpRequestFactory requestFactory;
 
+    private final HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
+
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
             DeserializationSchema<RowData> responseBodyDecoder,
@@ -43,6 +47,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.httpClient = httpClient;
         this.responseBodyDecoder = responseBodyDecoder;
         this.requestFactory = requestFactory;
+
+        // TODO inject same way as it is done for Sink
+        this.httpPostRequestCallback = new Slf4JHttpLookupPostRequestCallback();
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.
@@ -79,6 +86,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private Optional<RowData> processHttpResponse(
             HttpResponse<String> response,
             HttpRequest request) throws IOException {
+
+        this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
 
         if (response == null) {
             log.warn("Null Http response for request " + request.uri().toString());

@@ -52,6 +52,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
         ReadableConfig readableConfig = helper.getOptions();
         helper.validateExcept(
+            // properties coming from org.apache.flink.table.api.config.ExecutionConfigOptions
+            "table.",
             HttpConnectorConfigConstants.GID_CONNECTOR_HTTP,
             LOOKUP_REQUEST_FORMAT.key()
         );

@@ -5,6 +5,7 @@ import java.net.http.HttpClient.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -22,8 +23,56 @@ import com.getindata.connectors.http.internal.security.SelfSignedTrustManager;
 @NoArgsConstructor(access = AccessLevel.NONE)
 public class JavaNetHttpClientFactory {
 
+    /**
+     * Creates Java's {@link HttpClient} instance that will be using default, JVM shared {@link
+     * java.util.concurrent.ForkJoinPool} for async calls.
+     *
+     * @param properties properties used to build {@link SSLContext}
+     * @return new {@link HttpClient} instance.
+     */
     public static HttpClient createClient(Properties properties) {
 
+        SSLContext sslContext = getSslContext(properties);
+
+        return HttpClient.newBuilder()
+            .followRedirects(Redirect.NORMAL)
+            .sslContext(sslContext)
+            .build();
+    }
+
+    /**
+     * Creates Java's {@link HttpClient} instance that will be using provided Executor for all async
+     * calls.
+     *
+     * @param properties properties used to build {@link SSLContext}
+     * @param executor   {@link Executor} for async calls.
+     * @return new {@link HttpClient} instance.
+     */
+    public static HttpClient createClient(Properties properties, Executor executor) {
+
+        SSLContext sslContext = getSslContext(properties);
+
+        return HttpClient.newBuilder()
+            .followRedirects(Redirect.NORMAL)
+            .sslContext(sslContext)
+            .executor(executor)
+            .build();
+    }
+
+    /**
+     * Creates an {@link SSLContext} based on provided properties.
+     * <ul>
+     *     <li>{@link HttpConnectorConfigConstants#ALLOW_SELF_SIGNED}</li>
+     *     <li>{@link HttpConnectorConfigConstants#SERVER_TRUSTED_CERT}</li>
+     *     <li>{@link HttpConnectorConfigConstants#PROP_DELIM}</li>
+     *     <li>{@link HttpConnectorConfigConstants#CLIENT_CERT}</li>
+     *     <li>{@link HttpConnectorConfigConstants#CLIENT_PRIVATE_KEY}</li>
+     * </ul>
+     *
+     * @param properties properties used to build {@link SSLContext}
+     * @return new {@link SSLContext} instance.
+     */
+    private static SSLContext getSslContext(Properties properties) {
         SecurityContext securityContext = createSecurityContext(properties);
 
         boolean selfSignedCert = Boolean.parseBoolean(
@@ -54,17 +103,12 @@ public class JavaNetHttpClientFactory {
 
         // NOTE TrustManagers must be created AFTER adding all certificates to KeyStore.
         TrustManager[] trustManagers = getTrustedManagers(securityContext, selfSignedCert);
-        SSLContext sslContext = securityContext.getSslContext(trustManagers);
-
-        return HttpClient.newBuilder()
-            .followRedirects(Redirect.NORMAL)
-            .sslContext(sslContext)
-            .build();
+        return securityContext.getSslContext(trustManagers);
     }
 
     private static TrustManager[] getTrustedManagers(
-            SecurityContext securityContext,
-            boolean selfSignedCert) {
+        SecurityContext securityContext,
+        boolean selfSignedCert) {
 
         TrustManager[] trustManagers = securityContext.getTrustManagers();
 
@@ -88,8 +132,9 @@ public class JavaNetHttpClientFactory {
     }
 
     /**
-     * Creates a {@link SecurityContext} with empty {@link java.security.KeyStore}
-     * or loaded from file.
+     * Creates a {@link SecurityContext} with empty {@link java.security.KeyStore} or loaded from
+     * file.
+     *
      * @param properties Properties for creating {@link SecurityContext}
      * @return new {@link SecurityContext} instance.
      */

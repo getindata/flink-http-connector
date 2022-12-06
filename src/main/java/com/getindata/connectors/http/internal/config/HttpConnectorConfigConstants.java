@@ -65,4 +65,23 @@ public final class HttpConnectorConfigConstants {
         + "security.keystore.type";
 
     // -----------------------------------------------------
+
+    // ------ HTTPS timeouts and thread pool settings ------
+
+    public static final String LOOKUP_HTTP_TIMEOUT_SECONDS =
+        GID_CONNECTOR_HTTP + "source.lookup.request.timeout";
+
+    public static final String SINK_HTTP_TIMEOUT_SECONDS =
+        GID_CONNECTOR_HTTP + "sink.request.timeout";
+
+    public static final String LOOKUP_HTTP_PULING_THREAD_POOL_SIZE =
+        GID_CONNECTOR_HTTP + "source.lookup.request.thread-pool.size";
+
+    public static final String LOOKUP_HTTP_RESPONSE_THREAD_POOL_SIZE =
+        GID_CONNECTOR_HTTP + "source.lookup.response.thread-pool.size";
+
+    public static final String SINK_HTTP_WRITER_THREAD_POOL_SIZE =
+        GID_CONNECTOR_HTTP + "sink.writer.thread-pool.size";
+
+    // -----------------------------------------------------
 }

@@ -1,12 +1,14 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -14,7 +16,11 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ExecutionOptions;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -93,6 +99,11 @@ public class HttpLookupTableSourceITCaseTest {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setRestartStrategy(RestartStrategies.noRestart());
+        Configuration config = new Configuration();
+        config.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.STREAMING);
+        env.configure(config, getClass().getClassLoader());
+        env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
+
         tEnv = StreamTableEnvironment.create(env);
     }
 
@@ -136,11 +147,55 @@ public class HttpLookupTableSourceITCaseTest {
                 "'lookup-method' = '" + methodName + "',")
                 + "'url' = 'http://localhost:9090/client',"
                 + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + "'asyncPolling' = 'true',"
+                + "'table.exec.async-lookup.buffer-capacity' = '50',"
+                + "'table.exec.async-lookup.timeout' = '120s'"
+                + ")";
+
+        // WHEN
+        SortedSet<Row> rows = testLookupJoin(lookupTable);
+
+        // THEN
+        assertEnrichedRows(rows);
+    }
+
+    @Test
+    public void testHttpLookupJoinNoDataFromEndpoint() throws Exception {
+
+        // GIVEN
+        setupServerStubEmptyResponse(wireMockServer);
+
+        String lookupTable =
+            "CREATE TABLE Customers ("
+                + "id STRING,"
+                + "id2 STRING,"
+                + "msg STRING,"
+                + "uuid STRING,"
+                + "details ROW<"
+                + "isActive BOOLEAN,"
+                + "nestedDetails ROW<"
+                + "balance STRING"
+                + ">"
+                + ">"
+                + ") WITH ("
+                + "'format' = 'json',"
+                + "'connector' = 'rest-lookup',"
+                + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
                 + "'asyncPolling' = 'true'"
                 + ")";
 
         // WHEN/THEN
-        testLookupJoin(lookupTable);
+
+        boolean timeoutException = false;
+        try {
+            testLookupJoin(lookupTable);
+        } catch (TimeoutException e) {
+            // we expect no data produced by query so framework should time out.
+            timeoutException = true;
+        }
+
+        assertThat(timeoutException).isTrue();
     }
 
     @Test
@@ -180,8 +235,11 @@ public class HttpLookupTableSourceITCaseTest {
                 clientPrivateKey.getAbsolutePath()
             );
 
-        // WHEN/THEN
-        testLookupJoin(lookupTable);
+        // WHEN
+        SortedSet<Row> rows = testLookupJoin(lookupTable);
+
+        // THEN
+        assertEnrichedRows(rows);
     }
 
     @Test
@@ -515,7 +573,7 @@ public class HttpLookupTableSourceITCaseTest {
         assertThat(collectedRows.size()).isEqualTo(5);
     }
 
-    private void testLookupJoin(String lookupTable) throws Exception {
+    private @NotNull SortedSet<Row> testLookupJoin(String lookupTable) throws Exception {
 
         String sourceTable =
             "CREATE TABLE Orders ("
@@ -548,8 +606,10 @@ public class HttpLookupTableSourceITCaseTest {
         result.await(15, TimeUnit.SECONDS);
 
         // THEN
-        SortedSet<Row> collectedRows = getCollectedRows(result);
+        return getCollectedRows(result);
+    }
 
+    private void assertEnrichedRows(Collection<Row> collectedRows) {
         // validate every row and its column.
         assertAll(() -> {
                 assertThat(collectedRows.size()).isEqualTo(4);
@@ -594,7 +654,24 @@ public class HttpLookupTableSourceITCaseTest {
                 .withQueryParam("id2", matching("[0-9]+"))
                 .willReturn(
                     aResponse()
-                        .withTransformers(JsonTransform.NAME)));
+                        .withTransformers(JsonTransform.NAME)
+                )
+        );
+
+        wireMockServer.addStubMapping(stubMapping);
+    }
+
+    private void setupServerStubEmptyResponse(WireMockServer wireMockServer) {
+        StubMapping stubMapping = wireMockServer.stubFor(
+            get(urlPathEqualTo(ENDPOINT))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withQueryParam("id", matching("[0-9]+"))
+                .withQueryParam("id2", matching("[0-9]+"))
+                .willReturn(
+                    aResponse()
+                        .withBody(new byte[0])
+                )
+        );
 
         wireMockServer.addStubMapping(stubMapping);
     }

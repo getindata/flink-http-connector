@@ -32,7 +32,11 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
         // Validate configuration
         FactoryUtil.createTableFactoryHelper(this, context)
-            .validateExcept(HttpConnectorConfigConstants.GID_CONNECTOR_HTTP);
+            .validateExcept(
+                // properties coming from org.apache.flink.table.api.config.ExecutionConfigOptions
+                "table.",
+                HttpConnectorConfigConstants.GID_CONNECTOR_HTTP
+            );
         validateHttpSinkOptions(tableOptions);
 
         Properties asyncSinkProperties =

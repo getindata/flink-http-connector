@@ -46,7 +46,7 @@ public class GetRequestFactory extends RequestFactoryBase {
         return HttpRequest.newBuilder()
             .uri(constructGetUri(lookupQuery))
             .GET()
-            .timeout(Duration.ofMinutes(2));
+            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
 
     private URI constructGetUri(String lookupQuery) {

@@ -18,12 +18,16 @@ import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
  */
 public abstract class RequestFactoryBase implements HttpRequestFactory {
 
+    public static final String DEFAULT_REQUEST_TIMEOUT_SECONDS = "30";
+
     /**
      * Base url used for {@link HttpRequest} for example "http://localhost:8080"
      */
     protected final String baseUrl;
 
     protected final LookupQueryCreator lookupQueryCreator;
+
+    protected final int httpRequestTimeOutSeconds;
 
     /**
      * HTTP headers that should be used for {@link HttpRequest} created by factory.
@@ -46,6 +50,12 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
             );
 
         this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(headerMap);
+        this.httpRequestTimeOutSeconds = Integer.parseInt(
+            options.getProperties().getProperty(
+                HttpConnectorConfigConstants.LOOKUP_HTTP_TIMEOUT_SECONDS,
+                DEFAULT_REQUEST_TIMEOUT_SECONDS
+            )
+        );
     }
 
     @Override
