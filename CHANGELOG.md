@@ -2,12 +2,16 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-12-06
+
 ### Added
+
 -   Add new parameters for HTTP timeout configuration and thread pool size for Sink and Lookup source http requests.
 
 ### Fixed
--  Fix issue with not cleaning Flink's internal task queue for AsyncIO requests after HTTP timeout in
-   Lookup source - https://github.com/getindata/flink-http-connector/issues/38
+
+-   Fix issue with not cleaning Flink's internal task queue for AsyncIO requests after HTTP timeout in
+    Lookup source - <https://github.com/getindata/flink-http-connector/issues/38>
 
 ## [0.7.0] - 2022-10-27
 
@@ -93,7 +97,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.8.0...HEAD
+
+[0.8.0]: https://github.com/getindata/flink-http-connector/compare/0.7.0...0.8.0
 
 [0.7.0]: https://github.com/getindata/flink-http-connector/compare/0.6.0...0.7.0
 
