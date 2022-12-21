@@ -5,11 +5,9 @@ import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.connector.format.DecodingFormat;
-import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.LookupTableSource;
@@ -42,18 +40,15 @@ public class HttpLookupTableSource
 
     private final HttpLookupConfig lookupConfig;
 
-    private final EncodingFormat<SerializationSchema<RowData>> encodingFormat;
-
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
 
-    public HttpLookupTableSource(DataType physicalRowDataType,
-        HttpLookupConfig lookupConfig,
-        EncodingFormat<SerializationSchema<RowData>> encodingFormat,
-        DecodingFormat<DeserializationSchema<RowData>> decodingFormat) {
+    public HttpLookupTableSource(
+            DataType physicalRowDataType,
+            HttpLookupConfig lookupConfig,
+            DecodingFormat<DeserializationSchema<RowData>> decodingFormat) {
 
         this.physicalRowDataType = physicalRowDataType;
         this.lookupConfig = lookupConfig;
-        this.encodingFormat = encodingFormat;
         this.decodingFormat = decodingFormat;
     }
 
@@ -109,7 +104,6 @@ public class HttpLookupTableSource
         return new HttpLookupTableSource(
             physicalRowDataType,
             lookupConfig,
-            encodingFormat,
             decodingFormat
         );
     }

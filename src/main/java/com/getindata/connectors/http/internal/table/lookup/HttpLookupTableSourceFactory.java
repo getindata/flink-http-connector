@@ -7,7 +7,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.api.DataTypes;
@@ -15,13 +14,11 @@ import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.format.DecodingFormat;
-import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DeserializationFormatFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
-import org.apache.flink.table.factories.SerializationFormatFactory;
 import org.apache.flink.table.types.DataType;
 import static org.apache.flink.table.api.DataTypes.FIELD;
 import static org.apache.flink.table.types.utils.DataTypeUtils.removeTimeAttribute;
@@ -58,11 +55,6 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             LOOKUP_REQUEST_FORMAT.key()
         );
 
-        EncodingFormat<SerializationSchema<RowData>> encodingFormat =
-            helper.discoverEncodingFormat(SerializationFormatFactory.class,
-                HttpLookupConnectorOptions.LOOKUP_REQUEST_FORMAT
-            );
-
         DecodingFormat<DeserializationSchema<RowData>> decodingFormat =
             helper.discoverDecodingFormat(
                 DeserializationFormatFactory.class,
@@ -79,7 +71,6 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
         return new HttpLookupTableSource(
             physicalRowDataType,
             lookupConfig,
-            encodingFormat,
             decodingFormat
         );
     }
