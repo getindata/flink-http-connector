@@ -374,7 +374,7 @@ CREATE TABLE Customers (
 	>
 ) WITH (
 'connector' = 'rest-lookup',
-'format' = 'json' 
+'format' = 'json',
 'url' = 'http://localhost:8080/client', 
 'asyncPolling' = 'true'
 );
