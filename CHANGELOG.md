@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Removed
+-   Removed unused reference to EncodingFormat from HttpLookupTableSource
+
 ## [0.8.0] - 2022-12-06
 
 ### Added
