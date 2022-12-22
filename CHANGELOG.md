@@ -2,11 +2,15 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2022-12-22
+
 ### Fixed
-- Fixed issue with not printing HttpRequest body/parameters for Lookup Source by
-  [Slf4JHttpLookupPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java) - <https://github.com/getindata/flink-http-connector/issues/45>
+
+-   Fixed issue with not printing HttpRequest body/parameters for Lookup Source by
+    [Slf4JHttpLookupPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java) - <https://github.com/getindata/flink-http-connector/issues/45>
 
 ### Removed
+
 -   Removed unused reference to EncodingFormat from HttpLookupTableSource
 
 ## [0.8.0] - 2022-12-06
@@ -104,7 +108,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.8.1...HEAD
+
+[0.8.1]: https://github.com/getindata/flink-http-connector/compare/0.8.0...0.8.1
 
 [0.8.0]: https://github.com/getindata/flink-http-connector/compare/0.7.0...0.8.0
 
