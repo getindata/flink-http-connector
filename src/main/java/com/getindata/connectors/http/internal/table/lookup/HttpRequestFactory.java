@@ -16,5 +16,5 @@ public interface HttpRequestFactory extends Serializable {
      * @param lookupRow {@link RowData} object used for building http request.
      * @return {@link HttpRequest} created from {@link RowData}
      */
-    HttpRequest buildLookupRequest(RowData lookupRow);
+    HttpLookupSourceRequestEntry buildLookupRequest(RowData lookupRow);
 }

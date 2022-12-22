@@ -2,7 +2,6 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Collections;
@@ -36,7 +35,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpRequestFactory requestFactory;
 
-    private final HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
+    private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
@@ -78,19 +77,22 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     // TODO Add Retry Policy And configure TimeOut from properties
     private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
 
-        HttpRequest request = requestFactory.buildLookupRequest(lookupData);
-        HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+        HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
+        HttpResponse<String> response = httpClient.send(
+            request.getHttpRequest(),
+            BodyHandlers.ofString()
+        );
         return processHttpResponse(response, request);
     }
 
     private Optional<RowData> processHttpResponse(
             HttpResponse<String> response,
-            HttpRequest request) throws IOException {
+            HttpLookupSourceRequestEntry request) throws IOException {
 
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
 
         if (response == null) {
-            log.warn("Null Http response for request " + request.uri().toString());
+            log.warn("Null Http response for request " + request.getHttpRequest().uri().toString());
             return Optional.empty();
         }
 

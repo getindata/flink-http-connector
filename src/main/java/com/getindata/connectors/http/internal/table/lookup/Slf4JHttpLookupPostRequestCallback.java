@@ -20,17 +20,20 @@ import com.getindata.connectors.http.internal.utils.ConfigUtils;
  * the {@link HttpLookupTableSource}.
  */
 @Slf4j
-public class Slf4JHttpLookupPostRequestCallback implements HttpPostRequestCallback<HttpRequest> {
+public class Slf4JHttpLookupPostRequestCallback
+        implements HttpPostRequestCallback<HttpLookupSourceRequestEntry> {
 
     @Override
     public void call(
             HttpResponse<String> response,
-            HttpRequest requestEntry,
+            HttpLookupSourceRequestEntry requestEntry,
             String endpointUrl,
             Map<String, String> headerMap) {
 
+        HttpRequest httpRequest = requestEntry.getHttpRequest();
         StringJoiner headers = new StringJoiner(";");
-        for (Entry<String, List<String>> reqHeaders : requestEntry.headers().map().entrySet()) {
+
+        for (Entry<String, List<String>> reqHeaders : httpRequest.headers().map().entrySet()) {
             StringJoiner values = new StringJoiner(";");
             for (String value : reqHeaders.getValue()) {
                 values.add(value);
@@ -41,17 +44,21 @@ public class Slf4JHttpLookupPostRequestCallback implements HttpPostRequestCallba
 
         if (response == null) {
             log.info(
-                "Got response for a request.\n  Request:\n    " +
-                    "Method: {}\n    Headers: {}\n    Body: {}\n    Response: null",
-                requestEntry.method(), headers, requestEntry
+                "Got response for a request.\n  Request:\n    URL: {}\n    " +
+                    "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: null",
+                httpRequest.uri().toString(),
+                httpRequest.method(),
+                headers,
+                requestEntry.getLookupQuery()
             );
         } else {
             log.info(
-                "Got response for a request.\n  Request:\n    " +
-                    "Method: {}\n    Headers: {}\n    Body: {}\n    Response: {}\n    Body: {}",
-                requestEntry.method(),
+                "Got response for a request.\n  Request:\n    URL: {}\n    " +
+                    "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: {}\n    Body: {}",
+                httpRequest.uri().toString(),
+                httpRequest.method(),
                 headers,
-                requestEntry,
+                requestEntry.getLookupQuery(),
                 response,
                 response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );
