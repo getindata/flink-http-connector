@@ -59,7 +59,7 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
     }
 
     @Override
-    public HttpRequest buildLookupRequest(RowData lookupRow) {
+    public HttpLookupSourceRequestEntry buildLookupRequest(RowData lookupRow) {
 
         String lookupQuery = lookupQueryCreator.createLookupQuery(lookupRow);
         getLogger().debug("Created Http lookup query: " + lookupQuery);
@@ -70,7 +70,7 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
             requestBuilder.headers(headersAndValues);
         }
 
-        return requestBuilder.build();
+        return new HttpLookupSourceRequestEntry(requestBuilder.build(), lookupQuery);
     }
 
     protected abstract Logger getLogger();

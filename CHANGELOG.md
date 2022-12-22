@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+- Fixed issue with not printing HttpRequest body/parameters for Lookup Source by
+  [Slf4JHttpLookupPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java) - <https://github.com/getindata/flink-http-connector/issues/45>
+
 ### Removed
 -   Removed unused reference to EncodingFormat from HttpLookupTableSource
 
