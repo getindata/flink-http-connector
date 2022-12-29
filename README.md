@@ -406,7 +406,6 @@ The mapping from Http Json Response to SQL table schema is done via Flink's Json
 ### HTTP TableLookup Source
 - Implement caches.
 - Think about Retry Policy for Http Request
-- Add Configurable Timeout value
 - Check other `//TODO`'s.
 
 ### HTTP Sink
