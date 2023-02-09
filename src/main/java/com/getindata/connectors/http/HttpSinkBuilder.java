@@ -114,10 +114,25 @@ public class HttpSinkBuilder<InputT> extends
     /**
      * @param elementConverter the {@link ElementConverter} to be used for the sink
      * @return {@link HttpSinkBuilder} itself
+     * @deprecated Converters set by this method might not work properly for Flink 1.16+. Use {@link
+     * #setElementConverter(SchemaLifecycleAwareElementConverter)} instead.
      */
+    @Deprecated
     @PublicEvolving
     public HttpSinkBuilder<InputT> setElementConverter(
         ElementConverter<InputT, HttpSinkRequestEntry> elementConverter) {
+        this.elementConverter = elementConverter;
+        return this;
+    }
+
+    /**
+     * @param elementConverter the {@link SchemaLifecycleAwareElementConverter} to be used for the
+     *                         sink
+     * @return {@link HttpSinkBuilder} itself
+     */
+    @PublicEvolving
+    public HttpSinkBuilder<InputT> setElementConverter(
+        SchemaLifecycleAwareElementConverter<InputT, HttpSinkRequestEntry> elementConverter) {
         this.elementConverter = elementConverter;
         return this;
     }

@@ -49,6 +49,7 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreator;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
+import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
@@ -367,6 +368,14 @@ class JavaNetHttpPollingClientConnectionTest {
             new JsonFormatFactory()
                 .createDecodingFormat(dynamicTableFactoryContext, new Configuration())
                 .createRuntimeDecoder(dynamicTableSourceContext, physicalDataType);
+
+        try {
+            schemaDecoder.open(
+                SerializationSchemaUtils.createDeserializationInitContext(
+                    JavaNetHttpPollingClientConnectionTest.class));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to open schema decoder: " + e.getMessage(), e);
+        }
 
         JavaNetHttpPollingClientFactory pollingClientFactory =
             new JavaNetHttpPollingClientFactory(requestFactory);

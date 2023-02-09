@@ -22,6 +22,7 @@ import com.getindata.connectors.http.HttpSink;
 import com.getindata.connectors.http.HttpSinkBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
+import com.getindata.connectors.http.internal.table.SerializationSchemaElementConverter;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.INSERT_METHOD;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.URL;
@@ -128,10 +129,8 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             .setHttpPostRequestCallback(httpPostRequestCallback)
             // In future header preprocessor could be set via custom factory
             .setHttpHeaderPreprocessor(HttpHeaderUtils.createDefaultHeaderPreprocessor())
-            .setElementConverter((rowData, _context) -> new HttpSinkRequestEntry(
-                insertMethod,
-                serializationSchema.serialize(rowData)
-            ))
+            .setElementConverter(
+                new SerializationSchemaElementConverter(insertMethod, serializationSchema))
             .setProperties(properties);
         addAsyncOptionsToSinkBuilder(builder);
 

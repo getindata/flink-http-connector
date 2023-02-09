@@ -16,6 +16,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flink: [ "1.15.0", "1.15.3", "1.16.1" ]
     steps:
       - uses: actions/checkout@v3
 
@@ -26,23 +29,24 @@ jobs:
           distribution: 'adopt'
           cache: maven
 
-      - name: Build
-        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS compile
+      - name: Build for Flink ${{ matrix.flink }}
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} compile
 
-      - name: Tests
+      - name: Tests for Flink ${{ matrix.flink }}
         run: |
-          mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS test integration-test
+          mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test integration-test
           cat target/site/jacoco/index.html | grep -o 'Total[^%]*%'
 
       - name: Test JavaDoc
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
+        if: startsWith(matrix.flink, '1.15.0')
 
       - name: Add coverage to PR
         id: jacoco
         uses: madrapps/jacoco-report@v1.2
-        if: github.event_name == 'pull_request'
         with:
           paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
+        if: startsWith(matrix.flink, '1.15.0')
