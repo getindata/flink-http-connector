@@ -68,7 +68,7 @@ under the License.
 
     <!-- IMPORTANT: If you update Flink, remember to update link to its docs in maven-javadoc-plugin <links>
          section, omitting the patch part (so for 1.15.0 use 1.15). -->
-    <flink.version>[1.15.0,)</flink.version>
+    <flink.version>1.15.0</flink.version>
 
     <target.java.version>11</target.java.version>
     <scala.binary.version>2.12</scala.binary.version>
