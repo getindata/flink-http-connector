@@ -335,6 +335,9 @@ Project build command: `mvn package`. </br>
 Detailed test report can be found under `target/site/jacoco/index.xml`.
 
 ## Demo application
+This demo works only for Flink-1.15.x even though connector can be used with Flink 1.16.
+This is probably due to bug with SQLClient [FLINK-31018](https://issues.apache.org/jira/browse/FLINK-31018)
+
 You can test this connector using simple mock http server provided with this repository and Flink SQL-client. 
 The mock server can be started from IDE (currently only this way) by running `HttpStubApp::main` method. 
 It will start HTTP server listening on `http://localhost:8080/client`
