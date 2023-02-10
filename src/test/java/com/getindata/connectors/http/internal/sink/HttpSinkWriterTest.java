@@ -13,6 +13,7 @@ import org.apache.flink.api.connector.sink2.Sink.InitContext;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.groups.OperatorIOMetricGroup;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +43,12 @@ class HttpSinkWriterTest {
     @Mock
     private SinkHttpClient httpClient;
 
-    @Mock
+    // To work with Flink 1.15 and Flink 1.16
+    @Mock(lenient = true)
     private SinkWriterMetricGroup metricGroup;
+
+    @Mock
+    private OperatorIOMetricGroup operatorIOMetricGroup;
 
     @Mock
     private Counter errorCounter;
@@ -51,6 +56,7 @@ class HttpSinkWriterTest {
     @BeforeEach
     public void setUp() {
         when(metricGroup.getNumRecordsSendErrorsCounter()).thenReturn(errorCounter);
+        when(metricGroup.getIOMetricGroup()).thenReturn(operatorIOMetricGroup);
         when(context.metricGroup()).thenReturn(metricGroup);
 
         Collection<BufferedRequestState<HttpSinkRequestEntry>> stateBuffer = new ArrayList<>();

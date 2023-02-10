@@ -13,6 +13,7 @@ import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.SchemaLifecycleAwareElementConverter;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 
@@ -110,8 +111,14 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> createWriter(
             InitContext context) throws IOException {
 
+        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = getElementConverter();
+        if (elementConverter instanceof SchemaLifecycleAwareElementConverter) {
+            // This cast is needed for Flink 1.15.3 build
+            ((SchemaLifecycleAwareElementConverter<?, ?>) elementConverter).open(context);
+        }
+
         return new HttpSinkWriter<>(
-            getElementConverter(),
+            elementConverter,
             context,
             getMaxBatchSize(),
             getMaxInFlightRequests(),
@@ -128,8 +135,8 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     @Override
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> restoreWriter(
-            InitContext context,
-            Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState)
+                InitContext context,
+                Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState)
             throws IOException {
 
         return new HttpSinkWriter<>(

@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+-   Add support for Flink 1.16.
+-   Add [SchemaLifecycleAwareElementConverter](src/main/java/com/getindata/connectors/http/SchemaLifecycleAwareElementConverter.java) that can be used for createing
+    schema lifecycle aware Element converters for Http Sink.
 
 ## [0.8.1] - 2022-12-22
 

@@ -15,6 +15,7 @@ import org.apache.flink.table.functions.TableFunction;
 
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.PollingClientFactory;
+import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 
 @Slf4j
 public class HttpTableLookupFunction extends TableFunction<RowData> {
@@ -50,6 +51,11 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
     @Override
     public void open(FunctionContext context) throws Exception {
         super.open(context);
+
+        this.responseSchemaDecoder.open(
+            SerializationSchemaUtils
+                .createDeserializationInitContext(HttpTableLookupFunction.class));
+
         this.localHttpCallCounter = new AtomicInteger(0);
         this.client = pollingClientFactory
             .createPollClient(options, responseSchemaDecoder);
