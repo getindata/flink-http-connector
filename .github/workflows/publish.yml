@@ -27,11 +27,11 @@ jobs:
           cache: maven
 
       - name: Build
-        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=1.15.0 compile
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS compile
 
       - name: Tests
         run: |
-          mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=1.15.0 test integration-test
+          mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS test integration-test
 
       - name: Set up Apache Maven Central
         uses: actions/setup-java@v3
