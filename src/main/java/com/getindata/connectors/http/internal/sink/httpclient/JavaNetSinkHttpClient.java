@@ -70,7 +70,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
         // TODO HTTP-42
         this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(this.headerMap);
-        this.requestSubmitter = new PerRequestSubmitter(properties, headersAndValues);
+        //this.requestSubmitter = new PerRequestSubmitter(properties, headersAndValues);
+        this.requestSubmitter = new BatchRequestSubmitter(properties, headersAndValues);
     }
 
     @Override

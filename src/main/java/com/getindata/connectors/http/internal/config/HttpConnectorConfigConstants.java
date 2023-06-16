@@ -74,6 +74,9 @@ public final class HttpConnectorConfigConstants {
     public static final String SINK_HTTP_TIMEOUT_SECONDS =
         GID_CONNECTOR_HTTP + "sink.request.timeout";
 
+    public static final String SINK_HTTP_BATCH_REQUEST_SIZE =
+        GID_CONNECTOR_HTTP + "sink.request.batch.size";
+
     public static final String LOOKUP_HTTP_PULING_THREAD_POOL_SIZE =
         GID_CONNECTOR_HTTP + "source.lookup.request.thread-pool.size";
 
