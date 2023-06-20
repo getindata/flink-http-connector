@@ -3,6 +3,7 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 import java.net.http.HttpClient;
 import java.util.Properties;
 
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,8 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
 
@@ -33,6 +37,8 @@ class JavaNetSinkHttpClientTest {
 
     protected HeaderPreprocessor headerPreprocessor;
 
+    protected HttpPostRequestCallback<HttpSinkRequestEntry> postRequestCallback;
+
     @AfterAll
     public static void afterAll() {
         if (httpClientStaticMock != null) {
@@ -42,6 +48,7 @@ class JavaNetSinkHttpClientTest {
 
     @BeforeEach
     public void setUp() {
+        postRequestCallback = new Slf4jHttpPostRequestCallback();
         headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
         httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
         when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
@@ -53,7 +60,13 @@ class JavaNetSinkHttpClientTest {
     public void shouldBuildClientWithoutHeaders() {
 
         JavaNetSinkHttpClient client =
-            new JavaNetSinkHttpClient(new Properties(), this.headerPreprocessor);
+            new JavaNetSinkHttpClient(
+                new Properties(),
+                postRequestCallback,
+                this.headerPreprocessor,
+                //TODO HTTP-42 add test for PerRequest submitter
+                new BatchRequestSubmitterFactory(50)
+            );
         assertThat(client.getHeadersAndValues()).isEmpty();
     }
 
@@ -78,7 +91,13 @@ class JavaNetSinkHttpClientTest {
         );
 
         // WHEN
-        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(properties, headerPreprocessor);
+        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(
+            properties,
+            postRequestCallback,
+            headerPreprocessor,
+            //TODO HTTP-42 add test for PerRequest submitter
+            new BatchRequestSubmitterFactory(50)
+        );
         String[] headersAndValues = client.getHeadersAndValues();
         assertThat(headersAndValues).hasSize(6);
 

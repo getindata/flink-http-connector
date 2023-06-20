@@ -88,11 +88,9 @@ public class JavaNetHttpClientFactory {
         String clientPrivateKey = properties
             .getProperty(HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY, "");
 
-        if (serverTrustedCerts.length > 0) {
-            for (String cert : serverTrustedCerts) {
-                if (!StringUtils.isNullOrWhitespaceOnly(cert)) {
-                    securityContext.addCertToTrustStore(cert);
-                }
+        for (String cert : serverTrustedCerts) {
+            if (!StringUtils.isNullOrWhitespaceOnly(cert)) {
+                securityContext.addCertToTrustStore(cert);
             }
         }
 

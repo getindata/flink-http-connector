@@ -37,7 +37,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
                     buildHttpRequest(entry, endpointUri),
                     HttpResponse.BodyHandlers.ofString())
                 .exceptionally(ex -> {
-                    // TODO This will be executed on a ForJoinPool Thread... refactor this someday.
+                    // TODO This will be executed on a ForkJoinPool Thread... refactor this someday.
                     log.error("Request fatally failed because of an exception", ex);
                     return null;
                 })

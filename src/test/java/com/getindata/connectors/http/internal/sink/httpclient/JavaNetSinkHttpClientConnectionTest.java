@@ -205,9 +205,15 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             clientPrivateKey.getAbsolutePath()
         );
 
+        // TODO HTTP-42 add test for PerRequest submitter
         assertThrows(
             RuntimeException.class,
-            () -> new JavaNetSinkHttpClient(properties, headerPreprocessor)
+            () -> new JavaNetSinkHttpClient(
+                properties,
+                postRequestCallback,
+                headerPreprocessor,
+                new BatchRequestSubmitterFactory(50)
+            )
         );
     }
 
@@ -237,7 +243,12 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
 
         try {
             JavaNetSinkHttpClient client =
-                new JavaNetSinkHttpClient(properties, headerPreprocessor);
+                new JavaNetSinkHttpClient(
+                    properties,
+                    postRequestCallback,
+                    headerPreprocessor,
+                    // TODO HTTP-42 add test for PerRequest submitter
+                    new BatchRequestSubmitterFactory(50));
             HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
             SinkHttpClientResponse response =
                 client.putRequests(

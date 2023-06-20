@@ -16,6 +16,11 @@ import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.SchemaLifecycleAwareElementConverter;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.config.SinkRequestSubmitMode;
+import com.getindata.connectors.http.internal.sink.httpclient.BatchRequestSubmitterFactory;
+import com.getindata.connectors.http.internal.sink.httpclient.PerRequestRequestSubmitterFactory;
+import com.getindata.connectors.http.internal.sink.httpclient.RequestSubmitterFactory;
 
 /**
  * An internal implementation of HTTP Sink that performs async requests against a specified HTTP
@@ -127,7 +132,12 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
             endpointUrl,
-            sinkHttpClientBuilder.build(properties, httpPostRequestCallback, headerPreprocessor),
+            sinkHttpClientBuilder.build(
+                properties,
+                httpPostRequestCallback,
+                headerPreprocessor,
+                getRequestSubmitterFactory()
+            ),
             Collections.emptyList(),
             properties
         );
@@ -149,7 +159,12 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
             endpointUrl,
-            sinkHttpClientBuilder.build(properties, httpPostRequestCallback, headerPreprocessor),
+            sinkHttpClientBuilder.build(
+                properties,
+                httpPostRequestCallback,
+                headerPreprocessor,
+                getRequestSubmitterFactory()
+            ),
             recoveredState,
             properties
         );
@@ -157,7 +172,16 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     @Override
     public SimpleVersionedSerializer<BufferedRequestState<HttpSinkRequestEntry>>
-        getWriterStateSerializer() {
+            getWriterStateSerializer() {
         return new HttpSinkWriterStateSerializer();
+    }
+
+    private RequestSubmitterFactory getRequestSubmitterFactory() {
+
+        if (SinkRequestSubmitMode.PER_REQUEST.getMode().equalsIgnoreCase(
+            properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_REQUEST_MODE))) {
+            return new PerRequestRequestSubmitterFactory();
+        }
+        return new BatchRequestSubmitterFactory(getMaxBatchSize());
     }
 }

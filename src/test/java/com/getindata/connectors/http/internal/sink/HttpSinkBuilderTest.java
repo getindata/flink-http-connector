@@ -23,8 +23,11 @@ public class HttpSinkBuilderTest {
             IllegalArgumentException.class,
             () -> HttpSink.<String>builder().setElementConverter(ELEMENT_CONVERTER)
                 .setSinkHttpClientBuilder(
-                    (properties, httpPostRequestCallback, headerPreprocessor)
-                        -> new MockHttpClient())
+                    (
+                        properties,
+                        httpPostRequestCallback,
+                        headerPreprocessor,
+                        requestSubmitterFactory) -> new MockHttpClient())
                 .setEndpointUrl("")
                 .build()
         );
@@ -37,8 +40,11 @@ public class HttpSinkBuilderTest {
             () -> HttpSink.<String>builder()
                 .setElementConverter(ELEMENT_CONVERTER)
                 .setSinkHttpClientBuilder(
-                    (properties, httpPostRequestCallback, headerPreprocessor)
-                        -> new MockHttpClient())
+                    (
+                        properties,
+                        httpPostRequestCallback,
+                        headerPreprocessor,
+                        requestSubmitterFactory) -> new MockHttpClient())
                 .build()
         );
     }

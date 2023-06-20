@@ -21,7 +21,6 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 
 /**
@@ -41,14 +40,11 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final RequestSubmitter requestSubmitter;
 
-    public JavaNetSinkHttpClient(Properties properties, HeaderPreprocessor headerPreprocessor) {
-        this(properties, new Slf4jHttpPostRequestCallback(), headerPreprocessor);
-    }
-
     public JavaNetSinkHttpClient(
             Properties properties,
             HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
-            HeaderPreprocessor headerPreprocessor) {
+            HeaderPreprocessor headerPreprocessor,
+            RequestSubmitterFactory requestSubmitterFactory) {
 
         this.httpPostRequestCallback = httpPostRequestCallback;
         this.headerMap = HttpHeaderUtils.prepareHeaderMap(
@@ -68,10 +64,11 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
 
-        // TODO HTTP-42
         this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(this.headerMap);
-        //this.requestSubmitter = new PerRequestSubmitter(properties, headersAndValues);
-        this.requestSubmitter = new BatchRequestSubmitter(properties, headersAndValues);
+        this.requestSubmitter = requestSubmitterFactory.createSubmitter(
+            properties,
+            headersAndValues
+        );
     }
 
     @Override

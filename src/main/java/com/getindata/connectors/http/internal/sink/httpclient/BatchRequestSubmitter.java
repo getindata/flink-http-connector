@@ -22,17 +22,13 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 @Slf4j
 public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
-    // TODO HTTP-42 we MUST use maxBatchSize from HttpSink here
-    protected static final String DEFAULT_HTTP_BATCH_REQUEST_SIZE = "20";
-
     private final int httpReqeustBatchSize;
 
     public BatchRequestSubmitter(Properties properties, String[] headersAndValue) {
         super(properties, headersAndValue);
 
         this.httpReqeustBatchSize = Integer.parseInt(
-            properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_BATCH_REQUEST_SIZE,
-                DEFAULT_HTTP_BATCH_REQUEST_SIZE)
+            properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_BATCH_REQUEST_SIZE)
         );
     }
 
@@ -63,8 +59,8 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
     }
 
     private CompletableFuture<JavaNetHttpResponseWrapper> sendBatch(
-        String endpointUrl,
-        List<HttpSinkRequestEntry> reqeustBatch) {
+            String endpointUrl,
+            List<HttpSinkRequestEntry> reqeustBatch) {
 
         var endpointUri = URI.create(endpointUrl);
         return httpClient
@@ -72,7 +68,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
                 buildHttpRequest(reqeustBatch, endpointUri),
                 HttpResponse.BodyHandlers.ofString())
             .exceptionally(ex -> {
-                // TODO This will be executed on a ForJoinPool Thread... refactor this someday.
+                // TODO This will be executed on a ForkJoinPool Thread... refactor this someday.
                 log.error("Request fatally failed because of an exception", ex);
                 return null;
             })
@@ -90,21 +86,17 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             List<byte[]> elements = new ArrayList<>(reqeustBatch.size());
 
             BodyPublisher publisher;
-            if (reqeustBatch.size() > 1) {
-                // Buy default, Java's BodyPublishers.ofByteArrays(elements) will just put Jsons
-                // into the HTTP body without any context.
-                // What we do here is we pack every Json/byteArray into Json Array hence '[' and ']'
-                // at the end, and we separate every element with comma.
-                elements.add("[".getBytes(StandardCharsets.UTF_8));
-                for (HttpSinkRequestEntry entry : reqeustBatch) {
-                    elements.add(entry.element);
-                    elements.add(",".getBytes(StandardCharsets.UTF_8));
-                }
-                elements.set(elements.size() - 1, "]".getBytes(StandardCharsets.UTF_8));
-                publisher = BodyPublishers.ofByteArrays(elements);
-            } else {
-                publisher = BodyPublishers.ofByteArray(reqeustBatch.get(0).element);
+            // By default, Java's BodyPublishers.ofByteArrays(elements) will just put Jsons
+            // into the HTTP body without any context.
+            // What we do here is we pack every Json/byteArray into Json Array hence '[' and ']'
+            // at the end, and we separate every element with comma.
+            elements.add("[".getBytes(StandardCharsets.UTF_8));
+            for (HttpSinkRequestEntry entry : reqeustBatch) {
+                elements.add(entry.element);
+                elements.add(",".getBytes(StandardCharsets.UTF_8));
             }
+            elements.set(elements.size() - 1, "]".getBytes(StandardCharsets.UTF_8));
+            publisher = BodyPublishers.ofByteArrays(elements);
 
             Builder requestBuilder = HttpRequest
                 .newBuilder()
@@ -122,6 +114,4 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             throw new RuntimeException(e);
         }
     }
-
-
 }
