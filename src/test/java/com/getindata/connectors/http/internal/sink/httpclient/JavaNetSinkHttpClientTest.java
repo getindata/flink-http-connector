@@ -2,13 +2,15 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.net.http.HttpClient;
 import java.util.Properties;
-
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -56,22 +58,30 @@ class JavaNetSinkHttpClientTest {
         when(httpClientBuilder.executor(any())).thenReturn(httpClientBuilder);
     }
 
-    @Test
-    public void shouldBuildClientWithoutHeaders() {
+    private static Stream<Arguments> provideSubmitterFactory() {
+        return Stream.of(
+            Arguments.of(new PerRequestRequestSubmitterFactory()),
+            Arguments.of(new BatchRequestSubmitterFactory(50))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideSubmitterFactory")
+    public void shouldBuildClientWithoutHeaders(RequestSubmitterFactory requestSubmitterFactory) {
 
         JavaNetSinkHttpClient client =
             new JavaNetSinkHttpClient(
                 new Properties(),
                 postRequestCallback,
                 this.headerPreprocessor,
-                //TODO HTTP-42 add test for PerRequest submitter
-                new BatchRequestSubmitterFactory(50)
+                requestSubmitterFactory
             );
         assertThat(client.getHeadersAndValues()).isEmpty();
     }
 
-    @Test
-    public void shouldBuildClientWithHeaders() {
+    @ParameterizedTest
+    @MethodSource("provideSubmitterFactory")
+    public void shouldBuildClientWithHeaders(RequestSubmitterFactory requestSubmitterFactory) {
 
         // GIVEN
         Properties properties = new Properties();
@@ -95,8 +105,7 @@ class JavaNetSinkHttpClientTest {
             properties,
             postRequestCallback,
             headerPreprocessor,
-            //TODO HTTP-42 add test for PerRequest submitter
-            new BatchRequestSubmitterFactory(50)
+            requestSubmitterFactory
         );
         String[] headersAndValues = client.getHeadersAndValues();
         assertThat(headersAndValues).hasSize(6);
