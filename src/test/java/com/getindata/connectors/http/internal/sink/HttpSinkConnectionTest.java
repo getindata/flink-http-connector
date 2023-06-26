@@ -3,12 +3,15 @@ package com.getindata.connectors.http.internal.sink;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Counter;
@@ -27,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.getindata.connectors.http.HttpSink;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.config.SinkRequestSubmitMode;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 
 public class HttpSinkConnectionTest {
@@ -69,9 +73,65 @@ public class HttpSinkConnectionTest {
     }
 
     @Test
-    public void testConnection() throws Exception {
-        String contentTypeHeader = "application/json";
+    public void testConnection_singleRequestMode() throws Exception {
+
+        @SuppressWarnings("unchecked")
+        Function<ServeEvent, Map<Object, Object>> responseMapper = response -> {
+            try {
+                return new ObjectMapper().readValue(response.getRequest().getBody(), HashMap.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+        List<Map<Object, Object>> responses =
+            testConnection(SinkRequestSubmitMode.SINGLE, responseMapper);
+
+        var idsSet = new HashSet<>(messageIds);
+        for (var request : responses) {
+            var el = (Integer) request.get("http-sink-id");
+            assertTrue(idsSet.contains(el));
+            idsSet.remove(el);
+        }
+
+        // check that we hot responses for all requests.
+        assertTrue(idsSet.isEmpty());
+    }
+
+    @Test
+    public void testConnection_batchRequestMode() throws Exception {
+
+        Function<ServeEvent, List<Map<Object, Object>>> responseMapper = response -> {
+            try {
+                return new ObjectMapper().readValue(response.getRequest().getBody(),
+                    new TypeReference<List<Map<Object, Object>>>(){});
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+        List<List<Map<Object, Object>>> responses =
+            testConnection(SinkRequestSubmitMode.BATCH, responseMapper);
+
+        var idsSet = new HashSet<>(messageIds);
+        for (var requests : responses) {
+            for (var request : requests) {
+                var el = (Integer) request.get("http-sink-id");
+                assertTrue(idsSet.contains(el));
+                idsSet.remove(el);
+            }
+        }
+
+        // check that we hot responses for all requests.
+        assertTrue(idsSet.isEmpty());
+    }
+
+    public <T> List<T> testConnection(
+            SinkRequestSubmitMode mode,
+            Function<? super ServeEvent, T> responseMapper) throws Exception {
+
         String endpoint = "/myendpoint";
+        String contentTypeHeader = "application/json";
 
         wireMockServer.stubFor(any(urlPathEqualTo(endpoint))
             .withHeader("Content-Type", equalTo(contentTypeHeader))
@@ -90,6 +150,10 @@ public class HttpSinkConnectionTest {
             .setProperty(
                 HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Content-Type",
                 contentTypeHeader)
+            .setProperty(
+                HttpConnectorConfigConstants.SINK_HTTP_REQUEST_MODE,
+                mode.getMode()
+            )
             .build();
         source.sinkTo(httpSink);
         env.execute("Http Sink test connection");
@@ -99,23 +163,14 @@ public class HttpSinkConnectionTest {
             .allMatch(response -> Objects.equals(response.getRequest().getUrl(), endpoint)));
         assertTrue(
             responses.stream().allMatch(response -> response.getResponse().getStatus() == 200));
+        assertTrue(responses.stream()
+            .allMatch(response -> Objects.equals(response.getRequest().getUrl(), endpoint)));
+        assertTrue(
+            responses.stream().allMatch(response -> response.getResponse().getStatus() == 200));
 
-        var requestsAsMap = responses.stream().map(response -> {
-            try {
-                return new ObjectMapper().readValue(response.getRequest().getBody(), HashMap.class);
-            } catch (IOException e) {
-                return null;
-            }
-        }).collect(Collectors.toList());
-        assertTrue(requestsAsMap.stream().allMatch(Objects::nonNull));
-
-        var idsSet = new HashSet<>(messageIds);
-        for (var request : requestsAsMap) {
-            var el = (Integer) request.get("http-sink-id");
-            assertTrue(idsSet.contains(el));
-            idsSet.remove(el);
-        }
-        assertTrue(idsSet.isEmpty());
+        List<T> collect = responses.stream().map(responseMapper).collect(Collectors.toList());
+        assertTrue(collect.stream().allMatch(Objects::nonNull));
+        return collect;
     }
 
     @Test

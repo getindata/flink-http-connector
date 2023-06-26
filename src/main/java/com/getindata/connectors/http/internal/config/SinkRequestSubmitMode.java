@@ -2,8 +2,8 @@ package com.getindata.connectors.http.internal.config;
 
 public enum SinkRequestSubmitMode {
 
-    PER_REQUEST("PerRequest"),
-    BATCH("Batch");
+    SINGLE("single"),
+    BATCH("batch");
 
     private final String mode;
 

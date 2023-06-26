@@ -178,7 +178,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     private RequestSubmitterFactory getRequestSubmitterFactory() {
 
-        if (SinkRequestSubmitMode.PER_REQUEST.getMode().equalsIgnoreCase(
+        if (SinkRequestSubmitMode.SINGLE.getMode().equalsIgnoreCase(
             properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_REQUEST_MODE))) {
             return new PerRequestRequestSubmitterFactory();
         }
