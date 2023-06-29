@@ -1,18 +1,30 @@
 package com.getindata.connectors.http.internal.table.sink;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import static com.getindata.connectors.http.TestHelper.readTestFile;
 
 public class BatchRequestHttpDynamicSinkInsertTest {
 
@@ -61,8 +73,21 @@ public class BatchRequestHttpDynamicSinkInsertTest {
         wireMockServer.stop();
     }
 
-    @Test
-    public void testHttpDynamicSinkDefaultPost() throws Exception {
+    private static Stream<Arguments> reqeustBatch() {
+        return Stream.of(
+            Arguments.of(50, "allInOneBatch.txt"),
+            Arguments.of(5, "allInOneBatch.txt"),
+            Arguments.of(3, "twoBatches.txt"),
+            Arguments.of(2, "threeBatches.txt"),
+            Arguments.of(1, "fourSingleEventBatches.txt")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("reqeustBatch")
+    public void testHttpDynamicSinkDefaultPost(int requestBatchSize, String expectedRequests)
+            throws Exception {
+
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
         String contentTypeHeaderValue = "application/json";
 
@@ -80,38 +105,34 @@ public class BatchRequestHttpDynamicSinkInsertTest {
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
                     + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.request.batch.size' = '%s',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
                 "http://localhost:" + SERVER_PORT + "/myendpoint",
+                requestBatchSize,
                 contentTypeHeaderValue
             );
 
         tEnv.executeSql(createTable);
 
         final String insert = "INSERT INTO http\n"
-            + "VALUES (1, 'Ninette', 'Clee', 'Female', 'CDZI', 'RUB', "
-            + "TIMESTAMP '2021-08-24 15:22:59')";
+            + "VALUES\n"
+            + " (1, 'Ninette', 'Clee', 'Female', 'CDZI', 'RUB', TIMESTAMP '2021-08-24 15:22:59'),\n"
+            + " (2, 'Rob', 'Zombie', 'Male', 'DGICA', 'GBP', TIMESTAMP '2021-10-25 20:53:54'), \n"
+            + " (3, 'Adam', 'Jones', 'Male', 'DGICA', 'PLN', TIMESTAMP '2021-10-26 20:53:54'), \n"
+            + " (4, 'Danny', 'Carey', 'Male', 'DGICA', 'USD', TIMESTAMP '2021-10-27 20:53:54'), \n"
+            + " (5, 'Bob', 'Dylan', 'Male', 'DGICA', 'USD', TIMESTAMP '2021-10-28 20:53:54')";
         tEnv.executeSql(insert).await();
 
-        var postedRequests =
-            wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")));
-        assertEquals(1, postedRequests.size());
-
-        var request = postedRequests.get(0);
-        assertEquals(
-            "[{\"id\":1,\"first_name\":\"Ninette\",\"last_name\":\"Clee\","
-                + "\"gender\":\"Female\",\"stock\":\"CDZI\",\"currency\":\"RUB\","
-                + "\"tx_date\":\"2021-08-24 15:22:59\"}]",
-            request.getBodyAsString()
-        );
-        assertEquals(RequestMethod.POST, request.getMethod());
-        assertEquals(contentTypeHeaderValue, request.getHeader("Content-Type"));
+        verifyRequests(expectedRequests);
     }
 
-    // TODO HTTP-42 add parameters to verify different batch sizes.
-    @Test
-    public void testHttpDynamicSinkPut() throws Exception {
+    @ParameterizedTest
+    @MethodSource("reqeustBatch")
+    public void testHttpDynamicSinkPut(int requestBatchSize, String expectedRequests)
+            throws Exception {
+
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
         String contentTypeHeaderValue = "application/json";
 
@@ -130,10 +151,12 @@ public class BatchRequestHttpDynamicSinkInsertTest {
                     + "  'url' = '%s',\n"
                     + "  'insert-method' = 'PUT',\n"
                     + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.request.batch.size' = '%s',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
                 "http://localhost:" + SERVER_PORT + "/myendpoint",
+                requestBatchSize,
                 contentTypeHeaderValue
             );
 
@@ -142,24 +165,41 @@ public class BatchRequestHttpDynamicSinkInsertTest {
         final String insert = "INSERT INTO http\n"
             + "VALUES\n"
             + " (1, 'Ninette', 'Clee', 'Female', 'CDZI', 'RUB', TIMESTAMP '2021-08-24 15:22:59'),\n"
-            + " (2, 'Hedy', 'Hedgecock', 'Female', 'DGICA', 'CNY', "
-            + "TIMESTAMP '2021-10-24 20:53:54')";
+            + " (2, 'Rob', 'Zombie', 'Male', 'DGICA', 'GBP', TIMESTAMP '2021-10-25 20:53:54'), \n"
+            + " (3, 'Adam', 'Jones', 'Male', 'DGICA', 'PLN', TIMESTAMP '2021-10-26 20:53:54'), \n"
+            + " (4, 'Danny', 'Carey', 'Male', 'DGICA', 'USD', TIMESTAMP '2021-10-27 20:53:54'), \n"
+            + " (5, 'Bob', 'Dylan', 'Male', 'DGICA', 'USD', TIMESTAMP '2021-10-28 20:53:54')";
         tEnv.executeSql(insert).await();
 
-        var postedRequests = wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")));
+        verifyRequests(expectedRequests);
+    }
 
-        var firstElement =
-            "{\"id\":1,\"first_name\":\"Ninette\",\"last_name\":\"Clee\",\"gender\":\"Female\","
-                + "\"stock\":\"CDZI\",\"currency\":\"RUB\",\"tx_date\":\"2021-08-24 15:22:59\"}";
+    private void verifyRequests(String expectedResponse) {
+        ObjectMapper mapper = new ObjectMapper();
 
-        var secondElement =
-            "{\"id\":2,\"first_name\":\"Hedy\",\"last_name\":\"Hedgecock\",\"gender\":\"Female\","
-                + "\"stock\":\"DGICA\",\"currency\":\"CNY\",\"tx_date\":\"2021-10-24 20:53:54\"}";
+        var postedRequests = wireMockServer.findAll(anyRequestedFor(urlPathEqualTo("/myendpoint")))
+            .stream()
+            .map(LoggedRequest::getBodyAsString)
+            .map(content -> getJsonSipleString(mapper, content))
+            .collect(Collectors.toList());
 
-        var expectedJsonRequest = "[" + firstElement + "," + secondElement + "]";
+        var expectedResponses =
+            Arrays.stream(readTestFile("/json/sink/" + expectedResponse).split("#-----#"))
+                .map(content -> getJsonSipleString(mapper, content)).collect(Collectors.toList());
 
-        assertEquals(1, postedRequests.size());
-        assertEquals(expectedJsonRequest, postedRequests.get(0).getBodyAsString());
+        // TODO this ideally should use containsExactlyElementsOf however Wiremock uses multiple
+        //  threads to add events to its internal journal which can brea the order of
+        //  received events. Probably use WireMock Scenarios feature can help here and allow to
+        //  verify the order. Or maybe there is some other solution for that.
+        assertThat(postedRequests).containsExactlyInAnyOrderElementsOf(expectedResponses);
+    }
+
+    private static String getJsonSipleString(ObjectMapper mapper, String content) {
+        try {
+            return mapper.readTree(content).toString();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

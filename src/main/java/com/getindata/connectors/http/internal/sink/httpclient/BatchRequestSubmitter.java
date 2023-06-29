@@ -62,6 +62,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             String endpointUrl,
             List<HttpSinkRequestEntry> reqeustBatch) {
 
+        System.out.println("aaaaa " + new String(reqeustBatch.get(0).element));
         var endpointUri = URI.create(endpointUrl);
         return httpClient
             .sendAsync(

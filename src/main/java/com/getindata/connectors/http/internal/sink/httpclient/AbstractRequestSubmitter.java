@@ -13,7 +13,11 @@ import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 public abstract class AbstractRequestSubmitter implements RequestSubmitter {
 
-    protected static final int HTTP_CLIENT_THREAD_POOL_SIZE = 16;
+    // TODO Add this property to config. Make sure to add note in README.md that will describe that
+    //  any value greater than one will break order of messages.
+    protected static final int HTTP_CLIENT_THREAD_POOL_SIZE = 1;
+
+    protected static final int HTTP_CLIENT_PUBLISHING_THREAD_POOL_SIZE = 1;
 
     protected static final String DEFAULT_REQUEST_TIMEOUT_SECONDS = "30";
 
@@ -33,7 +37,7 @@ public abstract class AbstractRequestSubmitter implements RequestSubmitter {
         this.headersAndValues = headersAndValues;
         this.publishingThreadPool =
             Executors.newFixedThreadPool(
-                HTTP_CLIENT_THREAD_POOL_SIZE,
+                HTTP_CLIENT_PUBLISHING_THREAD_POOL_SIZE,
                 new ExecutorThreadFactory(
                     "http-sink-client-response-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER));
 
