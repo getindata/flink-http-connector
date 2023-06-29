@@ -1,22 +1,35 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.flink.util.StringUtils;
+import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import com.getindata.connectors.http.internal.config.ConfigException;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
+import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 public class BatchRequestSubmitterFactory implements RequestSubmitterFactory {
+
+    // TODO Add this property to config. Make sure to add note in README.md that will describe that
+    //  any value greater than one will break order of messages.
+    int HTTP_CLIENT_THREAD_POOL_SIZE = 1;
 
     private final String maxBatchSize;
 
     public BatchRequestSubmitterFactory(int maxBatchSize) {
+        if (maxBatchSize < 1) {
+            throw new IllegalArgumentException(
+                "Batch Request submitter batch size must be greater than zero.");
+        }
         this.maxBatchSize = String.valueOf(maxBatchSize);
     }
 
     @Override
-    public RequestSubmitter createSubmitter(Properties properties, String[] headersAndValues) {
+    public BatchRequestSubmitter createSubmitter(Properties properties, String[] headersAndValues) {
         String batchRequestSize =
             properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_BATCH_REQUEST_SIZE);
         if (StringUtils.isNullOrWhitespaceOnly(batchRequestSize)) {
@@ -45,6 +58,19 @@ public class BatchRequestSubmitterFactory implements RequestSubmitterFactory {
                 );
             }
         }
-        return new BatchRequestSubmitter(properties, headersAndValues);
+
+        ExecutorService httpClientExecutor =
+            Executors.newFixedThreadPool(
+                HTTP_CLIENT_THREAD_POOL_SIZE,
+                new ExecutorThreadFactory(
+                    "http-sink-client-batch-request-worker",
+                    ThreadUtils.LOGGING_EXCEPTION_HANDLER)
+            );
+
+        return new BatchRequestSubmitter(
+                properties,
+                headersAndValues,
+                JavaNetHttpClientFactory.createClient(properties, httpClientExecutor)
+            );
     }
 }

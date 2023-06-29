@@ -1,6 +1,7 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
@@ -10,11 +11,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
@@ -24,8 +27,12 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
     private final int httpReqeustBatchSize;
 
-    public BatchRequestSubmitter(Properties properties, String[] headersAndValue) {
-        super(properties, headersAndValue);
+    public BatchRequestSubmitter(
+            Properties properties,
+            String[] headersAndValue,
+            HttpClient httpClient) {
+
+        super(properties, headersAndValue, httpClient);
 
         this.httpReqeustBatchSize = Integer.parseInt(
             properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_BATCH_REQUEST_SIZE)
@@ -34,35 +41,52 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
     @Override
     public List<CompletableFuture<JavaNetHttpResponseWrapper>> submit(
-        String endpointUrl,
-        List<HttpSinkRequestEntry> requestToSubmit) {
+            String endpointUrl,
+            List<HttpSinkRequestEntry> requestsToSubmit) {
+
+        if (requestsToSubmit.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
 
         int counter = 0;
-        String previousReqeustMethod = requestToSubmit.get(0).method;
+        String previousReqeustMethod = requestsToSubmit.get(0).method;
         List<HttpSinkRequestEntry> reqeustBatch = new ArrayList<>(httpReqeustBatchSize);
-        for (var entry : requestToSubmit) {
-            reqeustBatch.add(entry);
-            if (++counter % httpReqeustBatchSize == 0
-                || !previousReqeustMethod.equalsIgnoreCase(entry.method)) {
+        for (var entry : requestsToSubmit) {
+            if (!previousReqeustMethod.equalsIgnoreCase(entry.method)) {
+                // break batch and submit
                 responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
                 reqeustBatch.clear();
+                // start a new batch for new HTTP method.
+                reqeustBatch.add(entry);
+            } else {
+                reqeustBatch.add(entry);
+                if (++counter % httpReqeustBatchSize == 0) {
+                    // batch is full, submit and start new batch.
+                    responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
+                    reqeustBatch.clear();
+                }
             }
+            previousReqeustMethod = entry.method;
         }
 
         if (!reqeustBatch.isEmpty()) {
+            // submit anything that left
             responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
         }
-
         return responseFutures;
+    }
+
+    @VisibleForTesting
+    int getBatchSize() {
+        return httpReqeustBatchSize;
     }
 
     private CompletableFuture<JavaNetHttpResponseWrapper> sendBatch(
             String endpointUrl,
             List<HttpSinkRequestEntry> reqeustBatch) {
 
-        System.out.println("aaaaa " + new String(reqeustBatch.get(0).element));
         var endpointUri = URI.create(endpointUrl);
         return httpClient
             .sendAsync(

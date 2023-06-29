@@ -1,6 +1,7 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -19,8 +20,12 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 @Slf4j
 public class PerRequestSubmitter extends AbstractRequestSubmitter {
 
-    public PerRequestSubmitter(Properties properties, String[] headersAndValues) {
-        super(properties, headersAndValues);
+    public PerRequestSubmitter(
+            Properties properties,
+            String[] headersAndValues,
+            HttpClient httpClient) {
+
+        super(properties, headersAndValues, httpClient);
     }
 
     @Override
