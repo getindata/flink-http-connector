@@ -36,13 +36,13 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
-    private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+    private final HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
 
     private final RequestSubmitter requestSubmitter;
 
     public JavaNetSinkHttpClient(
             Properties properties,
-            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+            HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
             HeaderPreprocessor headerPreprocessor,
             RequestSubmitterFactory requestSubmitterFactory) {
 
@@ -92,11 +92,11 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private SinkHttpClientResponse prepareSinkHttpClientResponse(
         List<JavaNetHttpResponseWrapper> responses,
         String endpointUrl) {
-        var successfulResponses = new ArrayList<HttpSinkRequestEntry>();
-        var failedResponses = new ArrayList<HttpSinkRequestEntry>();
+        var successfulResponses = new ArrayList<HttpRequest>();
+        var failedResponses = new ArrayList<HttpRequest>();
 
         for (var response : responses) {
-            var sinkRequestEntry = response.getSinkRequestEntry();
+            var sinkRequestEntry = response.getHttpRequest();
             var optResponse = response.getResponse();
 
             httpPostRequestCallback.call(

@@ -9,6 +9,7 @@ import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkInternal;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 
 /**
  * A public implementation for {@code HttpSink} that performs async requests against a specified
@@ -41,7 +42,7 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             String endpointUrl,
-            HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+            HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
             HeaderPreprocessor headerPreprocessor,
             SinkHttpClientBuilder sinkHttpClientBuilder,
             Properties properties) {

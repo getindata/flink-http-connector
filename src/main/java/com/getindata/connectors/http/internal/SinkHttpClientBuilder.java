@@ -6,7 +6,7 @@ import java.util.Properties;
 import org.apache.flink.annotation.PublicEvolving;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.sink.httpclient.RequestSubmitterFactory;
 
 /**
@@ -19,8 +19,9 @@ public interface SinkHttpClientBuilder extends Serializable {
     //  SinkHttpClientBuilder fields. This method is getting more and more arguments.
     SinkHttpClient build(
         Properties properties,
-        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+        HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
         HeaderPreprocessor headerPreprocessor,
         RequestSubmitterFactory requestSubmitterFactory
+
     );
 }

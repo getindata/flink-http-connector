@@ -3,7 +3,6 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
@@ -24,6 +23,12 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
 @Slf4j
 public class BatchRequestSubmitter extends AbstractRequestSubmitter {
+
+    private static final byte[] BATCH_START_BYTES = "[".getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] BATCH_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] BATCH_ELEMENT_DELIM_BYTES = ",".getBytes(StandardCharsets.UTF_8);
 
     private final int httpReqeustBatchSize;
 
@@ -87,10 +92,10 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             String endpointUrl,
             List<HttpSinkRequestEntry> reqeustBatch) {
 
-        var endpointUri = URI.create(endpointUrl);
+        HttpRequest httpRequest = buildHttpRequest(reqeustBatch, URI.create(endpointUrl));
         return httpClient
             .sendAsync(
-                buildHttpRequest(reqeustBatch, endpointUri),
+                httpRequest.getHttpRequest(),
                 HttpResponse.BodyHandlers.ofString())
             .exceptionally(ex -> {
                 // TODO This will be executed on a ForkJoinPool Thread... refactor this someday.
@@ -98,8 +103,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
                 return null;
             })
             .thenApplyAsync(
-                // TODO HTTP-42
-                res -> new JavaNetHttpResponseWrapper(reqeustBatch.get(0), res),
+                res -> new JavaNetHttpResponseWrapper(httpRequest, res),
                 publishingThreadPool
             );
     }
@@ -115,15 +119,15 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             // into the HTTP body without any context.
             // What we do here is we pack every Json/byteArray into Json Array hence '[' and ']'
             // at the end, and we separate every element with comma.
-            elements.add("[".getBytes(StandardCharsets.UTF_8));
+            elements.add(BATCH_START_BYTES);
             for (HttpSinkRequestEntry entry : reqeustBatch) {
                 elements.add(entry.element);
-                elements.add(",".getBytes(StandardCharsets.UTF_8));
+                elements.add(BATCH_ELEMENT_DELIM_BYTES);
             }
-            elements.set(elements.size() - 1, "]".getBytes(StandardCharsets.UTF_8));
+            elements.set(elements.size() - 1, BATCH_END_BYTES);
             publisher = BodyPublishers.ofByteArrays(elements);
 
-            Builder requestBuilder = HttpRequest
+            Builder requestBuilder = java.net.http.HttpRequest
                 .newBuilder()
                 .uri(endpointUri)
                 .version(Version.HTTP_1_1)
@@ -134,7 +138,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
                 requestBuilder.headers(headersAndValues);
             }
 
-            return requestBuilder.build();
+            return new HttpRequest(requestBuilder.build(), elements, method);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

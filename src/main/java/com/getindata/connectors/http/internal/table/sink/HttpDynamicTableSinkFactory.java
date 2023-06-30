@@ -12,7 +12,7 @@ import org.apache.flink.table.factories.FactoryUtil;
 
 import com.getindata.connectors.http.HttpPostRequestCallbackFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.table.sink.HttpDynamicSinkConnectorOptions.*;
 
@@ -43,7 +43,7 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
             new AsyncSinkConfigurationValidator(tableOptions).getValidatedConfigurations();
 
         // generics type erasure, so we have to do an unchecked cast
-        final HttpPostRequestCallbackFactory<HttpSinkRequestEntry> postRequestCallbackFactory =
+        final HttpPostRequestCallbackFactory<HttpRequest> postRequestCallbackFactory =
             FactoryUtil.discoverFactory(
                 context.getClassLoader(),
                 HttpPostRequestCallbackFactory.class,  // generics type erasure

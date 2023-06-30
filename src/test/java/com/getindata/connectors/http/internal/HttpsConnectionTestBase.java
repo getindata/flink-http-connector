@@ -5,7 +5,7 @@ import java.util.Properties;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 
@@ -31,7 +31,7 @@ public abstract class HttpsConnectionTestBase {
 
     protected HeaderPreprocessor headerPreprocessor;
 
-    protected HttpPostRequestCallback<HttpSinkRequestEntry> postRequestCallback =
+    protected HttpPostRequestCallback<HttpRequest> postRequestCallback =
         new Slf4jHttpPostRequestCallback();
 
     public void setUp() {

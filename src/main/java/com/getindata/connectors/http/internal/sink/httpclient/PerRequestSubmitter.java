@@ -3,7 +3,6 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
@@ -37,9 +36,10 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
         var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
 
         for (var entry : requestToSubmit) {
+            HttpRequest httpRequest = buildHttpRequest(entry, endpointUri);
             var response = httpClient
                 .sendAsync(
-                    buildHttpRequest(entry, endpointUri),
+                    httpRequest.getHttpRequest(),
                     HttpResponse.BodyHandlers.ofString())
                 .exceptionally(ex -> {
                     // TODO This will be executed on a ForkJoinPool Thread... refactor this someday.
@@ -47,7 +47,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
                     return null;
                 })
                 .thenApplyAsync(
-                    res -> new JavaNetHttpResponseWrapper(entry, res),
+                    res -> new JavaNetHttpResponseWrapper(httpRequest, res),
                     publishingThreadPool
                 );
             responseFutures.add(response);
@@ -56,7 +56,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
     }
 
     private HttpRequest buildHttpRequest(HttpSinkRequestEntry requestEntry, URI endpointUri) {
-        Builder requestBuilder = HttpRequest
+        Builder requestBuilder = java.net.http.HttpRequest
             .newBuilder()
             .uri(endpointUri)
             .version(Version.HTTP_1_1)
@@ -68,6 +68,10 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
             requestBuilder.headers(headersAndValues);
         }
 
-        return requestBuilder.build();
+        return new HttpRequest(
+            requestBuilder.build(),
+            List.of(requestEntry.element),
+            requestEntry.method
+        );
     }
 }

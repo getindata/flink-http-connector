@@ -20,7 +20,6 @@ import static org.mockito.Mockito.*;
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
@@ -39,7 +38,7 @@ class JavaNetSinkHttpClientTest {
 
     protected HeaderPreprocessor headerPreprocessor;
 
-    protected HttpPostRequestCallback<HttpSinkRequestEntry> postRequestCallback;
+    protected HttpPostRequestCallback<HttpRequest> postRequestCallback;
 
     @AfterAll
     public static void afterAll() {

@@ -19,6 +19,7 @@ import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.config.SinkRequestSubmitMode;
 import com.getindata.connectors.http.internal.sink.httpclient.BatchRequestSubmitterFactory;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.sink.httpclient.PerRequestRequestSubmitterFactory;
 import com.getindata.connectors.http.internal.sink.httpclient.RequestSubmitterFactory;
 
@@ -64,7 +65,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
     // makes it possible to serialize `HttpSink`
     private final SinkHttpClientBuilder sinkHttpClientBuilder;
 
-    private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+    private final HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
 
     private final HeaderPreprocessor headerPreprocessor;
 
@@ -79,7 +80,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         long maxTimeInBufferMS,
         long maxRecordSizeInBytes,
         String endpointUrl,
-        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
+        HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
         HeaderPreprocessor headerPreprocessor,
         SinkHttpClientBuilder sinkHttpClientBuilder,
         Properties properties) {
