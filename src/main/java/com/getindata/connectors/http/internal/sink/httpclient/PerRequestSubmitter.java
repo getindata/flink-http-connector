@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
+/**
+ * This implementation creates HTTP requests for every processed event.
+ */
 @Slf4j
 public class PerRequestSubmitter extends AbstractRequestSubmitter {
 

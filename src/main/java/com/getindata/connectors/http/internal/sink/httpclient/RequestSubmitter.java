@@ -5,6 +5,9 @@ import java.util.concurrent.CompletableFuture;
 
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
+/**
+ * Submits request via HTTP.
+ */
 public interface RequestSubmitter {
 
     List<CompletableFuture<JavaNetHttpResponseWrapper>> submit(

@@ -21,6 +21,10 @@ import org.apache.flink.annotation.VisibleForTesting;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
+/**
+ * This implementation groups received events in batches and submits each batch as individual HTTP
+ * requests. Batch is created based on batch size or based on HTTP method type.
+ */
 @Slf4j
 public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
