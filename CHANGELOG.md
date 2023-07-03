@@ -13,7 +13,7 @@
 -   Changed API for public HttpSink builder. The `setHttpPostRequestCallback` expects a `PostRequestCallback`
     of generic type [HttpRequest](src/main/java/com/getindata/connectors/http/internal/sink/httpclient/HttpRequest.java)
     instead `HttpSinkRequestEntry`.
--   Changed HTTP sink reqeust and response processing thread pool sizes from 16 to 1.
+-   Changed HTTP sink request and response processing thread pool sizes from 16 to 1.
 
 ## [0.9.0] - 2023-02-10
 

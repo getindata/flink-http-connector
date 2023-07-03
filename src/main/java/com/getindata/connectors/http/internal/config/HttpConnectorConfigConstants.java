@@ -87,7 +87,7 @@ public final class HttpConnectorConfigConstants {
     // -----------------------------------------------------
 
 
-    // ------ Sink reqeust submitter settings ------
+    // ------ Sink request submitter settings ------
     public static final String SINK_HTTP_REQUEST_MODE =
         GID_CONNECTOR_HTTP + "sink.writer.request.mode";
 

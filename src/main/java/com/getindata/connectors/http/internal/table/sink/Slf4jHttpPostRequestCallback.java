@@ -28,7 +28,7 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
         String endpointUrl,
         Map<String, String> headerMap) {
 
-        String reqeustBody = requestEntry.getElements().stream()
+        String requestBody = requestEntry.getElements().stream()
             .map(element -> new String(element, StandardCharsets.UTF_8))
             .collect(Collectors.joining());
 
@@ -37,14 +37,14 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
                 "Got response for a request.\n  Request:\n    " +
                 "Method: {}\n    Body: {}\n  Response: null",
                 requestEntry.getMethod(),
-                reqeustBody
+                requestBody
             );
         } else {
             log.info(
                 "Got response for a request.\n  Request:\n    " +
                 "Method: {}\n    Body: {}\n  Response: {}\n    Body: {}",
                 requestEntry.method,
-                reqeustBody,
+                requestBody,
                 response,
                 response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );

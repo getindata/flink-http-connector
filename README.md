@@ -196,7 +196,7 @@ This is a breaking compatibility change.
 The submission mode can be changed using `gid.connector.http.sink.writer.request.mode` property using `single` or `batch` as property value.
 
 #### Batch submission mode
-In batch mode, a number of events (processed elements) will be batched and submitted in one HTTP reqeust.
+In batch mode, a number of events (processed elements) will be batched and submitted in one HTTP request.
 In this mode, HTTP PUT/POST request's body contains a Json array, where every element of this array represents
 individual event.
 

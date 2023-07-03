@@ -73,7 +73,7 @@ public class BatchRequestHttpDynamicSinkInsertTest {
         wireMockServer.stop();
     }
 
-    private static Stream<Arguments> reqeustBatch() {
+    private static Stream<Arguments> requestBatch() {
         return Stream.of(
             Arguments.of(50, "allInOneBatch.txt"),
             Arguments.of(5, "allInOneBatch.txt"),
@@ -84,7 +84,7 @@ public class BatchRequestHttpDynamicSinkInsertTest {
     }
 
     @ParameterizedTest
-    @MethodSource("reqeustBatch")
+    @MethodSource("requestBatch")
     public void testHttpDynamicSinkDefaultPost(int requestBatchSize, String expectedRequests)
             throws Exception {
 
@@ -129,7 +129,7 @@ public class BatchRequestHttpDynamicSinkInsertTest {
     }
 
     @ParameterizedTest
-    @MethodSource("reqeustBatch")
+    @MethodSource("requestBatch")
     public void testHttpDynamicSinkPut(int requestBatchSize, String expectedRequests)
             throws Exception {
 

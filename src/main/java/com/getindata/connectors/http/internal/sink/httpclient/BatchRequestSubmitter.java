@@ -34,7 +34,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
     private static final byte[] BATCH_ELEMENT_DELIM_BYTES = ",".getBytes(StandardCharsets.UTF_8);
 
-    private final int httpReqeustBatchSize;
+    private final int httpRequestBatchSize;
 
     public BatchRequestSubmitter(
             Properties properties,
@@ -43,7 +43,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
         super(properties, headersAndValue, httpClient);
 
-        this.httpReqeustBatchSize = Integer.parseInt(
+        this.httpRequestBatchSize = Integer.parseInt(
             properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_BATCH_REQUEST_SIZE)
         );
     }
@@ -61,7 +61,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
         int counter = 0;
         String previousReqeustMethod = requestsToSubmit.get(0).method;
-        List<HttpSinkRequestEntry> reqeustBatch = new ArrayList<>(httpReqeustBatchSize);
+        List<HttpSinkRequestEntry> reqeustBatch = new ArrayList<>(httpRequestBatchSize);
         for (var entry : requestsToSubmit) {
             if (!previousReqeustMethod.equalsIgnoreCase(entry.method)) {
                 // break batch and submit
@@ -71,7 +71,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
                 reqeustBatch.add(entry);
             } else {
                 reqeustBatch.add(entry);
-                if (++counter % httpReqeustBatchSize == 0) {
+                if (++counter % httpRequestBatchSize == 0) {
                     // batch is full, submit and start new batch.
                     responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
                     reqeustBatch.clear();
@@ -89,7 +89,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
     @VisibleForTesting
     int getBatchSize() {
-        return httpReqeustBatchSize;
+        return httpRequestBatchSize;
     }
 
     private CompletableFuture<JavaNetHttpResponseWrapper> sendBatch(
