@@ -58,32 +58,22 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
         }
 
         var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
-
-        int counter = 0;
         String previousReqeustMethod = requestsToSubmit.get(0).method;
-        List<HttpSinkRequestEntry> reqeustBatch = new ArrayList<>(httpRequestBatchSize);
+        List<HttpSinkRequestEntry> requestBatch = new ArrayList<>(httpRequestBatchSize);
+
         for (var entry : requestsToSubmit) {
-            if (!previousReqeustMethod.equalsIgnoreCase(entry.method)) {
+            if (requestBatch.size() == httpRequestBatchSize
+                || !previousReqeustMethod.equalsIgnoreCase(entry.method)) {
                 // break batch and submit
-                responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
-                reqeustBatch.clear();
-                // start a new batch for new HTTP method.
-                reqeustBatch.add(entry);
-            } else {
-                reqeustBatch.add(entry);
-                if (++counter % httpRequestBatchSize == 0) {
-                    // batch is full, submit and start new batch.
-                    responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
-                    reqeustBatch.clear();
-                }
+                responseFutures.add(sendBatch(endpointUrl, requestBatch));
+                requestBatch.clear();
             }
+            requestBatch.add(entry);
             previousReqeustMethod = entry.method;
         }
 
-        if (!reqeustBatch.isEmpty()) {
-            // submit anything that left
-            responseFutures.add(sendBatch(endpointUrl, reqeustBatch));
-        }
+        // submit anything that left
+        responseFutures.add(sendBatch(endpointUrl, requestBatch));
         return responseFutures;
     }
 
