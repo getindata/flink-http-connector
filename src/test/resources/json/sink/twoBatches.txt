@@ -1,0 +1,50 @@
+[
+  {
+    "id": 4,
+    "first_name": "Danny",
+    "last_name": "Carey",
+    "gender": "Male",
+    "stock": "DGICA",
+    "currency": "USD",
+    "tx_date": "2021-10-27 20:53:54"
+  },
+  {
+    "id": 5,
+    "first_name": "Bob",
+    "last_name": "Dylan",
+    "gender": "Male",
+    "stock": "DGICA",
+    "currency": "USD",
+    "tx_date": "2021-10-28 20:53:54"
+  }
+]
+#-----#
+[
+	{
+		"id": 1,
+		"first_name": "Ninette",
+		"last_name": "Clee",
+		"gender": "Female",
+		"stock": "CDZI",
+		"currency": "RUB",
+		"tx_date": "2021-08-24 15:22:59"
+	},
+	{
+		"id": 2,
+		"first_name": "Rob",
+		"last_name": "Zombie",
+		"gender": "Male",
+		"stock": "DGICA",
+		"currency": "GBP",
+		"tx_date": "2021-10-25 20:53:54"
+	},
+	{
+		"id": 3,
+		"first_name": "Adam",
+		"last_name": "Jones",
+		"gender": "Male",
+		"stock": "DGICA",
+		"currency": "PLN",
+		"tx_date": "2021-10-26 20:53:54"
+	}
+]

@@ -17,7 +17,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HttpDynamicSinkInsertTest {
+public class PerRequestHttpDynamicSinkInsertTest {
 
     private static final int SERVER_PORT = 9090;
 
@@ -83,6 +83,7 @@ public class HttpDynamicSinkInsertTest {
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
                     + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.writer.request.mode' = 'single',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
@@ -132,6 +133,7 @@ public class HttpDynamicSinkInsertTest {
                     + "  'url' = '%s',\n"
                     + "  'insert-method' = 'PUT',\n"
                     + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.writer.request.mode' = 'single',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
@@ -178,6 +180,7 @@ public class HttpDynamicSinkInsertTest {
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
                     + "  'format' = 'raw',\n"
+                    + "  'gid.connector.http.sink.writer.request.mode' = 'single',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
                     + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
@@ -216,6 +219,7 @@ public class HttpDynamicSinkInsertTest {
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
                     + "  'format' = 'raw',\n"
+                    + "  'gid.connector.http.sink.writer.request.mode' = 'single',\n"
                     + "  'gid.connector.http.sink.header.Origin' = '%s',\n"
                     + "  'gid.connector.http.sink.header.X-Content-Type-Options' = '%s',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s'\n"
@@ -268,6 +272,7 @@ public class HttpDynamicSinkInsertTest {
                     + "  'connector' = '%s',\n"
                     + "  'url' = '%s',\n"
                     + "  'format' = 'json',\n"
+                    + "  'gid.connector.http.sink.writer.request.mode' = 'single',\n"
                     + "  'gid.connector.http.sink.header.Content-Type' = '%s',\n"
                     + "  'gid.connector.http.security.cert.server' = '%s',\n"
                     + "  'gid.connector.http.security.cert.client' = '%s',\n"

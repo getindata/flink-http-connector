@@ -5,18 +5,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory;
 import static com.getindata.connectors.http.TestPostRequestCallbackFactory.TEST_POST_REQUEST_CALLBACK_IDENT;
 
@@ -27,7 +29,7 @@ public class HttpPostRequestCallbackFactoryTest {
     protected StreamExecutionEnvironment env;
     protected StreamTableEnvironment tEnv;
 
-    private static final ArrayList<HttpSinkRequestEntry> requestEntries = new ArrayList<>();
+    private static final ArrayList<HttpRequest> requestEntries = new ArrayList<>();
     private static final ArrayList<HttpResponse<String>> responses = new ArrayList<>();
 
     @BeforeEach
@@ -47,8 +49,9 @@ public class HttpPostRequestCallbackFactoryTest {
         wireMockServer.stop();
     }
 
-    @Test
-    public void httpPostRequestCallbackFactoryTest()
+    @ParameterizedTest
+    @CsvSource(value = {"single, {\"id\":1}", "batch, [{\"id\":1}]"})
+    public void httpPostRequestCallbackFactoryTest(String mode, String expectedRequest)
         throws ExecutionException, InterruptedException {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
 
@@ -61,11 +64,13 @@ public class HttpPostRequestCallbackFactoryTest {
                 + "  'url' = '%s',\n"
                 + "  'format' = 'json',\n"
                 + "  'gid.connector.http.sink.request-callback' = '%s',\n"
+                + "  'gid.connector.http.sink.writer.request.mode' = '%s',\n"
                 + "  'gid.connector.http.sink.header.Content-Type' = 'application/json'\n"
                 + ")",
                 HttpDynamicTableSinkFactory.IDENTIFIER,
                 "http://localhost:" + SERVER_PORT + "/myendpoint",
-                TEST_POST_REQUEST_CALLBACK_IDENT
+                TEST_POST_REQUEST_CALLBACK_IDENT,
+                mode
             );
         tEnv.executeSql(createTable);
 
@@ -75,18 +80,18 @@ public class HttpPostRequestCallbackFactoryTest {
         assertEquals(1, requestEntries.size());
         assertEquals(1, responses.size());
 
-        assertArrayEquals(
-            "{\"id\":1}".getBytes(StandardCharsets.UTF_8),
-            requestEntries.get(0).element
-        );
+        String actualRequest = requestEntries.get(0).getElements().stream()
+            .map(element -> new String(element, StandardCharsets.UTF_8))
+            .collect(Collectors.joining());
+
+        Assertions.assertThat(actualRequest).isEqualToIgnoringNewLines(expectedRequest);
     }
 
-    public static class TestPostRequestCallback
-        implements HttpPostRequestCallback<HttpSinkRequestEntry> {
+    public static class TestPostRequestCallback implements HttpPostRequestCallback<HttpRequest> {
         @Override
         public void call(
             HttpResponse<String> response,
-            HttpSinkRequestEntry requestEntry,
+            HttpRequest requestEntry,
             String endpointUrl,
             Map<String, String> headerMap
         ) {

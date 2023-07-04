@@ -3,11 +3,12 @@ package com.getindata.connectors.http.internal.table.sink;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 
 /**
@@ -18,28 +19,32 @@ import com.getindata.connectors.http.internal.utils.ConfigUtils;
  * the {@link HttpDynamicSink}.
  */
 @Slf4j
-public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<HttpSinkRequestEntry> {
+public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<HttpRequest> {
 
     @Override
     public void call(
         HttpResponse<String> response,
-        HttpSinkRequestEntry requestEntry,
+        HttpRequest requestEntry,
         String endpointUrl,
         Map<String, String> headerMap) {
+
+        String requestBody = requestEntry.getElements().stream()
+            .map(element -> new String(element, StandardCharsets.UTF_8))
+            .collect(Collectors.joining());
 
         if (response == null) {
             log.info(
                 "Got response for a request.\n  Request:\n    " +
                 "Method: {}\n    Body: {}\n  Response: null",
-                requestEntry.method,
-                new String(requestEntry.element, StandardCharsets.UTF_8)
+                requestEntry.getMethod(),
+                requestBody
             );
         } else {
             log.info(
                 "Got response for a request.\n  Request:\n    " +
                 "Method: {}\n    Body: {}\n  Response: {}\n    Body: {}",
                 requestEntry.method,
-                new String(requestEntry.element, StandardCharsets.UTF_8),
+                requestBody,
                 response,
                 response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );

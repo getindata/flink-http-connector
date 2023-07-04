@@ -9,6 +9,7 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 @NoArgsConstructor(access = AccessLevel.NONE)
+// TODO Change this name to HttpConnectorConfigProperties
 public final class HttpConnectorConfigConstants {
 
     public static final String PROP_DELIM = ",";
@@ -84,4 +85,14 @@ public final class HttpConnectorConfigConstants {
         GID_CONNECTOR_HTTP + "sink.writer.thread-pool.size";
 
     // -----------------------------------------------------
+
+
+    // ------ Sink request submitter settings ------
+    public static final String SINK_HTTP_REQUEST_MODE =
+        GID_CONNECTOR_HTTP + "sink.writer.request.mode";
+
+    public static final String SINK_HTTP_BATCH_REQUEST_SIZE =
+        GID_CONNECTOR_HTTP + "sink.request.batch.size";
+
+    // ---------------------------------------------
 }

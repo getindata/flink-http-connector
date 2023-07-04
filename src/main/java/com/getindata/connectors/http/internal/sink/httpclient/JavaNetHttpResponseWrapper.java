@@ -20,7 +20,7 @@ final class JavaNetHttpResponseWrapper {
      * A representation of a single {@link com.getindata.connectors.http.HttpSink} request.
      */
     @NonNull
-    private final HttpSinkRequestEntry sinkRequestEntry;
+    private final HttpRequest httpRequest;
 
     /**
      * A response to an HTTP request based on {@link HttpSinkRequestEntry}.

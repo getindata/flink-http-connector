@@ -1,26 +1,16 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
@@ -31,10 +21,7 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
-import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 /**
  * An implementation of {@link SinkHttpClient} that uses Java 11's {@link HttpClient}. This
@@ -43,50 +30,28 @@ import com.getindata.connectors.http.internal.utils.ThreadUtils;
 @Slf4j
 public class JavaNetSinkHttpClient implements SinkHttpClient {
 
-    private static final int HTTP_CLIENT_THREAD_POOL_SIZE = 16;
-
-    public static final String DEFAULT_REQUEST_TIMEOUT_SECONDS = "30";
-
-    private final HttpClient httpClient;
-
     private final String[] headersAndValues;
 
     private final Map<String, String> headerMap;
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
-    private final HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+    private final HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
 
-    /**
-     * Thread pool to handle HTTP response from HTTP client.
-     */
-    private final ExecutorService publishingThreadPool;
-
-    private final int httpRequestTimeOutSeconds;
-
-    public JavaNetSinkHttpClient(Properties properties, HeaderPreprocessor headerPreprocessor) {
-        this(properties, new Slf4jHttpPostRequestCallback(), headerPreprocessor);
-    }
+    private final RequestSubmitter requestSubmitter;
 
     public JavaNetSinkHttpClient(
-        Properties properties,
-        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback,
-        HeaderPreprocessor headerPreprocessor) {
+            Properties properties,
+            HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
+            HeaderPreprocessor headerPreprocessor,
+            RequestSubmitterFactory requestSubmitterFactory) {
 
-        ExecutorService httpClientExecutor =
-            Executors.newFixedThreadPool(
-                HTTP_CLIENT_THREAD_POOL_SIZE,
-                new ExecutorThreadFactory(
-                    "http-sink-client-request-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER));
-
-        this.httpClient = JavaNetHttpClientFactory.createClient(properties, httpClientExecutor);
         this.httpPostRequestCallback = httpPostRequestCallback;
         this.headerMap = HttpHeaderUtils.prepareHeaderMap(
             HttpConnectorConfigConstants.SINK_HEADER_PREFIX,
             properties,
             headerPreprocessor
         );
-        this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(this.headerMap);
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.
@@ -99,15 +64,10 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
 
-        this.publishingThreadPool =
-            Executors.newFixedThreadPool(
-                HTTP_CLIENT_THREAD_POOL_SIZE,
-                new ExecutorThreadFactory(
-                    "http-sink-client-response-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER));
-
-        this.httpRequestTimeOutSeconds = Integer.parseInt(
-            properties.getProperty(HttpConnectorConfigConstants.SINK_HTTP_TIMEOUT_SECONDS,
-                DEFAULT_REQUEST_TIMEOUT_SECONDS)
+        this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(this.headerMap);
+        this.requestSubmitter = requestSubmitterFactory.createSubmitter(
+            properties,
+            headersAndValues
         );
     }
 
@@ -119,45 +79,11 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             .thenApply(responses -> prepareSinkHttpClientResponse(responses, endpointUrl));
     }
 
-    private HttpRequest buildHttpRequest(HttpSinkRequestEntry requestEntry, URI endpointUri) {
-        Builder requestBuilder = HttpRequest
-            .newBuilder()
-            .uri(endpointUri)
-            .version(Version.HTTP_1_1)
-            .timeout(Duration.ofSeconds(httpRequestTimeOutSeconds))
-            .method(requestEntry.method,
-                BodyPublishers.ofByteArray(requestEntry.element));
-
-        if (headersAndValues.length != 0) {
-            requestBuilder.headers(headersAndValues);
-        }
-
-        return requestBuilder.build();
-    }
-
     private CompletableFuture<List<JavaNetHttpResponseWrapper>> submitRequests(
-        List<HttpSinkRequestEntry> requestEntries,
-        String endpointUrl) {
-        var endpointUri = URI.create(endpointUrl);
-        var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
+            List<HttpSinkRequestEntry> requestEntries,
+            String endpointUrl) {
 
-        for (var entry : requestEntries) {
-            var response = httpClient
-                .sendAsync(
-                    buildHttpRequest(entry, endpointUri),
-                    HttpResponse.BodyHandlers.ofString())
-                .exceptionally(ex -> {
-                    // TODO This will be executed on a ForJoinPool Thread... refactor this someday.
-                    log.error("Request fatally failed because of an exception", ex);
-                    return null;
-                })
-                .thenApplyAsync(
-                    res -> new JavaNetHttpResponseWrapper(entry, res),
-                    publishingThreadPool
-                );
-            responseFutures.add(response);
-        }
-
+        var responseFutures = requestSubmitter.submit(endpointUrl, requestEntries);
         var allFutures = CompletableFuture.allOf(responseFutures.toArray(new CompletableFuture[0]));
         return allFutures.thenApply(_void -> responseFutures.stream().map(CompletableFuture::join)
             .collect(Collectors.toList()));
@@ -166,11 +92,11 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private SinkHttpClientResponse prepareSinkHttpClientResponse(
         List<JavaNetHttpResponseWrapper> responses,
         String endpointUrl) {
-        var successfulResponses = new ArrayList<HttpSinkRequestEntry>();
-        var failedResponses = new ArrayList<HttpSinkRequestEntry>();
+        var successfulResponses = new ArrayList<HttpRequest>();
+        var failedResponses = new ArrayList<HttpRequest>();
 
         for (var response : responses) {
-            var sinkRequestEntry = response.getSinkRequestEntry();
+            var sinkRequestEntry = response.getHttpRequest();
             var optResponse = response.getResponse();
 
             httpPostRequestCallback.call(

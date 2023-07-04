@@ -11,6 +11,7 @@ import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient;
 import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
@@ -62,7 +63,7 @@ public class HttpSinkBuilder<InputT> extends
 
     private static final SinkHttpClientBuilder DEFAULT_CLIENT_BUILDER = JavaNetSinkHttpClient::new;
 
-    private static final HttpPostRequestCallback<HttpSinkRequestEntry>
+    private static final HttpPostRequestCallback<HttpRequest>
         DEFAULT_POST_REQUEST_CALLBACK = new Slf4jHttpPostRequestCallback();
 
     private static final HeaderPreprocessor DEFAULT_HEADER_PREPROCESSOR =
@@ -80,7 +81,7 @@ public class HttpSinkBuilder<InputT> extends
     private SinkHttpClientBuilder sinkHttpClientBuilder;
 
     // If not defined, should be set to DEFAULT_POST_REQUEST_CALLBACK
-    private HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback;
+    private HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
 
     // If not defined, should be set to DEFAULT_HEADER_PREPROCESSOR
     private HeaderPreprocessor headerPreprocessor;
@@ -138,7 +139,7 @@ public class HttpSinkBuilder<InputT> extends
     }
 
     public HttpSinkBuilder<InputT> setHttpPostRequestCallback(
-        HttpPostRequestCallback<HttpSinkRequestEntry> httpPostRequestCallback) {
+        HttpPostRequestCallback<HttpRequest> httpPostRequestCallback) {
         this.httpPostRequestCallback = httpPostRequestCallback;
         return this;
     }

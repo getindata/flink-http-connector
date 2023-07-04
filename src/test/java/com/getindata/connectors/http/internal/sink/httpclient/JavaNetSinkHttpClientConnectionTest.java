@@ -16,6 +16,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.any;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
@@ -25,9 +26,15 @@ import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
 class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
 
+    private RequestSubmitterFactory perRequestSubmitterFactory;
+
+    private RequestSubmitterFactory batchRequestSubmitterFactory;
+
     @BeforeEach
     public void setUp() {
         super.setUp();
+        this.perRequestSubmitterFactory = new PerRequestRequestSubmitterFactory();
+        this.batchRequestSubmitterFactory = new BatchRequestSubmitterFactory(50);
     }
 
     @AfterEach
@@ -42,7 +49,17 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
         wireMockServer.start();
         mockEndPoint(wireMockServer);
 
-        testSinkClientForConnection(new Properties(), "http://localhost:", SERVER_PORT);
+        testSinkClientForConnection(
+            new Properties(),
+            "http://localhost:",
+            SERVER_PORT,
+            perRequestSubmitterFactory);
+
+        testSinkClientForConnection(
+            new Properties(),
+            "http://localhost:",
+            SERVER_PORT,
+            batchRequestSubmitterFactory);
     }
 
     @Test
@@ -63,7 +80,17 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
 
         properties.setProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "true");
 
-        testSinkClientForConnection(properties, "https://localhost:", HTTPS_SERVER_PORT);
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            perRequestSubmitterFactory);
+
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            batchRequestSubmitterFactory);
     }
 
     @ParameterizedTest
@@ -89,7 +116,19 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             trustedCert.getAbsolutePath()
         );
 
-        testSinkClientForConnection(properties, "https://localhost:", HTTPS_SERVER_PORT);
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            perRequestSubmitterFactory
+        );
+
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            batchRequestSubmitterFactory
+        );
     }
 
     @ParameterizedTest
@@ -130,7 +169,19 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             clientPrivateKey.getAbsolutePath()
         );
 
-        testSinkClientForConnection(properties, "https://localhost:", HTTPS_SERVER_PORT);
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            perRequestSubmitterFactory
+        );
+
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            batchRequestSubmitterFactory
+        );
     }
 
     @Test
@@ -173,7 +224,18 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             serverTrustedCert.getAbsolutePath()
         );
 
-        testSinkClientForConnection(properties, "https://localhost:", HTTPS_SERVER_PORT);
+        testSinkClientForConnection(
+            properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            perRequestSubmitterFactory
+        );
+
+        testSinkClientForConnection(properties,
+            "https://localhost:",
+            HTTPS_SERVER_PORT,
+            batchRequestSubmitterFactory
+        );
     }
 
 
@@ -205,10 +267,26 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             clientPrivateKey.getAbsolutePath()
         );
 
-        assertThrows(
-            RuntimeException.class,
-            () -> new JavaNetSinkHttpClient(properties, headerPreprocessor)
-        );
+        assertAll(() -> {
+            assertThrows(
+                RuntimeException.class,
+                () -> new JavaNetSinkHttpClient(
+                    properties,
+                    postRequestCallback,
+                    headerPreprocessor,
+                    perRequestSubmitterFactory
+                )
+            );
+            assertThrows(
+                RuntimeException.class,
+                () -> new JavaNetSinkHttpClient(
+                    properties,
+                    postRequestCallback,
+                    headerPreprocessor,
+                    batchRequestSubmitterFactory
+                )
+            );
+        });
     }
 
     @ParameterizedTest
@@ -227,17 +305,34 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             authorizationHeaderValue
         );
 
-        testSinkClientForConnection(properties, "http://localhost:", SERVER_PORT);
+        testSinkClientForConnection(
+            properties,
+            "http://localhost:",
+            SERVER_PORT,
+            perRequestSubmitterFactory
+        );
+
+        testSinkClientForConnection(
+            properties,
+            "http://localhost:",
+            SERVER_PORT,
+            batchRequestSubmitterFactory
+        );
     }
 
     private void testSinkClientForConnection(
             Properties properties,
             String endpointUrl,
-            int httpsServerPort) {
+            int httpsServerPort,
+            RequestSubmitterFactory requestSubmitterFactory) {
 
         try {
             JavaNetSinkHttpClient client =
-                new JavaNetSinkHttpClient(properties, headerPreprocessor);
+                new JavaNetSinkHttpClient(
+                    properties,
+                    postRequestCallback,
+                    headerPreprocessor,
+                    requestSubmitterFactory);
             HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
             SinkHttpClientResponse response =
                 client.putRequests(
