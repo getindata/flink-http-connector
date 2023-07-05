@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2023-07-05
+
 ### Added
+
 -   Add support for batch request submission in HTTP sink. The mode can be changed by setting
     `gid.connector.http.sink.writer.request.mode` with value `single` or `batch`. The default value
     is `batch` bode which is breaking change comparing to previous versions. Additionally,
@@ -10,6 +13,7 @@
     batch size is 500 which is same as default value of HttpSink `maxBatchSize` parameter. 
 
 ### Changed
+
 -   Changed API for public HttpSink builder. The `setHttpPostRequestCallback` expects a `PostRequestCallback`
     of generic type [HttpRequest](src/main/java/com/getindata/connectors/http/internal/sink/httpclient/HttpRequest.java)
     instead `HttpSinkRequestEntry`.
@@ -127,7 +131,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.10.0...HEAD
+
+[0.10.0]: https://github.com/getindata/flink-http-connector/compare/0.9.0...0.10.0
 
 [0.9.0]: https://github.com/getindata/flink-http-connector/compare/0.8.1...0.9.0
 
