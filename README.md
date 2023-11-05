@@ -266,6 +266,27 @@ CREATE TABLE http (
 #### Single submission mode
 In this mode every processed event is submitted as individual HTTP POST/PUT request. 
 
+Streaming API:
+```java
+HttpSink.<String>builder()
+      .setEndpointUrl("http://example.com/myendpoint")
+      .setElementConverter(
+          (s, _context) -> new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+      .setProperty("gid.connector.http.sink.writer.request.mode", "single")
+      .build();
+```
+SQL:
+```roomsql
+CREATE TABLE http (
+  id bigint,
+  some_field string
+) WITH (
+  'connector' = 'http-sink',
+  'url' = 'http://example.com/myendpoint',
+  'format' = 'json',
+  'gid.connector.http.sink.writer.request.mode' = 'single'
+)
+```
 
 #### Http headers
 It is possible to set HTTP headers that will be added to HTTP request send by sink connector.
