@@ -71,7 +71,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
         return new HttpLookupTableSource(
             physicalRowDataType,
             lookupConfig,
-            decodingFormat
+            decodingFormat,
+            context.getClassLoader()
         );
     }
 

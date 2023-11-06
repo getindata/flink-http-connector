@@ -40,16 +40,20 @@ public class HttpLookupTableSource
 
     private final HttpLookupConfig lookupConfig;
 
+    private final ClassLoader classLoader;
+
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
 
     public HttpLookupTableSource(
             DataType physicalRowDataType,
             HttpLookupConfig lookupConfig,
-            DecodingFormat<DeserializationSchema<RowData>> decodingFormat) {
+            DecodingFormat<DeserializationSchema<RowData>> decodingFormat,
+            ClassLoader classLoader) {
 
         this.physicalRowDataType = physicalRowDataType;
         this.lookupConfig = lookupConfig;
         this.decodingFormat = decodingFormat;
+        this.classLoader = classLoader;
     }
 
     @Override
@@ -62,7 +66,8 @@ public class HttpLookupTableSource
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
             FactoryUtil.discoverFactory(
-                Thread.currentThread().getContextClassLoader(),
+                //Thread.currentThread().getContextClassLoader(),
+                context.getClass().getClassLoader(),
                 LookupQueryCreatorFactory.class,
                 lookupConfig.getReadableConfig().getOptional(LOOKUP_QUERY_CREATOR_IDENTIFIER)
                     .orElse(
@@ -104,7 +109,8 @@ public class HttpLookupTableSource
         return new HttpLookupTableSource(
             physicalRowDataType,
             lookupConfig,
-            decodingFormat
+            decodingFormat,
+            classLoader
         );
     }
 
