@@ -66,8 +66,7 @@ public class HttpLookupTableSource
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
             FactoryUtil.discoverFactory(
-                //Thread.currentThread().getContextClassLoader(),
-                context.getClass().getClassLoader(),
+                this.classLoader,
                 LookupQueryCreatorFactory.class,
                 lookupConfig.getReadableConfig().getOptional(LOOKUP_QUERY_CREATOR_IDENTIFIER)
                     .orElse(

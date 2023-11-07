@@ -8,6 +8,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.factories.SerializationFormatFactory;
 
@@ -31,7 +32,8 @@ public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory
         String formatIdentifier = readableConfig.get(LOOKUP_REQUEST_FORMAT);
         SerializationFormatFactory jsonFormatFactory =
             FactoryUtil.discoverFactory(
-                Thread.currentThread().getContextClassLoader(),
+                // Thread.currentThread().getContextClassLoader(),
+                DynamicTableFactory.Context.class.getClassLoader(),
                 SerializationFormatFactory.class,
                 formatIdentifier
             );
