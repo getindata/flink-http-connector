@@ -4,10 +4,12 @@ import java.util.Set;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.table.factories.DynamicTableFactory;
 
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.LookupQueryCreatorFactory;
 import com.getindata.connectors.http.internal.table.lookup.LookupRow;
+
 
 /**
  * Factory for creating {@link ElasticSearchLiteQueryCreator}.
@@ -19,7 +21,9 @@ public class ElasticSearchLiteQueryCreatorFactory implements LookupQueryCreatorF
     @Override
     public LookupQueryCreator createLookupQueryCreator(
             ReadableConfig readableConfig,
-            LookupRow lookupRow) {
+            LookupRow lookupRow,
+            DynamicTableFactory.Context dynamicTableFactoryContext
+    ) {
         return new ElasticSearchLiteQueryCreator(lookupRow);
     }
 

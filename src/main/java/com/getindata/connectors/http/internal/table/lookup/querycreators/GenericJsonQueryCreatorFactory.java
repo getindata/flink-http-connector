@@ -27,23 +27,24 @@ public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory
     @Override
     public LookupQueryCreator createLookupQueryCreator(
             ReadableConfig readableConfig,
-            LookupRow lookupRow) {
+            LookupRow lookupRow,
+            DynamicTableFactory.Context dynamicTableFactoryContext) {
 
         String formatIdentifier = readableConfig.get(LOOKUP_REQUEST_FORMAT);
         SerializationFormatFactory jsonFormatFactory =
             FactoryUtil.discoverFactory(
-                // Thread.currentThread().getContextClassLoader(),
-                DynamicTableFactory.Context.class.getClassLoader(),
+                dynamicTableFactoryContext.getClassLoader(),
                 SerializationFormatFactory.class,
                 formatIdentifier
             );
-
-        EncodingFormat<SerializationSchema<RowData>>
-            encoder = jsonFormatFactory.createEncodingFormat(
-            null,
+        QueryFormatAwareConfiguration queryFormatAwareConfiguration =
             new QueryFormatAwareConfiguration(
                 LOOKUP_REQUEST_FORMAT.key() + "." + formatIdentifier,
-                (Configuration) readableConfig)
+                (Configuration) readableConfig);
+        EncodingFormat<SerializationSchema<RowData>>
+            encoder = jsonFormatFactory.createEncodingFormat(
+            dynamicTableFactoryContext,
+            queryFormatAwareConfiguration
         );
 
         SerializationSchema<RowData> serializationSchema =

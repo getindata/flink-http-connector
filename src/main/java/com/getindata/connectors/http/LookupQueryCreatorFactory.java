@@ -3,6 +3,7 @@ package com.getindata.connectors.http;
 import java.io.Serializable;
 
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.Factory;
 
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSource;
@@ -40,5 +41,6 @@ public interface LookupQueryCreatorFactory extends Factory, Serializable {
      */
     LookupQueryCreator createLookupQueryCreator(
         ReadableConfig readableConfig,
-        LookupRow lookupRow);
+        LookupRow lookupRow,
+        DynamicTableFactory.Context dynamicTableFactoryContext);
 }

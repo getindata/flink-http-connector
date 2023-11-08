@@ -5,6 +5,7 @@ import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.connector.format.DecodingFormat;
@@ -15,6 +16,7 @@ import org.apache.flink.table.connector.source.TableFunctionProvider;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -40,7 +42,7 @@ public class HttpLookupTableSource
 
     private final HttpLookupConfig lookupConfig;
 
-    private final ClassLoader classLoader;
+    private final DynamicTableFactory.Context dynamicTableFactoryContext;
 
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
 
@@ -48,25 +50,25 @@ public class HttpLookupTableSource
             DataType physicalRowDataType,
             HttpLookupConfig lookupConfig,
             DecodingFormat<DeserializationSchema<RowData>> decodingFormat,
-            ClassLoader classLoader) {
+            DynamicTableFactory.Context dynamicTablecontext) {
 
         this.physicalRowDataType = physicalRowDataType;
         this.lookupConfig = lookupConfig;
         this.decodingFormat = decodingFormat;
-        this.classLoader = classLoader;
+        this.dynamicTableFactoryContext = dynamicTablecontext;
     }
 
     @Override
-    public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext context) {
+    public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext lookupContext) {
 
-        LookupRow lookupRow = extractLookupRow(context.getKeys());
+        LookupRow lookupRow = extractLookupRow(lookupContext.getKeys());
 
         DeserializationSchema<RowData> responseSchemaDecoder =
-            decodingFormat.createRuntimeDecoder(context, physicalRowDataType);
+            decodingFormat.createRuntimeDecoder(lookupContext, physicalRowDataType);
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
             FactoryUtil.discoverFactory(
-                this.classLoader,
+                this.dynamicTableFactoryContext.getClassLoader(),
                 LookupQueryCreatorFactory.class,
                 lookupConfig.getReadableConfig().getOptional(LOOKUP_QUERY_CREATOR_IDENTIFIER)
                     .orElse(
@@ -75,11 +77,12 @@ public class HttpLookupTableSource
                             GenericJsonQueryCreatorFactory.IDENTIFIER)
                     )
             );
-
+        ReadableConfig readableConfig = lookupConfig.getReadableConfig();
         LookupQueryCreator lookupQueryCreator =
             lookupQueryCreatorFactory.createLookupQueryCreator(
-                lookupConfig.getReadableConfig(),
-                lookupRow
+                readableConfig,
+                lookupRow,
+                dynamicTableFactoryContext
             );
 
         PollingClientFactory<RowData> pollingClientFactory =
@@ -109,7 +112,7 @@ public class HttpLookupTableSource
             physicalRowDataType,
             lookupConfig,
             decodingFormat,
-            classLoader
+            dynamicTableFactoryContext
         );
     }
 

@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.PrefixedConfigOption;
 import org.apache.flink.table.factories.SerializationFormatFactory;
 
 /**
@@ -21,9 +20,12 @@ class QueryFormatAwareConfiguration extends Configuration {
      * This will be used as prefix parameter for {@link PrefixedConfigOption}.
      */
     private final String queryFormatName;
+    private final ClassLoader classLoader;
+
 
     QueryFormatAwareConfiguration(String queryFormatName, Configuration other) {
         super(other);
+        this.classLoader = other.getClass().getClassLoader();
         this.queryFormatName =
             (queryFormatName.endsWith(".")) ? queryFormatName : queryFormatName + ".";
     }
@@ -36,8 +38,10 @@ class QueryFormatAwareConfiguration extends Configuration {
      */
     @Override
     public <T> Optional<T> getOptional(ConfigOption<T> option) {
-        PrefixedConfigOption<T> configOption = new PrefixedConfigOption<>(queryFormatName, option);
-        return super.getOptional(configOption);
+
+        PrefixedConfigOption<T> prefixedConfigOption =
+                new PrefixedConfigOption<>(queryFormatName, option);
+        return super.getOptional(prefixedConfigOption.getConfigOption());
     }
 
 }
