@@ -1,1 +1,2 @@
 com.getindata.connectors.http.TestPostRequestCallbackFactory
+com.getindata.connectors.http.internal.table.lookup.querycreators.CustomFormatFactory
