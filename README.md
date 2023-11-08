@@ -19,7 +19,7 @@ In case of updating http-connector please see [Breaking changes](#breaking-chang
 ## Prerequisites
 * Java 11
 * Maven 3
-* Flink 1.15+
+* Flink 1.16+
 
 ## Runtime dependencies
 This connector has few Flink's runtime dependencies, that are expected to be provided.
@@ -424,7 +424,7 @@ It will start HTTP server listening on `http://localhost:8080/client`
 
 Steps to follow:
 - Run Mock HTTP server from `HttpStubApp::main` method.
-- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/try-flink/local_installation/
+- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/try-flink/local_installation/
 - Start Flink SQL Client [6] by calling: `./bin/sql-client.sh -j flink-http-connector-1.0-SNAPSHOT.jar`
 - Execute SQL statements:
 Create Data Stream source Table:
@@ -502,13 +502,13 @@ The mapping from Http Json Response to SQL table schema is done via Flink's Json
 - Make `HttpSink` retry the failed requests. Currently, it does not retry those at all, only adds their count to the `numRecordsSendErrors` metric. It should be thoroughly thought over how to do it efficiently and then implemented.
 
 ### 
-[1] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/table/sql/queries/joins/#lookup-join
+[1] https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/dev/table/sql/queries/joins/#lookup-join
 </br>
-[2] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/datastream/sources/
+[2] https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/dev/datastream/sources/
 </br>
 [3] https://cwiki.apache.org/confluence/display/FLINK/FLIP-171%3A+Async+Sink
 </br>
-[4] https://nightlies.apache.org/flink/flink-docs-release-1.15/api/java/org/apache/flink/connector/base/sink/AsyncSinkBase.html
+[4] https://nightlies.apache.org/flink/flink-docs-release-1.16/api/java/org/apache/flink/connector/base/sink/AsyncSinkBase.html
 </br>
 [5] https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/
 </br>
