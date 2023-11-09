@@ -38,10 +38,8 @@ class QueryFormatAwareConfiguration extends Configuration {
      */
     @Override
     public <T> Optional<T> getOptional(ConfigOption<T> option) {
-
         PrefixedConfigOption<T> prefixedConfigOption =
-                new PrefixedConfigOption<>(queryFormatName, option);
+              new PrefixedConfigOption<>(queryFormatName, option);
         return super.getOptional(prefixedConfigOption.getConfigOption());
     }
-
 }

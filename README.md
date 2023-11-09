@@ -439,7 +439,7 @@ Project build command: `mvn package`. </br>
 Detailed test report can be found under `target/site/jacoco/index.xml`.
 
 ## Demo application
-**Note**: This demo works only for Flink-1.16x.
+**Note**: This demo works only for Flink-1.15x.
 
 You can test this connector using simple mock http server provided with this repository and Flink SQL-client. 
 The mock server can be started from IDE (currently only this way) by running `HttpStubApp::main` method. 
@@ -525,13 +525,13 @@ The mapping from Http Json Response to SQL table schema is done via Flink's Json
 - Make `HttpSink` retry the failed requests. Currently, it does not retry those at all, only adds their count to the `numRecordsSendErrors` metric. It should be thoroughly thought over how to do it efficiently and then implemented.
 
 ### 
-[1] https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/dev/table/sql/queries/joins/#lookup-join
+[1] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/table/sql/queries/joins/#lookup-join
 </br>
-[2] https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/dev/datastream/sources/
+[2] https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/dev/datastream/sources/
 </br>
 [3] https://cwiki.apache.org/confluence/display/FLINK/FLIP-171%3A+Async+Sink
 </br>
-[4] https://nightlies.apache.org/flink/flink-docs-release-1.16/api/java/org/apache/flink/connector/base/sink/AsyncSinkBase.html
+[4] https://nightlies.apache.org/flink/flink-docs-release-1.15/api/java/org/apache/flink/connector/base/sink/AsyncSinkBase.html
 </br>
 [5] https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/formats/json/
 </br>

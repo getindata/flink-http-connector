@@ -39,7 +39,7 @@ jobs:
 
       - name: Test JavaDoc
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
-        if: startsWith(matrix.flink, '1.16.0')
+        if: startsWith(matrix.flink, '1.15.0')
 
       - name: Add coverage to PR
         id: jacoco
@@ -49,4 +49,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
-        if: startsWith(matrix.flink, '1.16.0')
+        if: startsWith(matrix.flink, '1.15.0')
