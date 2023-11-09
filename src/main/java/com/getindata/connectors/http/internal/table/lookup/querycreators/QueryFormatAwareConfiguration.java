@@ -20,8 +20,6 @@ class QueryFormatAwareConfiguration extends Configuration {
      * This will be used as prefix parameter for {@link PrefixedConfigOption}.
      */
     private final String queryFormatName;
-    private final ClassLoader classLoader;
-
 
     QueryFormatAwareConfiguration(String queryFormatName, Configuration other) {
         super(other);
