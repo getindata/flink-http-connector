@@ -23,7 +23,6 @@ class QueryFormatAwareConfiguration extends Configuration {
 
     QueryFormatAwareConfiguration(String queryFormatName, Configuration other) {
         super(other);
-        this.classLoader = other.getClass().getClassLoader();
         this.queryFormatName =
             (queryFormatName.endsWith(".")) ? queryFormatName : queryFormatName + ".";
     }

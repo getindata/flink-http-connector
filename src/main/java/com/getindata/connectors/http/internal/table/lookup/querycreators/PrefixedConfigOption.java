@@ -17,11 +17,6 @@ import org.apache.flink.configuration.FallbackKey;
  * for custom content, so we could no longer extend ConfigOption.
  */
 public class PrefixedConfigOption<T> {
-
-    /**
-     * Prefix that will be added to original option key.
-     */
-    private final String prefixedKey;
     /**
      * configOption to decorate
      */
@@ -40,7 +35,7 @@ public class PrefixedConfigOption<T> {
      * @param other  original {@link ConfigOption} to clone and decorate.
      */
     public PrefixedConfigOption(String keyPrefix, ConfigOption<T> other) {
-        this.prefixedKey = keyPrefix + other.key();
+        String prefixedKey = keyPrefix + other.key();
         Class clazz;
         boolean isList;
 
@@ -55,34 +50,27 @@ public class PrefixedConfigOption<T> {
             field.setAccessible(true);
             isList = (Boolean) field.get(other);
 
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-
-        /*
-         * Create a new ConfigOption based on other, but with a prefixed key.
-         * At 1.16 we cannot access the protected fields / constructor in the suppliedOption
-         * as this object is loaded using a different classloader.
-         * Without changing Flink to make the constructor, methods and fields public, we need
-         * to use reflection to access and create the new prefixed ConfigOption. It is not
-         * great practise to use reflection, but getting round this classloader issue
-         * necessitates it's use.
-         */
-        Constructor constructor = other.getClass().getDeclaredConstructors()[0];
-        constructor.setAccessible(true);
-
-        try {
+            /*
+            * Create a new ConfigOption based on other, but with a prefixed key.
+            * At 1.16 we cannot access the protected fields / constructor in the supplied
+            * configOption as this object is loaded using a different classloader.
+            * Without changing Flink to make the constructor, methods and fields public, we need
+            * to use reflection to access and create the new prefixed ConfigOption. It is not
+            * great practise to use reflection, but getting round this classloader issue
+            * necessitates it's use.
+            */
+            Constructor constructor = other.getClass().getDeclaredConstructors()[0];
+            constructor.setAccessible(true);
             configOption = (ConfigOption) constructor.newInstance(prefixedKey,
                     clazz,
                     other.description(),
                     other.defaultValue(),
                     isList,
                     getFallbackKeys(other));
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException |
+                 NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
     }
