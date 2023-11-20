@@ -4,6 +4,19 @@
 
 ## [0.10.0] - 2023-07-05
 
+
+### Fixed 
+
+    Fixed an issue where SQL Client did not work with the connector at Flink 1.16.
+    
+    This required a change to use a different classloader in the lookup join processing. 
+    As well as the classloader change, a change to the PrefixedConfigOption implementation was
+    required, because it was implemented as an extension to ConfigOption; which produced  
+    access errors when trying to access the parent class protected methods (the parent class was loaded 
+    using a different classloader). The new implementation is not an extension; instead it holds an
+    instance of the ConfigOption as a private variable and uses reflection to instantiate a cloned 
+    ConfigOption object with the prefixed key. 
+
 ### Added
 
 -   Add support for batch request submission in HTTP sink. The mode can be changed by setting

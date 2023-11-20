@@ -43,9 +43,9 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
     }
 
     @Override
-    public DynamicTableSource createDynamicTableSource(Context context) {
+    public DynamicTableSource createDynamicTableSource(Context dynamicTableContext) {
         FactoryUtil.TableFactoryHelper helper =
-            FactoryUtil.createTableFactoryHelper(this, context);
+            FactoryUtil.createTableFactoryHelper(this, dynamicTableContext);
 
         ReadableConfig readableConfig = helper.getOptions();
         helper.validateExcept(
@@ -61,9 +61,9 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
                 FactoryUtil.FORMAT
             );
 
-        HttpLookupConfig lookupConfig = getHttpLookupOptions(context, readableConfig);
+        HttpLookupConfig lookupConfig = getHttpLookupOptions(dynamicTableContext, readableConfig);
 
-        ResolvedSchema resolvedSchema = context.getCatalogTable().getResolvedSchema();
+        ResolvedSchema resolvedSchema = dynamicTableContext.getCatalogTable().getResolvedSchema();
 
         DataType physicalRowDataType =
             toRowDataType(resolvedSchema.getColumns(), Column::isPhysical);
@@ -71,7 +71,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
         return new HttpLookupTableSource(
             physicalRowDataType,
             lookupConfig,
-            decodingFormat
+            decodingFormat,
+            dynamicTableContext
         );
     }
 

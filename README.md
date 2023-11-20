@@ -19,7 +19,7 @@ In case of updating http-connector please see [Breaking changes](#breaking-chang
 ## Prerequisites
 * Java 11
 * Maven 3
-* Flink 1.15+
+* Flink 1.16+
 
 ## Runtime dependencies
 This connector has few Flink's runtime dependencies, that are expected to be provided.
@@ -439,8 +439,7 @@ Project build command: `mvn package`. </br>
 Detailed test report can be found under `target/site/jacoco/index.xml`.
 
 ## Demo application
-**Note**: This demo works only for Flink-1.15.x even though connector can be used with Flink 1.16.
-This problem is addressed by https://github.com/getindata/flink-http-connector/issues/54 and will be fix in next relesees. 
+**Note**: This demo works only for Flink-1.15x.
 
 You can test this connector using simple mock http server provided with this repository and Flink SQL-client. 
 The mock server can be started from IDE (currently only this way) by running `HttpStubApp::main` method. 
@@ -448,7 +447,7 @@ It will start HTTP server listening on `http://localhost:8080/client`
 
 Steps to follow:
 - Run Mock HTTP server from `HttpStubApp::main` method.
-- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/try-flink/local_installation/
+- Start your Flink cluster, for example as described under https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/try-flink/local_installation/
 - Start Flink SQL Client [6] by calling: `./bin/sql-client.sh -j flink-http-connector-1.0-SNAPSHOT.jar`
 - Execute SQL statements:
 Create Data Stream source Table:
