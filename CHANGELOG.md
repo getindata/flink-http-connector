@@ -2,13 +2,14 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2023-11-20
+
 ## [0.10.0] - 2023-07-05
 
-
-### Fixed 
+### Fixed
 
     Fixed an issue where SQL Client did not work with the connector at Flink 1.16.
-    
+
     This required a change to use a different classloader in the lookup join processing. 
     As well as the classloader change, a change to the PrefixedConfigOption implementation was
     required, because it was implemented as an extension to ConfigOption; which produced  
@@ -144,7 +145,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.11.0...HEAD
+
+[0.11.0]: https://github.com/getindata/flink-http-connector/compare/0.10.0...0.11.0
 
 [0.10.0]: https://github.com/getindata/flink-http-connector/compare/0.9.0...0.10.0
 
