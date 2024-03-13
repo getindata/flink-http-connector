@@ -1,6 +1,7 @@
 /.idea/
 .idea
 target
+bin
 /flink.http.connector.iml
 /src/main/flink-http-connector.iml
 /src/main/main.iml

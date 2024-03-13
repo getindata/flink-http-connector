@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for passing `Authorization` headers for other purposes than Basic Authentication.
+    New configuration parameter: `gid.connector.http.source.lookup.use-raw-authorization-header`.
+    If set to `'true'`, the connector uses the raw value set for the `Authorization` header, without
+    transformation for Basic Authentication (base64, addition of "Basic " prefix).
+    If not specified, defaults to `'false'`.
+
 ## [0.11.0] - 2023-11-20
 
 ## [0.10.0] - 2023-07-05

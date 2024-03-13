@@ -27,6 +27,14 @@ public final class HttpConnectorConfigConstants {
     public static final String LOOKUP_SOURCE_HEADER_PREFIX = GID_CONNECTOR_HTTP
         + "source.lookup.header.";
 
+    /**
+     * Whether to use the raw value of the Authorization header. If set, it prevents
+     * the special treatment of the header for Basic Authentication, thus preserving the passed
+     * raw value. Defaults to false.
+     */
+    public static final String LOOKUP_SOURCE_HEADER_USE_RAW = GID_CONNECTOR_HTTP
+        + "source.lookup.use-raw-authorization-header";
+
     // --------- Error code handling configuration ---------
     public static final String HTTP_ERROR_SINK_CODE_WHITE_LIST =
         GID_CONNECTOR_HTTP + "sink.error.code.exclude";

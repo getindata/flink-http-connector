@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
@@ -239,11 +240,13 @@ class JavaNetHttpPollingClientConnectionTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-        "user:password",
-        "Basic dXNlcjpwYXNzd29yZA=="
+    @CsvSource({
+        "user:password, false",
+        "Basic dXNlcjpwYXNzd29yZA==, false",
+        "Basic dXNlcjpwYXNzd29yZA==, true"
     })
-    public void shouldConnectWithBasicAuth(String authorizationHeaderValue) {
+    public void shouldConnectWithBasicAuth(String authorizationHeaderValue,
+                                           boolean useRawAuthHeader) {
 
         // GIVEN
         this.stubMapping = setupServerStubForBasicAuth();
@@ -257,6 +260,11 @@ class JavaNetHttpPollingClientConnectionTest {
         properties.setProperty(
             HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX + "Authorization",
             authorizationHeaderValue
+        );
+
+        properties.setProperty(
+                HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW,
+                Boolean.toString(useRawAuthHeader)
         );
 
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(
@@ -312,9 +320,12 @@ class JavaNetHttpPollingClientConnectionTest {
             );
         lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
 
+        boolean useRawAuthHeader = Boolean.parseBoolean(
+            (String)properties.get(HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW));
+
         return new GetRequestFactory(
             new GenericGetQueryCreator(lookupRow),
-            HttpHeaderUtils.createDefaultHeaderPreprocessor(),
+            HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader),
             HttpLookupConfig.builder()
                 .url(getBaseUrl())
                 .properties(properties)
@@ -331,10 +342,13 @@ class JavaNetHttpPollingClientConnectionTest {
                 .createEncodingFormat(dynamicTableFactoryContext, new Configuration())
                 .createRuntimeEncoder(null, lookupPhysicalDataType);
 
+        boolean useRawAuthHeader = Boolean.parseBoolean(
+            (String)properties.get(HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW));
+
         return new BodyBasedRequestFactory(
             methodName,
             new GenericJsonQueryCreator(jsonSerializer),
-            HttpHeaderUtils.createDefaultHeaderPreprocessor(),
+            HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader),
             HttpLookupConfig.builder()
                 .url(getBaseUrl())
                 .properties(properties)

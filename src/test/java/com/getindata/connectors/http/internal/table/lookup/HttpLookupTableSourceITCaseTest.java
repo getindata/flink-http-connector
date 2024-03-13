@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -385,6 +386,38 @@ public class HttpLookupTableSourceITCaseTest {
     @Test
     public void testLookupJoinOnRowWithRowType() throws Exception {
 
+        testLookupJoinOnRowWithRowTypeImpl();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "user:password, Basic dXNlcjpwYXNzd29yZA==, false",
+        "Basic dXNlcjpwYXNzd29yZA==, Basic dXNlcjpwYXNzd29yZA==, false",
+        "abc123, abc123, true",
+        "Basic dXNlcjpwYXNzd29yZA==, Basic dXNlcjpwYXNzd29yZA==, true",
+        "Bearer dXNlcjpwYXNzd29yZA==, Bearer dXNlcjpwYXNzd29yZA==, true"
+    })
+    public void testLookupWithUseRawAuthHeader(
+            String authHeaderRawValue,
+            String expectedAuthHeaderValue,
+            boolean useRawAuthHeader) throws Exception {
+
+        // Test with gid.connector.http.source.lookup.use-raw-authorization-header set to either
+        // true or false, and asserting Authorization header is processed as expected, either with
+        // transformation for Basic Auth, or kept as-is when it is not used for Basic Auth.
+        testLookupJoinOnRowWithRowTypeImpl(
+            authHeaderRawValue, expectedAuthHeaderValue, useRawAuthHeader);
+    }
+
+    private void testLookupJoinOnRowWithRowTypeImpl() throws Exception {
+        testLookupJoinOnRowWithRowTypeImpl(null, null, false);
+    }
+
+    private void testLookupJoinOnRowWithRowTypeImpl(
+            String authHeaderRawValue,
+            String expectedAuthHeaderValue,
+            boolean useRawAuthHeader) throws Exception {
+
         // GIVEN
         setUpServerBodyStub(
             "POST",
@@ -394,7 +427,11 @@ public class HttpLookupTableSourceITCaseTest {
                 matchingJsonPath("$.nestedRow.anIntColumn"),
                 matchingJsonPath("$.nestedRow.aRow.anotherStringColumn"),
                 matchingJsonPath("$.nestedRow.aRow.anotherIntColumn")
-            )
+            ),
+            // For testing the gid.connector.http.source.lookup.use-raw-authorization-header
+            // configuration parameter:
+            expectedAuthHeaderValue != null ? "Authorization" : null,
+            expectedAuthHeaderValue // expected value of extra header
         );
 
         String fields =
@@ -417,6 +454,8 @@ public class HttpLookupTableSourceITCaseTest {
                 + "'fields.id.end' = '5'"
                 + ")";
 
+        String useRawAuthHeaderString = useRawAuthHeader ? "'true'" : "'false'";
+
         String lookupTable =
             "CREATE TABLE Customers (\n" +
                 "  `enrichedInt` INT,\n" +
@@ -429,6 +468,12 @@ public class HttpLookupTableSourceITCaseTest {
                 + "'lookup-method' = 'POST',"
                 + "'url' = 'http://localhost:9090/client',"
                 + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + (authHeaderRawValue != null ?
+                      ("'gid.connector.http.source.lookup.use-raw-authorization-header' = "
+                          + useRawAuthHeaderString + ","
+                          + "'gid.connector.http.source.lookup.header.Authorization' = '"
+                          + authHeaderRawValue + "',")
+                      : "")
                 + "'asyncPolling' = 'true'"
                 + ")";
 
@@ -680,6 +725,15 @@ public class HttpLookupTableSourceITCaseTest {
             String methodName,
             WireMockServer wireMockServer,
             List<StringValuePattern> matchingJsonPaths) {
+        setUpServerBodyStub(methodName, wireMockServer, matchingJsonPaths, null, null);
+    }
+
+    private void setUpServerBodyStub(
+            String methodName,
+            WireMockServer wireMockServer,
+            List<StringValuePattern> matchingJsonPaths,
+            String extraHeader,
+            String expectedExtraHeaderValue) {
 
         MappingBuilder methodStub = (methodName.equalsIgnoreCase("PUT") ?
             put(urlEqualTo(ENDPOINT)) :
@@ -689,9 +743,14 @@ public class HttpLookupTableSourceITCaseTest {
         methodStub
             .withHeader("Content-Type", equalTo("application/json"));
 
+        if (extraHeader != null && expectedExtraHeaderValue != null) {
+            methodStub
+                .withHeader(extraHeader, equalTo(expectedExtraHeaderValue));
+        }
+
         // TODO think about writing custom matcher that will check node values against regexp
-        //  or real values. Currently we check only if JsonPath exists. Alo we should check if there
-        //  are no extra fields.
+        //  or real values. Currently we check only if JsonPath exists. Also, we should check if
+        // there are no extra fields.
         for (StringValuePattern pattern : matchingJsonPaths) {
             methodStub.withRequestBody(pattern);
         }

@@ -68,8 +68,13 @@ public final class HttpHeaderUtils {
     }
 
     public static HeaderPreprocessor createDefaultHeaderPreprocessor() {
+        return createDefaultHeaderPreprocessor(false);
+    }
+
+    public static HeaderPreprocessor createDefaultHeaderPreprocessor(boolean useRawAuthHeader) {
         return new ComposeHeaderPreprocessor(
-            Collections.singletonMap("Authorization", new BasicAuthHeaderValuePreprocessor())
+            Collections.singletonMap(
+                "Authorization", new BasicAuthHeaderValuePreprocessor(useRawAuthHeader))
         );
     }
 }

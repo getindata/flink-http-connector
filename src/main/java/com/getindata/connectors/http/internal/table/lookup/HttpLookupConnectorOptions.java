@@ -3,6 +3,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER;
 
 public class HttpLookupConnectorOptions {
@@ -40,4 +41,10 @@ public class HttpLookupConnectorOptions {
         ConfigOptions.key("lookup-request.format")
             .stringType()
             .defaultValue("json");
+
+    public static final ConfigOption<Boolean> USE_RAW_AUTH_HEADER =
+        ConfigOptions.key(LOOKUP_SOURCE_HEADER_USE_RAW)
+            .booleanType()
+            .defaultValue(false)
+            .withDescription("Whether to use the raw value of Authorization header");
 }
