@@ -37,14 +37,14 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
      * Method for preparing {@link HttpRequest.Builder} for REST request that sends their parameters
      * in request body, for example PUT or POST methods
      *
-     * @param lookupQuery lookup query used for request body.
+     * @param lookupQueryInfo lookup query info used for request body.
      * @return {@link HttpRequest.Builder} for given lookupQuery.
      */
     @Override
-    protected Builder setUpRequestMethod(String lookupQuery) {
+    protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
         return HttpRequest.newBuilder()
-            .uri(constructGetUri())
-            .method(methodName, BodyPublishers.ofString(lookupQuery))
+            .uri(constructBodyBasedUri(lookupQueryInfo))
+            .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()))
             .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
 
@@ -53,9 +53,15 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
         return log;
     }
 
-    private URI constructGetUri() {
+    URI constructBodyBasedUri(LookupQueryInfo lookupQueryInfo) {
+        StringBuilder resolvedUrl = new StringBuilder(baseUrl);
+        if (lookupQueryInfo.hasBodyBasedUrlQueryParameters()) {
+            resolvedUrl.append(baseUrl.contains("?") ? "&" : "?")
+                       .append(lookupQueryInfo.getBodyBasedUrlQueryParameters());
+        }
+
         try {
-            return new URIBuilder(baseUrl).build();
+            return new URIBuilder(resolvedUrl.toString()).build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

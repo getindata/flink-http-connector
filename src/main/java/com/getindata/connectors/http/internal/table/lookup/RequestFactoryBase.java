@@ -61,16 +61,16 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
     @Override
     public HttpLookupSourceRequestEntry buildLookupRequest(RowData lookupRow) {
 
-        String lookupQuery = lookupQueryCreator.createLookupQuery(lookupRow);
-        getLogger().debug("Created Http lookup query: " + lookupQuery);
+        LookupQueryInfo lookupQueryInfo = lookupQueryCreator.createLookupQuery(lookupRow);
+        getLogger().debug("Created Http lookup query: " + lookupQueryInfo);
 
-        Builder requestBuilder = setUpRequestMethod(lookupQuery);
+        Builder requestBuilder = setUpRequestMethod(lookupQueryInfo);
 
         if (headersAndValues.length != 0) {
             requestBuilder.headers(headersAndValues);
         }
 
-        return new HttpLookupSourceRequestEntry(requestBuilder.build(), lookupQuery);
+        return new HttpLookupSourceRequestEntry(requestBuilder.build(), lookupQueryInfo);
     }
 
     protected abstract Logger getLogger();
@@ -80,7 +80,7 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
      * @param lookupQuery lookup query used for request query parameters or body.
      * @return {@link HttpRequest.Builder} for given lookupQuery.
      */
-    protected abstract Builder setUpRequestMethod(String lookupQuery);
+    protected abstract Builder setUpRequestMethod(LookupQueryInfo lookupQuery);
 
     @VisibleForTesting
     String[] getHeadersAndValues() {

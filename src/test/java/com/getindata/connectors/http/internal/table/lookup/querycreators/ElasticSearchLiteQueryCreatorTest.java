@@ -36,7 +36,8 @@ public class ElasticSearchLiteQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery).isEqualTo("q=key1:%22val1%22");
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("q=key1:%22val1%22");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
     }
 
     @Test
@@ -68,7 +69,8 @@ public class ElasticSearchLiteQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery).isEqualTo("q=key1:%2210%22");
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("q=key1:%2210%22");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
     }
 
     @Test
@@ -110,7 +112,9 @@ public class ElasticSearchLiteQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery)
-            .isEqualTo("q=key1:%22val1%22%20AND%20key2:%22val2%22%20AND%20key3:%223%22");
+        assertThat(createdQuery.getLookupQuery())
+                .isEqualTo("q=key1:%22val1%22%20AND%20key2:%22val2%22%20AND%20key3:%223%22");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters())
+                .isEmpty();
     }
 }

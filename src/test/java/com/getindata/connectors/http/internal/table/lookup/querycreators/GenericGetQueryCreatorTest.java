@@ -37,7 +37,8 @@ public class GenericGetQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery).isEqualTo("key1=val1");
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("key1=val1");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
     }
 
     @Test
@@ -69,7 +70,8 @@ public class GenericGetQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery).isEqualTo("key1=10");
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("key1=10");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
     }
 
     @Test
@@ -111,7 +113,8 @@ public class GenericGetQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery).isEqualTo("key1=val1&key2=val2&key3=3");
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("key1=val1&key2=val2&key3=3");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
     }
 
     @Test
@@ -172,6 +175,7 @@ public class GenericGetQueryCreatorTest {
         var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
 
         // THEN
-        assertThat(createdQuery).isEqualTo("col1=val1&col2=val2&col3=val3");
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("col1=val1&col2=val2&col3=val3");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
     }
 }
