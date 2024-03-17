@@ -134,7 +134,11 @@ public class HttpLookupTableSource
             LookupQueryCreator lookupQueryCreator,
             HttpLookupConfig lookupConfig) {
 
-        HeaderPreprocessor headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+        boolean useRawAuthHeader =
+            lookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.USE_RAW_AUTH_HEADER);
+
+        HeaderPreprocessor headerPreprocessor =
+            HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader);
         String lookupMethod = lookupConfig.getLookupMethod();
 
         HttpRequestFactory requestFactory = (lookupMethod.equalsIgnoreCase("GET")) ?
