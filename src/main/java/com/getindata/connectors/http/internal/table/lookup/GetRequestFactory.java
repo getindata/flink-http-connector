@@ -33,25 +33,36 @@ public class GetRequestFactory extends RequestFactoryBase {
     }
 
     /**
-     * Method for preparing {@link HttpRequest.Builder} for REST GET request, where lookupQuery
-     * is used as query parameters for example:
+     * Method for preparing {@link HttpRequest.Builder} for REST GET request, where lookupQueryInfo
+     * is used as query parameters for GET requests, for example:
      * <pre>
      *     http:localhost:8080/service?id=1
      * </pre>
-     * @param lookupQuery lookup query used for request query parameters.
+     * or as payload for body-based requests with optional parameters, for example:
+     * <pre>
+     *     http:localhost:8080/service?id=1
+     *     body payload: { "uid": 2 }
+     * </pre>
+     * @param lookupQueryInfo lookup query info used for request query parameters.
      * @return {@link HttpRequest.Builder} for given GET lookupQuery
      */
     @Override
-    protected Builder setUpRequestMethod(String lookupQuery) {
+    protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
         return HttpRequest.newBuilder()
-            .uri(constructGetUri(lookupQuery))
+            .uri(constructGetUri(lookupQueryInfo))
             .GET()
             .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
 
-    private URI constructGetUri(String lookupQuery) {
+    URI constructGetUri(LookupQueryInfo lookupQueryInfo) {
+        StringBuilder resolvedUrl = new StringBuilder(baseUrl);
+        if (lookupQueryInfo.hasLookupQuery()) {
+            resolvedUrl.append(baseUrl.contains("?") ? "&" : "?")
+                       .append(lookupQueryInfo.getLookupQuery());
+        }
+
         try {
-            return new URIBuilder(baseUrl + "?" + lookupQuery).build();
+            return new URIBuilder(resolvedUrl.toString()).build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

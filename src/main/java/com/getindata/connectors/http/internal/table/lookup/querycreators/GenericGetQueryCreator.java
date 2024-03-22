@@ -8,6 +8,7 @@ import org.apache.flink.table.data.RowData;
 
 import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.LookupQueryCreator;
+import com.getindata.connectors.http.internal.table.lookup.LookupQueryInfo;
 import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.utils.uri.NameValuePair;
 import com.getindata.connectors.http.internal.utils.uri.URLEncodedUtils;
@@ -25,14 +26,17 @@ public class GenericGetQueryCreator implements LookupQueryCreator {
     }
 
     @Override
-    public String createLookupQuery(RowData lookupDataRow) {
+    public LookupQueryInfo createLookupQuery(RowData lookupDataRow) {
 
         Collection<LookupArg> lookupArgs = lookupRow.convertToLookupArgs(lookupDataRow);
 
-        return URLEncodedUtils.format(
-            lookupArgs.stream()
-                .map(arg -> new NameValuePair(arg.getArgName(), arg.getArgValue()))
-                .collect(Collectors.toList()),
-            StandardCharsets.UTF_8);
+        String lookupQuery =
+            URLEncodedUtils.format(
+                lookupArgs.stream()
+                        .map(arg -> new NameValuePair(arg.getArgName(), arg.getArgValue()))
+                        .collect(Collectors.toList()),
+                StandardCharsets.UTF_8);
+
+        return new LookupQueryInfo(lookupQuery);
     }
 }

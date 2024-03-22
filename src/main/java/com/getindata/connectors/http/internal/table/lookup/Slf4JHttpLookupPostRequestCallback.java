@@ -49,7 +49,7 @@ public class Slf4JHttpLookupPostRequestCallback
                 httpRequest.uri().toString(),
                 httpRequest.method(),
                 headers,
-                requestEntry.getLookupQuery()
+                requestEntry.getLookupQueryInfo()
             );
         } else {
             log.info(
@@ -58,7 +58,7 @@ public class Slf4JHttpLookupPostRequestCallback
                 httpRequest.uri().toString(),
                 httpRequest.method(),
                 headers,
-                requestEntry.getLookupQuery(),
+                requestEntry.getLookupQueryInfo(),
                 response,
                 response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );

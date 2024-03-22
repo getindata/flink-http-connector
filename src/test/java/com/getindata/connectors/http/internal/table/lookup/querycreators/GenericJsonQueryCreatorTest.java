@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.getindata.connectors.http.internal.table.lookup.LookupQueryInfo;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,7 +52,8 @@ class GenericJsonQueryCreatorTest {
         row.setField(0, 11);
         row.setField(1, StringData.fromString("myUuid"));
 
-        String lookupQuery = this.jsonQueryCreator.createLookupQuery(row);
-        assertThat(lookupQuery).isEqualTo("{\"id\":11,\"uuid\":\"myUuid\"}");
+        LookupQueryInfo lookupQuery = this.jsonQueryCreator.createLookupQuery(row);
+        assertThat(lookupQuery.getBodyBasedUrlQueryParameters().isEmpty());
+        assertThat(lookupQuery.getLookupQuery()).isEqualTo("{\"id\":11,\"uuid\":\"myUuid\"}");
     }
 }

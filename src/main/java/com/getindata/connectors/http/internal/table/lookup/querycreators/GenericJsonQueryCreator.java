@@ -7,6 +7,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import com.getindata.connectors.http.LookupQueryCreator;
+import com.getindata.connectors.http.internal.table.lookup.LookupQueryInfo;
 import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 
 /**
@@ -33,9 +34,12 @@ public class GenericJsonQueryCreator implements LookupQueryCreator {
      * @return Json string created from lookupDataRow argument.
      */
     @Override
-    public String createLookupQuery(RowData lookupDataRow) {
+    public LookupQueryInfo createLookupQuery(RowData lookupDataRow) {
         checkOpened();
-        return new String(jsonSerialization.serialize(lookupDataRow), StandardCharsets.UTF_8);
+        String lookupQuery =
+                new String(jsonSerialization.serialize(lookupDataRow), StandardCharsets.UTF_8);
+
+        return new LookupQueryInfo(lookupQuery);
     }
 
     private void checkOpened() {

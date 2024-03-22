@@ -4,9 +4,12 @@ import java.io.Serializable;
 
 import org.apache.flink.table.data.RowData;
 
+import com.getindata.connectors.http.internal.table.lookup.LookupQueryInfo;
+
 /**
  * An interface for a creator of a lookup query in the Http Lookup Source (e.g., the query that
- * gets appended to the URI in GET request).
+ * gets appended as query parameters to the URI in GET request or supplied as the payload of a
+ * body-based request along with optional query parameters).
  *
  * <p>One can customize how those queries are built by implementing {@link LookupQueryCreator} and
  * {@link LookupQueryCreatorFactory}.
@@ -20,5 +23,5 @@ public interface LookupQueryCreator extends Serializable {
      * @param lookupDataRow a {@link RowData} containing request parameters.
      * @return a lookup query.
      */
-    String createLookupQuery(RowData lookupDataRow);
+    LookupQueryInfo createLookupQuery(RowData lookupDataRow);
 }

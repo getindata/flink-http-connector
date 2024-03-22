@@ -10,6 +10,13 @@
     transformation for Basic Authentication (base64, addition of "Basic " prefix).
     If not specified, defaults to `'false'`.
 
+### Changed
+
+-   Changed API for `LookupQueryCreator`. The method `createLookupQuery` no longer returns a String but a
+    [LookupQueryInfo](src/main/java/com/getindata/connectors/http/internal/table/lookup/LookupQueryInfo.java)
+    Any custom implementation of this interface that aims to provide body-based request is able to provide
+    the lookup query as the payload and an optional formatted string representing the query parameters.
+
 ## [0.11.0] - 2023-11-20
 
 ## [0.10.0] - 2023-07-05

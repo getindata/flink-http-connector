@@ -23,11 +23,10 @@ public class HttpLookupSourceRequestEntry {
      * represent a request body, for example a Json string when PUT/POST requests method was used,
      * or it can represent a query parameters if GET method was used.
      */
-    private final String lookupQuery;
+    private final LookupQueryInfo lookupQueryInfo;
 
-    public HttpLookupSourceRequestEntry(HttpRequest httpRequest, String lookupQuery) {
-
+    public HttpLookupSourceRequestEntry(HttpRequest httpRequest, LookupQueryInfo lookupQueryInfo) {
         this.httpRequest = httpRequest;
-        this.lookupQuery = lookupQuery;
+        this.lookupQueryInfo = lookupQueryInfo;
     }
 }
