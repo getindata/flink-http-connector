@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2024-03-22
+
 ### Added
 
 -   Added support for passing `Authorization` headers for other purposes than Basic Authentication.
@@ -160,7 +162,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.11.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.12.0...HEAD
+
+[0.12.0]: https://github.com/getindata/flink-http-connector/compare/0.11.0...0.12.0
 
 [0.11.0]: https://github.com/getindata/flink-http-connector/compare/0.10.0...0.11.0
 
