@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+   
+    Moved junit support to junit 5, allowing junits to be run against flink 1.17 and 1.18.
+
 ## [0.12.0] - 2024-03-22
 
 ### Added
