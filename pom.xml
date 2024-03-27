@@ -68,7 +68,7 @@ under the License.
 
     <!-- IMPORTANT: If you update Flink, remember to update link to its docs in maven-javadoc-plugin <links>
          section, omitting the patch part (so for 1.15.0 use 1.15). -->
-    <flink.version>1.15.0</flink.version>
+    <flink.version>1.16.3</flink.version>
 
     <target.java.version>11</target.java.version>
     <scala.binary.version>2.12</scala.binary.version>
@@ -76,7 +76,9 @@ under the License.
     <maven.compiler.target>${target.java.version}</maven.compiler.target>
     <log4j.version>2.17.2</log4j.version>
     <lombok.version>1.18.22</lombok.version>
-    <junit.jupiter.version>5.8.1</junit.jupiter.version>
+    <junit4.version>4.13.2</junit4.version>
+    <junit5.version>5.10.1</junit5.version>
+    <junit.jupiter.version>${junit5.version}</junit.jupiter.version>
     <assertj.core.version>3.21.0</assertj.core.version>
     <mockito.version>4.0.0</mockito.version>
     <wiremock.version>2.27.2</wiremock.version>
@@ -167,6 +169,20 @@ under the License.
 
     <dependency>
       <groupId>org.apache.flink</groupId>
+      <artifactId>flink-test-utils</artifactId>
+      <version>${flink.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-test-utils</artifactId>
+            <version>${flink.version}</version>
+            <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
       <artifactId>flink-table-common</artifactId>
       <version>${flink.version}</version>
       <type>test-jar</type>
@@ -178,13 +194,6 @@ under the License.
       <artifactId>flink-connector-base</artifactId>
       <version>${flink.version}</version>
       <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-      <version>${flink.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -233,9 +242,9 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-params</artifactId>
-      <version>${junit.jupiter.version}</version>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit5.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -323,6 +332,8 @@ under the License.
             <exclude>**/HttpLookupConnectorOptions.class</exclude>
             <exclude>**/Slf4jHttpPostRequestCallback.class</exclude>
             <exclude>**/SelfSignedTrustManager.class</exclude>
+            <exclude>org/apache/calcite**</exclude>
+            <exclude>org/apache/flink**</exclude>
           </excludes>
         </configuration>
         <executions>
