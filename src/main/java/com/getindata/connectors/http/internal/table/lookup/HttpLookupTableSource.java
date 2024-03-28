@@ -146,7 +146,7 @@ public class HttpLookupTableSource
                 lookupQueryCreator,
                 headerPreprocessor,
                 lookupConfig) :
-            new BodyBasedRequestFactory(
+            new BodyAndPathBasedRequestFactory(
                 lookupMethod,
                 lookupQueryCreator,
                 headerPreprocessor,
