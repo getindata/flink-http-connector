@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for using the result of a lookup join operation in a subsequent select query that adds
+    or removes columns (project pushdown operation).
+
 ### Fixed
    
     Moved junit support to junit 5, allowing junits to be run against flink 1.17 and 1.18.

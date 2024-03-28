@@ -8,6 +8,7 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
+import org.apache.flink.table.connector.Projection;
 import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
@@ -38,7 +39,7 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTabl
 public class HttpLookupTableSource
     implements LookupTableSource, SupportsProjectionPushDown, SupportsLimitPushDown {
 
-    private final DataType physicalRowDataType;
+    private DataType physicalRowDataType;
 
     private final HttpLookupConfig lookupConfig;
 
@@ -56,6 +57,11 @@ public class HttpLookupTableSource
         this.lookupConfig = lookupConfig;
         this.decodingFormat = decodingFormat;
         this.dynamicTableFactoryContext = dynamicTablecontext;
+    }
+
+    @Override
+    public void applyProjection(int[][] projectedFields, DataType producedDataType) {
+        physicalRowDataType = Projection.of(projectedFields).project(physicalRowDataType);
     }
 
     @Override
@@ -127,7 +133,7 @@ public class HttpLookupTableSource
 
     @Override
     public boolean supportsNestedProjection() {
-        return false;
+        return true;
     }
 
     private PollingClientFactory<RowData> createPollingClientFactory(
