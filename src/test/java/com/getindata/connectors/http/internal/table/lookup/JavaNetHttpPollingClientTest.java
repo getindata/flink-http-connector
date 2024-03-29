@@ -152,7 +152,7 @@ public class JavaNetHttpPollingClientTest {
                         .createEncodingFormat(dynamicTableFactoryContext, new Configuration())
                         .createRuntimeEncoder(null, lookupPhysicalDataType);
 
-        BodyBasedRequestFactory requestFactory = new BodyBasedRequestFactory(
+        BodyAndPathBasedRequestFactory requestFactory = new BodyAndPathBasedRequestFactory(
                 "POST",
                 new GenericJsonQueryCreator(jsonSerializer),
                 HttpHeaderUtils.createDefaultHeaderPreprocessor(),
@@ -165,7 +165,8 @@ public class JavaNetHttpPollingClientTest {
         urlBodyBasedQueryParameters.put("key1", "value1");
         urlBodyBasedQueryParameters.put("key2", "value2");
 
-        LookupQueryInfo lookupQueryInfo = new LookupQueryInfo("{}", urlBodyBasedQueryParameters);
+        LookupQueryInfo lookupQueryInfo = new LookupQueryInfo("{}",
+                urlBodyBasedQueryParameters, null);
 
         // WHEN
         HttpRequest httpRequest = requestFactory.setUpRequestMethod(lookupQueryInfo).build();

@@ -333,7 +333,7 @@ class JavaNetHttpPollingClientConnectionTest {
         );
     }
 
-    private BodyBasedRequestFactory setUpBodyRequestFactory(
+    private BodyAndPathBasedRequestFactory setUpBodyRequestFactory(
             String methodName,
             Properties properties) {
 
@@ -345,7 +345,7 @@ class JavaNetHttpPollingClientConnectionTest {
         boolean useRawAuthHeader = Boolean.parseBoolean(
             (String)properties.get(HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW));
 
-        return new BodyBasedRequestFactory(
+        return new BodyAndPathBasedRequestFactory(
             methodName,
             new GenericJsonQueryCreator(jsonSerializer),
             HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader),

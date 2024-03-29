@@ -1,7 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
@@ -12,18 +10,17 @@ import org.slf4j.Logger;
 
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
-import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 
 /**
  * Implementation of {@link HttpRequestFactory} for REST calls that sends their parameters using
- * request body.
+ * request body or in the path.
  */
 @Slf4j
-public class BodyBasedRequestFactory extends RequestFactoryBase {
+public class BodyAndPathBasedRequestFactory extends RequestFactoryBase {
 
     private final String methodName;
 
-    public BodyBasedRequestFactory(
+    public BodyAndPathBasedRequestFactory(
             String methodName,
             LookupQueryCreator lookupQueryCreator,
             HeaderPreprocessor headerPreprocessor,
@@ -43,7 +40,7 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
     @Override
     protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
         return HttpRequest.newBuilder()
-            .uri(constructBodyBasedUri(lookupQueryInfo))
+            .uri(lookupQueryInfo.getURI())
             .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()))
             .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
@@ -53,17 +50,4 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
         return log;
     }
 
-    URI constructBodyBasedUri(LookupQueryInfo lookupQueryInfo) {
-        StringBuilder resolvedUrl = new StringBuilder(baseUrl);
-        if (lookupQueryInfo.hasBodyBasedUrlQueryParameters()) {
-            resolvedUrl.append(baseUrl.contains("?") ? "&" : "?")
-                       .append(lookupQueryInfo.getBodyBasedUrlQueryParameters());
-        }
-
-        try {
-            return new URIBuilder(resolvedUrl.toString()).build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
