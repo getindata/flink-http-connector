@@ -2,12 +2,14 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2024-04-03
+
 ### Added
 
 -   Added support for using the result of a lookup join operation in a subsequent select query that adds
     or removes columns (project pushdown operation).
 
-###  Changed
+### Changed
 
 -   Changed  [LookupQueryInfo](src/main/java/com/getindata/connectors/http/internal/table/lookup/LookupQueryInfo.java)
     Any custom implementation of this interface that aims to provide path-based requests is able to provide
@@ -179,7 +181,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.12.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.13.0...HEAD
+
+[0.13.0]: https://github.com/getindata/flink-http-connector/compare/0.12.0...0.13.0
 
 [0.12.0]: https://github.com/getindata/flink-http-connector/compare/0.11.0...0.12.0
 
