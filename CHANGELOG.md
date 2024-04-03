@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for using the result of a lookup join operation in a subsequent select query that adds
+    or removes columns (project pushdown operation).
+
 ###  Changed
 
 -   Changed  [LookupQueryInfo](src/main/java/com/getindata/connectors/http/internal/table/lookup/LookupQueryInfo.java)

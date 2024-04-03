@@ -244,6 +244,160 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
+    public void testLookupJoinProjectionPushDown() throws Exception {
+
+        // GIVEN
+        setUpServerBodyStub(
+                "POST",
+                wireMockServer,
+                List.of(
+                        matchingJsonPath("$.row.aStringColumn"),
+                        matchingJsonPath("$.row.anIntColumn"),
+                        matchingJsonPath("$.row.aFloatColumn")
+                )
+        );
+
+        String fields =
+                "`row` ROW<`aStringColumn` STRING, `anIntColumn` INT, `aFloatColumn` FLOAT>\n";
+
+        String sourceTable =
+                "CREATE TABLE Orders (\n"
+                        + "  proc_time AS PROCTIME(),\n"
+                        + "  id STRING,\n"
+                        + fields
+                        + ") WITH ("
+                        + "'connector' = 'datagen',"
+                        + "'rows-per-second' = '1',"
+                        + "'fields.id.kind' = 'sequence',"
+                        + "'fields.id.start' = '1',"
+                        + "'fields.id.end' = '5'"
+                        + ")";
+
+        String lookupTable =
+            "CREATE TABLE Customers (\n" +
+                    "  `enrichedInt` INT,\n" +
+                    "  `enrichedString` STRING,\n" +
+                    "  \n"
+                    + fields
+                    + ") WITH ("
+                    + "'format' = 'json',"
+                    + "'lookup-request.format' = 'json',"
+                    + "'lookup-request.format.json.fail-on-missing-field' = 'true',"
+                    + "'connector' = 'rest-lookup',"
+                    + "'lookup-method' = 'POST',"
+                    + "'url' = 'http://localhost:9090/client',"
+                    + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                    + "'asyncPolling' = 'true'"
+                    + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
+
+        // WHEN
+        // SQL query that performs JOIN on both tables.
+        String joinQuery =
+                "CREATE TEMPORARY VIEW lookupResult AS " +
+                        "SELECT o.id, o.`row`, c.enrichedInt, c.enrichedString FROM Orders AS o"
+                        + " JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c"
+                        + " ON (\n"
+                        + "  o.`row` = c.`row`\n"
+                        + ")";
+
+        tEnv.executeSql(joinQuery);
+
+        // SQL query that performs a projection pushdown to limit the number of columns
+        String lastQuery =
+                "SELECT r.id, r.enrichedInt FROM lookupResult r;";
+
+        TableResult result = tEnv.executeSql(lastQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
+
+        collectedRows.stream().forEach(row -> assertThat(row.getArity()).isEqualTo(2));
+
+        assertThat(collectedRows.size()).isEqualTo(5);
+    }
+
+    @Test
+    public void testLookupJoinProjectionPushDownNested() throws Exception {
+
+        // GIVEN
+        setUpServerBodyStub(
+                "POST",
+                wireMockServer,
+                List.of(
+                        matchingJsonPath("$.row.aStringColumn"),
+                        matchingJsonPath("$.row.anIntColumn"),
+                        matchingJsonPath("$.row.aFloatColumn")
+                )
+        );
+
+        String fields =
+            "`row` ROW<`aStringColumn` STRING, `anIntColumn` INT, `aFloatColumn` FLOAT>\n";
+
+        String sourceTable =
+            "CREATE TABLE Orders (\n"
+                    + "  proc_time AS PROCTIME(),\n"
+                    + "  id STRING,\n"
+                    + fields
+                    + ") WITH ("
+                    + "'connector' = 'datagen',"
+                    + "'rows-per-second' = '1',"
+                    + "'fields.id.kind' = 'sequence',"
+                    + "'fields.id.start' = '1',"
+                    + "'fields.id.end' = '5'"
+                    + ")";
+
+        String lookupTable =
+            "CREATE TABLE Customers (\n" +
+                    "  `enrichedInt` INT,\n" +
+                    "  `enrichedString` STRING,\n" +
+                    "  \n"
+                    + fields
+                    + ") WITH ("
+                    + "'format' = 'json',"
+                    + "'lookup-request.format' = 'json',"
+                    + "'lookup-request.format.json.fail-on-missing-field' = 'true',"
+                    + "'connector' = 'rest-lookup',"
+                    + "'lookup-method' = 'POST',"
+                    + "'url' = 'http://localhost:9090/client',"
+                    + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                    + "'asyncPolling' = 'true'"
+                    + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
+
+        // WHEN
+        // SQL query that performs JOIN on both tables.
+        String joinQuery =
+            "CREATE TEMPORARY VIEW lookupResult AS " +
+                    "SELECT o.id, o.`row`, c.enrichedInt, c.enrichedString FROM Orders AS o"
+                    + " JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c"
+                    + " ON (\n"
+                    + "  o.`row` = c.`row`\n"
+                    + ")";
+
+        tEnv.executeSql(joinQuery);
+
+        // SQL query that performs a project pushdown to take a subset of columns with nested value
+        String lastQuery =
+            "SELECT r.id, r.enrichedInt, r.`row`.aStringColumn FROM lookupResult r;";
+
+        TableResult result = tEnv.executeSql(lastQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        SortedSet<Row> collectedRows = getCollectedRows(result);
+
+        collectedRows.stream().forEach(row -> assertThat(row.getArity()).isEqualTo(3));
+
+        assertThat(collectedRows.size()).isEqualTo(5);
+    }
+
+    @Test
     public void testLookupJoinOnRowType() throws Exception {
 
         // GIVEN
