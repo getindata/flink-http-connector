@@ -2,9 +2,17 @@
 
 ## [Unreleased]
 
+###  Changed
+
+-   Changed  [LookupQueryInfo](src/main/java/com/getindata/connectors/http/internal/table/lookup/LookupQueryInfo.java)
+    Any custom implementation of this interface that aims to provide path-based requests is able to provide
+    the lookup query url with parameters surrounded by curly brackets. For example the supplied
+    URL `http://service/{customerId}`, will result in the lookup parameter `customerId` value being used
+    in the url.
+
 ### Fixed
-   
-    Moved junit support to junit 5, allowing junits to be run against flink 1.17 and 1.18.
+
+-   Moved junit support to junit 5, allowing junits to be run against flink 1.17 and 1.18.
 
 ## [0.12.0] - 2024-03-22
 

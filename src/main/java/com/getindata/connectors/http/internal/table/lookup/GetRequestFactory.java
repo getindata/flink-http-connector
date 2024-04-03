@@ -60,7 +60,7 @@ public class GetRequestFactory extends RequestFactoryBase {
             resolvedUrl.append(baseUrl.contains("?") ? "&" : "?")
                        .append(lookupQueryInfo.getLookupQuery());
         }
-
+        resolvedUrl = resolvePathParameters(lookupQueryInfo, resolvedUrl);
         try {
             return new URIBuilder(resolvedUrl.toString()).build();
         } catch (URISyntaxException e) {
