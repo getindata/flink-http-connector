@@ -3,9 +3,11 @@ package com.getindata.connectors.http.internal.table.lookup;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 
 import com.getindata.connectors.http.LookupQueryCreator;
@@ -81,6 +83,24 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
      * @return {@link HttpRequest.Builder} for given lookupQuery.
      */
     protected abstract Builder setUpRequestMethod(LookupQueryInfo lookupQuery);
+
+    protected static StringBuilder resolvePathParameters(LookupQueryInfo lookupQueryInfo,
+                                                         StringBuilder resolvedUrl) {
+        if (lookupQueryInfo.hasPathBasedUrlParameters()) {
+            for (Map.Entry<String, String> entry :
+                    lookupQueryInfo.getPathBasedUrlParameters().entrySet()) {
+                String pathParam = "{" + entry.getKey() + "}";
+                int startIndex = resolvedUrl.indexOf(pathParam);
+                if (startIndex == -1) {
+                    throw new FlinkRuntimeException(
+                            "Unexpected error while parsing the URL for path parameters.");
+                }
+                int endIndex = startIndex + pathParam.length();
+                resolvedUrl = resolvedUrl.replace(startIndex, endIndex, entry.getValue());
+            }
+        }
+        return resolvedUrl;
+    }
 
     @VisibleForTesting
     String[] getHeadersAndValues() {

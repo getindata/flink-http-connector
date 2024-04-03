@@ -16,7 +16,7 @@ import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 
 /**
  * Implementation of {@link HttpRequestFactory} for REST calls that sends their parameters using
- * request body.
+ * request body or in the path.
  */
 @Slf4j
 public class BodyBasedRequestFactory extends RequestFactoryBase {
@@ -43,7 +43,7 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
     @Override
     protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
         return HttpRequest.newBuilder()
-            .uri(constructBodyBasedUri(lookupQueryInfo))
+            .uri(constructUri(lookupQueryInfo))
             .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()))
             .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
@@ -53,12 +53,13 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
         return log;
     }
 
-    URI constructBodyBasedUri(LookupQueryInfo lookupQueryInfo) {
+    URI constructUri(LookupQueryInfo lookupQueryInfo) {
         StringBuilder resolvedUrl = new StringBuilder(baseUrl);
         if (lookupQueryInfo.hasBodyBasedUrlQueryParameters()) {
             resolvedUrl.append(baseUrl.contains("?") ? "&" : "?")
                        .append(lookupQueryInfo.getBodyBasedUrlQueryParameters());
         }
+        resolvedUrl = resolvePathParameters(lookupQueryInfo, resolvedUrl);
 
         try {
             return new URIBuilder(resolvedUrl.toString()).build();
@@ -66,4 +67,5 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
             throw new RuntimeException(e);
         }
     }
+
 }
