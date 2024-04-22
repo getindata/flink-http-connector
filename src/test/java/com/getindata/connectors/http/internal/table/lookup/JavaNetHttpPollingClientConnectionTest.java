@@ -7,7 +7,9 @@ import java.util.stream.Stream;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -94,6 +96,7 @@ class JavaNetHttpPollingClientConnectionTest {
         int[][] lookupKey = {{}};
         this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
 
+        wireMockServer.resetAll();
         this.lookupRowData = GenericRowData.of(
             StringData.fromString("1"),
             StringData.fromString("2")
@@ -288,6 +291,45 @@ class JavaNetHttpPollingClientConnectionTest {
 
         RowData nestedDetailsRow = detailsRow.getRow(1, 1);
         assertThat(nestedDetailsRow.getString(0).toString()).isEqualTo("$1,729.34");
+    }
+
+    @Test
+    void shouldRetryOnIOExceptionAndSucceedOnSecondAttempt() {
+        // GIVEN
+        this.stubMapping = setUpServerStubForIOExceptionOnFirstAttempt();
+        Properties properties = new Properties();
+        properties.setProperty(
+            HttpConnectorConfigConstants.LOOKUP_HTTP_MAX_RETRIES,
+            "3"
+        );
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(
+            getBaseUrl(), properties, setUpGetRequestFactory(properties));
+
+        // WHEN
+        Optional<RowData> poll = pollingClient.pull(lookupRowData);
+
+        // THEN
+        wireMockServer.verify(2, RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
+
+        assertThat(poll.isPresent()).isTrue();
+    }
+
+    private StubMapping setUpServerStubForIOExceptionOnFirstAttempt() {
+        wireMockServer.stubFor(
+            get(urlEqualTo(ENDPOINT + "?id=1&uuid=2"))
+                .inScenario("Retry Scenario")
+                .whenScenarioStateIs(Scenario.STARTED) // Initial state
+                .willReturn(aResponse()
+                    .withFault(Fault.CONNECTION_RESET_BY_PEER)) // Fail the first request
+                .willSetStateTo("Second Attempt")); // Set the next state
+
+        return wireMockServer.stubFor(
+            get(urlEqualTo(ENDPOINT + "?id=1&uuid=2"))
+                .inScenario("Retry Scenario")
+                .whenScenarioStateIs("Second Attempt") // When the state is "Second Attempt"
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
     }
 
     private String getBaseUrl() {
