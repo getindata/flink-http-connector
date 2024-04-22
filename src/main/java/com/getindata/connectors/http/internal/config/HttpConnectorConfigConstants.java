@@ -92,6 +92,12 @@ public final class HttpConnectorConfigConstants {
     public static final String SINK_HTTP_WRITER_THREAD_POOL_SIZE =
         GID_CONNECTOR_HTTP + "sink.writer.thread-pool.size";
 
+    public static final String LOOKUP_HTTP_MAX_RETRIES =
+        GID_CONNECTOR_HTTP + "source.lookup.request.max-retries";
+
+    public static final String LOOKUP_HTTP_RETRY_TIMEOUT_MS =
+        GID_CONNECTOR_HTTP + "source.lookup.request.retry-timeout-ms";
+
     // -----------------------------------------------------
 
 

@@ -27,6 +27,10 @@ import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 @Slf4j
 public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
+    public static final String DEFAULT_REQUEST_MAX_RETRIES = "3";
+
+    public static final String DEFAULT_REQUEST_RETRY_TIMEOUT_MS = "1000";
+
     private final HttpClient httpClient;
 
     private final HttpStatusCodeChecker statusCodeChecker;
@@ -36,6 +40,10 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private final HttpRequestFactory requestFactory;
 
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
+
+    protected final int httpRequestMaxRetries;
+
+    protected final int httpRequestRetryTimeoutMs;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
@@ -62,6 +70,20 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
                 .build();
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
+
+        this.httpRequestMaxRetries = Integer.parseInt(
+            options.getProperties().getProperty(
+                HttpConnectorConfigConstants.LOOKUP_HTTP_MAX_RETRIES,
+                DEFAULT_REQUEST_MAX_RETRIES
+            )
+        );
+
+        this.httpRequestRetryTimeoutMs = Integer.parseInt(
+            options.getProperties().getProperty(
+                HttpConnectorConfigConstants.LOOKUP_HTTP_RETRY_TIMEOUT_MS,
+                DEFAULT_REQUEST_RETRY_TIMEOUT_MS
+            )
+        );
     }
 
     @Override
@@ -74,15 +96,43 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         }
     }
 
-    // TODO Add Retry Policy And configure TimeOut from properties
-    private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
-
+    private Optional<RowData> queryAndProcess(RowData lookupData) {
         HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
-        HttpResponse<String> response = httpClient.send(
-            request.getHttpRequest(),
-            BodyHandlers.ofString()
-        );
-        return processHttpResponse(response, request);
+        HttpResponse<String> response = null;
+
+        int retryCount = 0;
+
+        while (retryCount < this.httpRequestMaxRetries) {
+            try {
+                response = httpClient.send(
+                    request.getHttpRequest(),
+                    BodyHandlers.ofString()
+                );
+                break;
+            } catch (IOException e) {
+                log.error("IOException during HTTP request. Retrying...", e);
+                retryCount++;
+                if (retryCount == this.httpRequestMaxRetries) {
+                    log.error("Maximum retries reached. Aborting...");
+                    return Optional.empty();
+                }
+                try {
+                    Thread.sleep(this.httpRequestRetryTimeoutMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("HTTP request interrupted. Aborting...", e);
+                return Optional.empty();
+            }
+        }
+        try {
+            return processHttpResponse(response, request);
+        } catch (IOException e) {
+            log.error("IOException during HTTP response processing.", e);
+            return Optional.empty();
+        }
     }
 
     private Optional<RowData> processHttpResponse(
