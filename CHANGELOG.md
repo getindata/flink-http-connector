@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Lookup queries are now retried in case of IOException up to `gid.connector.http.source.lookup.max-retries` with a delay of `gid.connector.http.source.lookup.request.retry-timeout-ms` between retries. The default values are 3 retries and 1 second delay.
+
 ## [0.13.0] - 2024-04-03
 
 ### Added

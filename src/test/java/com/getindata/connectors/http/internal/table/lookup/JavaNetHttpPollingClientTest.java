@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-//import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
