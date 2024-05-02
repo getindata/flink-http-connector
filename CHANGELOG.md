@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for optionally using a custom SLF4J logger to trace HTTP lookup queries.
+    New configuration parameter: `gid.connector.http.source.lookup.request-callback` with default value
+    `slf4j-lookup-logger`. If this parameter is not provided then the default SLF4J logger 
+    [Slf4JHttpLookupPostRequestCallback](https://github.com/getindata/flink-http-connector/blob/main/src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java)
+    is used instead.
+
 ## [0.13.0] - 2024-04-03
 
 ### Added

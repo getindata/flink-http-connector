@@ -259,6 +259,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url("https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT)
             .properties(properties)
+            .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
             .build();
 
         DataType physicalDataType = DataTypes.ROW(

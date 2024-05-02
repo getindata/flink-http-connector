@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 
+import com.getindata.connectors.http.HttpPostRequestCallback;
+
 @Builder
 @Data
 @RequiredArgsConstructor
@@ -26,4 +28,6 @@ public class HttpLookupConfig implements Serializable {
 
     @Builder.Default
     private final ReadableConfig readableConfig = new Configuration();
+
+    private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 }

@@ -48,6 +48,9 @@ public final class HttpConnectorConfigConstants {
         GID_CONNECTOR_HTTP + "source.lookup.error.code";
     // -----------------------------------------------------
 
+    public static final String SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER =
+        GID_CONNECTOR_HTTP + "source.lookup.request-callback";
+
     public static final String SINK_REQUEST_CALLBACK_IDENTIFIER =
         GID_CONNECTOR_HTTP + "sink.request-callback";
 

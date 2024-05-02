@@ -364,6 +364,7 @@ class JavaNetHttpPollingClientConnectionTest {
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(url)
             .properties(properties)
+            .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
             .build();
 
         DataType physicalDataType = DataTypes.ROW(
