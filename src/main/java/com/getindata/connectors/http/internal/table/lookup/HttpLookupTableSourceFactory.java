@@ -23,6 +23,7 @@ import org.apache.flink.table.types.DataType;
 import static org.apache.flink.table.api.DataTypes.FIELD;
 import static org.apache.flink.table.types.utils.DataTypeUtils.removeTimeAttribute;
 
+import com.getindata.connectors.http.HttpPostRequestCallbackFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.*;
@@ -88,7 +89,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return Set.of(URL_ARGS, ASYNC_POLLING, LOOKUP_METHOD);
+        return Set.of(URL_ARGS, ASYNC_POLLING, LOOKUP_METHOD, REQUEST_CALLBACK_IDENTIFIER);
     }
 
     private HttpLookupConfig getHttpLookupOptions(Context context, ReadableConfig readableConfig) {
@@ -96,12 +97,21 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
         Properties httpConnectorProperties =
             ConfigUtils.getHttpConnectorProperties(context.getCatalogTable().getOptions());
 
+        final HttpPostRequestCallbackFactory<HttpLookupSourceRequestEntry>
+                postRequestCallbackFactory =
+                    FactoryUtil.discoverFactory(
+                        context.getClassLoader(),
+                        HttpPostRequestCallbackFactory.class,
+                        readableConfig.get(REQUEST_CALLBACK_IDENTIFIER)
+        );
+
         return HttpLookupConfig.builder()
             .lookupMethod(readableConfig.get(LOOKUP_METHOD))
             .url(readableConfig.get(URL))
             .useAsync(readableConfig.get(ASYNC_POLLING))
             .properties(httpConnectorProperties)
             .readableConfig(readableConfig)
+            .httpPostRequestCallback(postRequestCallbackFactory.createHttpPostRequestCallback())
             .build();
     }
 

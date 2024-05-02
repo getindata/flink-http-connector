@@ -5,6 +5,7 @@ import org.apache.flink.configuration.ConfigOptions;
 
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER;
 
 public class HttpLookupConnectorOptions {
 
@@ -47,4 +48,9 @@ public class HttpLookupConnectorOptions {
             .booleanType()
             .defaultValue(false)
             .withDescription("Whether to use the raw value of Authorization header");
+
+    public static final ConfigOption<String> REQUEST_CALLBACK_IDENTIFIER =
+            ConfigOptions.key(SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER)
+                    .stringType()
+                    .defaultValue(Slf4jHttpLookupPostRequestCallbackFactory.IDENTIFIER);
 }

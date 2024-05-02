@@ -43,6 +43,8 @@ public class Slf4JHttpLookupPostRequestCallback
         }
 
         if (response == null) {
+            log.warn("Null Http response for request " + httpRequest.uri().toString());
+
             log.info(
                 "Got response for a request.\n  Request:\n    URL: {}\n    " +
                     "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: null",

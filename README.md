@@ -338,17 +338,42 @@ CREATE TABLE http (
 ```
 
 #### Custom request/response callback
-Http Sink processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
+
+- Http Sink processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
 behaviour of the additional stage of processing done by Table API Sink by implementing
 [HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
 [HttpPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpPostRequestCallbackFactory.java)
-interfaces. Custom implementations of `HttpSinkRequestCallbackFactory` can be registered along other factories in
-`resources/META-INF.services/org.apache.flink.table.factories.Factory` file and then referenced by their identifiers in
+interfaces. Custom implementations of `HttpPostRequestCallbackFactory<HttpRequest>` can be registered along other factories in
+`resources/META-INF/services/org.apache.flink.table.factories.Factory` file and then referenced by their identifiers in
 the HttpSink DDL property field `gid.connector.http.sink.request-callback`.
 
-A default implementation that logs those pairs as *INFO* level logs using Slf4j
+   For example, one can create a class `CustomHttpSinkPostRequestCallbackFactory` with a unique identifier, say `rest-sink-logger`,
+that implements interface `HttpPostRequestCallbackFactory<HttpRequest>` to create a new instance of a custom callback
+`CustomHttpSinkPostRequestCallback`. This factory can be registered along other factories by appending the fully-qualified name 
+of class `CustomHttpSinkPostRequestCallbackFactory` in `resources/META-INF/services/org.apache.flink.table.factories.Factory` file 
+and then reference identifier `rest-sink-logger` in the HttpSink DDL property field `gid.connector.http.sink.request-callback`.
+
+  A default implementation that logs those pairs as *INFO* level logs using Slf4j
 ([Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java))
 is provided.
+
+
+- Http Lookup Source processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
+behaviour of the additional stage of processing done by Table Function API by implementing
+[HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
+[HttpPostRequestCallbackFactory](src/main/java/com/getindata/connectors/http/HttpPostRequestCallbackFactory.java)
+interfaces. 
+ 
+   For example, one can create a class `CustomHttpLookupPostRequestCallbackFactory` with a unique identifier, say `rest-lookup-logger`,
+that implements interface `HttpPostRequestCallbackFactory<HttpLookupSourceRequestEntry>` to create a new instance of a custom callback
+`CustomHttpLookupPostRequestCallback`. This factory can be registered along other factories by appending the fully-qualified name
+of class `CustomHttpLookupPostRequestCallbackFactory` in `resources/META-INF/services/org.apache.flink.table.factories.Factory` file 
+and then reference identifier `rest-lookup-logger` in the HTTP lookup DDL property field `gid.connector.http.source.lookup.request-callback`.
+
+   A default implementation that logs those pairs as *INFO* level logs using Slf4j
+([Slf4JHttpLookupPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java))
+is provided.
+
 
 ## HTTP status code handler
 Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
@@ -409,6 +434,7 @@ is set to `'true'`, it will be used as header value as is, without any extra mod
 | gid.connector.http.source.lookup.request.thread-pool.size     | optional | Sets the size of pool thread for HTTP lookup request processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 8 threads will be used.  |
 | gid.connector.http.source.lookup.response.thread-pool.size    | optional | Sets the size of pool thread for HTTP lookup response processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 4 threads will be used. |
 | gid.connector.http.source.lookup.use-raw-authorization-header | optional | If set to `'true'`, uses the raw value set for the `Authorization` header, without transformation for Basic Authentication (base64, addition of "Basic " prefix). If not specified, defaults to `'false'`.                         |
+| gid.connector.http.source.lookup.request-callback             | optional | Specify which `HttpLookupPostRequestCallback` implementation to use. By default, it is set to `slf4j-lookup-logger` corresponding to `Slf4jHttpLookupPostRequestCallback`.                                                         |
 
 ### HTTP Sink
 | Option                                                  | Required | Description/Value                                                                                                                                                                                                                                |

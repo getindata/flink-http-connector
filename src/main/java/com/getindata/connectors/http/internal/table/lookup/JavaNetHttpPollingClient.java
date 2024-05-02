@@ -47,8 +47,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.responseBodyDecoder = responseBodyDecoder;
         this.requestFactory = requestFactory;
 
-        // TODO inject same way as it is done for Sink
-        this.httpPostRequestCallback = new Slf4JHttpLookupPostRequestCallback();
+        this.httpPostRequestCallback = options.getHttpPostRequestCallback();
 
         // TODO Inject this via constructor when implementing a response processor.
         //  Processor will be injected and it will wrap statusChecker implementation.
@@ -92,22 +91,21 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
 
         if (response == null) {
-            log.warn("Null Http response for request " + request.getHttpRequest().uri().toString());
             return Optional.empty();
         }
 
         String responseBody = response.body();
         int statusCode = response.statusCode();
 
-        log.debug("Received {} status code for RestTableSource Request", statusCode);
+        log.debug("Received status code [%s] for RestTableSource request " +
+                        "with Server response body [%s] ", statusCode, responseBody);
+
         if (notErrorCodeAndNotEmptyBody(responseBody, statusCode)) {
-            log.trace("Server response body" + responseBody);
             return Optional.ofNullable(responseBodyDecoder.deserialize(responseBody.getBytes()));
         } else {
             log.warn(
                 String.format("Returned Http status code was invalid or returned body was empty. "
-                + "Status Code [%s], "
-                + "response body [%s]", statusCode, responseBody)
+                + "Status Code [%s]", statusCode)
             );
 
             return Optional.empty();
