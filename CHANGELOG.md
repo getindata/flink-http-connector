@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2024-05-10
+
 ### Added
 
 -   Added support for optionally using a custom SLF4J logger to trace HTTP lookup queries.
@@ -189,7 +191,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.13.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.14.0...HEAD
+
+[0.14.0]: https://github.com/getindata/flink-http-connector/compare/0.13.0...0.14.0
 
 [0.13.0]: https://github.com/getindata/flink-http-connector/compare/0.12.0...0.13.0
 
