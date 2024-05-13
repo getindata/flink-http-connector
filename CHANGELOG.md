@@ -16,6 +16,8 @@
     [Slf4JHttpLookupPostRequestCallback](https://github.com/getindata/flink-http-connector/blob/main/src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java)
     is used instead.
 
+-   Added support for caching of synchronous lookup joins.
+
 ## [0.13.0] - 2024-04-03
 
 ### Added

@@ -5,6 +5,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
@@ -15,6 +16,9 @@ import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.DynamicTableSource;
+import org.apache.flink.table.connector.source.lookup.LookupOptions;
+import org.apache.flink.table.connector.source.lookup.cache.DefaultLookupCache;
+import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DeserializationFormatFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
@@ -48,7 +52,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
         FactoryUtil.TableFactoryHelper helper =
             FactoryUtil.createTableFactoryHelper(this, dynamicTableContext);
 
-        ReadableConfig readableConfig = helper.getOptions();
+        ReadableConfig readable = helper.getOptions();
         helper.validateExcept(
             // properties coming from org.apache.flink.table.api.config.ExecutionConfigOptions
             "table.",
@@ -62,7 +66,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
                 FactoryUtil.FORMAT
             );
 
-        HttpLookupConfig lookupConfig = getHttpLookupOptions(dynamicTableContext, readableConfig);
+        HttpLookupConfig lookupConfig = getHttpLookupOptions(dynamicTableContext, readable);
 
         ResolvedSchema resolvedSchema = dynamicTableContext.getCatalogTable().getResolvedSchema();
 
@@ -73,7 +77,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             physicalRowDataType,
             lookupConfig,
             decodingFormat,
-            dynamicTableContext
+            dynamicTableContext,
+            getLookupCache(readable)
         );
     }
 
@@ -89,7 +94,18 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return Set.of(URL_ARGS, ASYNC_POLLING, LOOKUP_METHOD, REQUEST_CALLBACK_IDENTIFIER);
+
+        return Set.of(
+             URL_ARGS,
+             ASYNC_POLLING,
+             LOOKUP_METHOD,
+             REQUEST_CALLBACK_IDENTIFIER,
+             LookupOptions.CACHE_TYPE,
+             LookupOptions.PARTIAL_CACHE_EXPIRE_AFTER_ACCESS,
+             LookupOptions.PARTIAL_CACHE_EXPIRE_AFTER_WRITE,
+             LookupOptions.PARTIAL_CACHE_MAX_ROWS,
+             LookupOptions.PARTIAL_CACHE_CACHE_MISSING_KEY,
+             LookupOptions.MAX_RETRIES);
     }
 
     private HttpLookupConfig getHttpLookupOptions(Context context, ReadableConfig readableConfig) {
@@ -113,6 +129,18 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             .readableConfig(readableConfig)
             .httpPostRequestCallback(postRequestCallbackFactory.createHttpPostRequestCallback())
             .build();
+    }
+
+    @Nullable
+    private LookupCache getLookupCache(ReadableConfig tableOptions) {
+        LookupCache cache = null;
+        // Do not support legacy cache options
+        if (tableOptions
+                .get(LookupOptions.CACHE_TYPE)
+                .equals(LookupOptions.LookupCacheType.PARTIAL)) {
+            cache = DefaultLookupCache.fromConfig(tableOptions);
+        }
+        return cache;
     }
 
     // TODO verify this since we are on 1.15 now.
