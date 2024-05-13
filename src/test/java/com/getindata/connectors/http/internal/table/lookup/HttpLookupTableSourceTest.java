@@ -1,27 +1,34 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.metrics.groups.CacheMetricGroup;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
-import org.apache.flink.table.connector.source.TableFunctionProvider;
+import org.apache.flink.table.connector.source.LookupTableSource;
+import org.apache.flink.table.connector.source.lookup.LookupFunctionProvider;
+import org.apache.flink.table.connector.source.lookup.PartialCachingLookupProvider;
+import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
 import org.apache.flink.table.types.DataType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSource;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
+
 
 class HttpLookupTableSourceTest {
 
@@ -68,12 +75,10 @@ class HttpLookupTableSourceTest {
         HttpLookupTableSource tableSource =
             (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
 
-        TableFunctionProvider<RowData> lookupProvider =
-            (TableFunctionProvider<RowData>)
+        LookupTableSource.LookupRuntimeProvider lookupProvider =
                 tableSource.getLookupRuntimeProvider(new LookupRuntimeProviderContext(lookupKey));
-
-        HttpTableLookupFunction tableFunction =
-            (HttpTableLookupFunction) lookupProvider.createTableFunction();
+        CachingHttpTableLookupFunction tableFunction = (CachingHttpTableLookupFunction)
+                ((LookupFunctionProvider) lookupProvider).createLookupFunction();
 
         LookupRow actualLookupRow = tableFunction.getLookupRow();
         assertThat(actualLookupRow).isNotNull();
@@ -98,32 +103,149 @@ class HttpLookupTableSourceTest {
         Map<String, String> options = getOptionsWithAsync();
 
         HttpLookupTableSource tableSource =
-            (HttpLookupTableSource) createTableSource(SCHEMA, options);
+                (HttpLookupTableSource) createTableSource(SCHEMA, options);
 
         AsyncTableFunctionProvider<RowData> lookupProvider =
-            (AsyncTableFunctionProvider<RowData>)
-                tableSource.getLookupRuntimeProvider(new LookupRuntimeProviderContext(lookupKey));
+                (AsyncTableFunctionProvider<RowData>)
+                        tableSource.getLookupRuntimeProvider(
+                        new LookupRuntimeProviderContext(lookupKey));
 
         AsyncHttpTableLookupFunction tableFunction =
-            (AsyncHttpTableLookupFunction) lookupProvider.createAsyncTableFunction();
+                (AsyncHttpTableLookupFunction) lookupProvider.createAsyncTableFunction();
 
         LookupRow actualLookupRow = tableFunction.getLookupRow();
         assertThat(actualLookupRow).isNotNull();
         assertThat(actualLookupRow.getLookupEntries()).isNotEmpty();
         assertThat(actualLookupRow.getLookupPhysicalRowDataType())
-            .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
+                .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
 
         HttpLookupConfig actualLookupConfig = tableFunction.getOptions();
         assertThat(actualLookupConfig).isNotNull();
         assertThat(actualLookupConfig.isUseAsync()).isTrue();
         assertThat(
-            actualLookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.ASYNC_POLLING)
+                actualLookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.ASYNC_POLLING)
         )
-            .withFailMessage(
-                "Readable config probably was not passed from Table Factory or it is empty.")
-            .isTrue();
+                .withFailMessage(
+                        "Readable config probably was not passed" +
+                                " from Table Factory or it is empty.")
+                .isTrue();
+    }
+    @ParameterizedTest
+    @MethodSource("configProvider")
+    void testgetLookupRuntimeProvider(TestSpec testSpec) throws Exception {
+        LookupCache cache = new LookupCache() {
+            @Override
+            public void open(CacheMetricGroup cacheMetricGroup) {
+
+            }
+
+            @Nullable
+            @Override
+            public Collection<RowData> getIfPresent(RowData rowData) {
+                return null;
+            }
+
+            @Override
+            public Collection<RowData> put(RowData rowData, Collection<RowData> collection) {
+                return null;
+            }
+
+            @Override
+            public void invalidate(RowData rowData) {
+
+            }
+
+            @Override
+            public long size() {
+                return 0;
+            }
+
+            @Override
+            public void close() throws Exception {
+
+            }
+        };
+
+        HttpLookupConfig options = HttpLookupConfig.builder()
+                .useAsync(testSpec.isAsync)
+                .build();
+        LookupTableSource.LookupRuntimeProvider lookupRuntimeProvider =
+                getLookupRuntimeProvider(testSpec.hasCache?cache:null, options);
+        assertTrue(testSpec.expected.isInstance(lookupRuntimeProvider));
+
     }
 
+    private static class TestSpec {
+
+        boolean hasCache;
+        boolean isAsync;
+
+        Class expected;
+
+        private TestSpec(boolean hasCache,
+            boolean isAsync,
+            Class expected) {
+            this.hasCache = hasCache;
+            this.isAsync = isAsync;
+            this.expected = expected;
+        }
+
+        @Override
+        public String toString() {
+            return "TestSpec{"
+                    + "hasCache="
+                    +hasCache
+                    + ", isAsync="
+                    + isAsync
+                    + ", expected="
+                    + expected
+                    + '}';
+        }
+    }
+
+    static Collection<TestSpec> configProvider() {
+        return ImmutableList.<TestSpec>builder()
+                .addAll(getTestSpecs())
+                .build();
+    }
+
+    @NotNull
+    private static ImmutableList<TestSpec> getTestSpecs() {
+        return ImmutableList.of(
+
+                new TestSpec(
+                        false,
+                        false,
+                        LookupFunctionProvider.class
+                        ),
+                new TestSpec(
+                        true,
+                        false,
+                        PartialCachingLookupProvider.class
+                ),
+                new TestSpec(
+                        false,
+                        true,
+                        AsyncTableFunctionProvider.class
+                ),
+                new TestSpec(
+                        true,
+                        true,
+                        AsyncTableFunctionProvider.class
+                )
+        );
+    }
+
+    private static LookupTableSource.LookupRuntimeProvider
+        getLookupRuntimeProvider(LookupCache cache, HttpLookupConfig options) {
+        HttpLookupTableSource tableSource = new HttpLookupTableSource(
+                null, options,
+                null, null, cache);
+        int[][] lookupKeys = {{1, 2}};
+        LookupTableSource.LookupContext lookupContext =
+                new LookupRuntimeProviderContext(lookupKeys);
+        return tableSource.getLookupRuntimeProvider(null, null, null);
+    }
     private Map<String, String> getOptionsWithAsync() {
         Map<String, String> options = getOptions();
         options = new HashMap<>(options);
