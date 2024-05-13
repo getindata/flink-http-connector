@@ -97,8 +97,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         String responseBody = response.body();
         int statusCode = response.statusCode();
 
-        log.debug("Received status code [%s] for RestTableSource request " +
-                        "with Server response body [%s] ", statusCode, responseBody);
+        log.debug(String.format("Received status code [%s] for RestTableSource request " +
+                        "with Server response body [%s] ", statusCode, responseBody));
 
         if (notErrorCodeAndNotEmptyBody(responseBody, statusCode)) {
             return Optional.ofNullable(responseBodyDecoder.deserialize(responseBody.getBytes()));
