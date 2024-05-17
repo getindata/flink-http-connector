@@ -27,6 +27,14 @@ public final class HttpConnectorConfigConstants {
     public static final String LOOKUP_SOURCE_HEADER_PREFIX = GID_CONNECTOR_HTTP
         + "source.lookup.header.";
 
+    public static final String OIDC_AUTH_TOKEN_REQUEST = GID_CONNECTOR_HTTP
+            + "security.oidc.token.request";
+
+    public static final String OIDC_AUTH_TOKEN_ENDPOINT_URL = GID_CONNECTOR_HTTP
+            + "security.oidc.token.endpoint.url";
+
+    public static final String OIDC_AUTH_TOKEN_EXPIRY_REDUCTION = GID_CONNECTOR_HTTP
+            + "security.oidc.token.expiry.reduction";
     /**
      * Whether to use the raw value of the Authorization header. If set, it prevents
      * the special treatment of the header for Basic Authentication, thus preserving the passed

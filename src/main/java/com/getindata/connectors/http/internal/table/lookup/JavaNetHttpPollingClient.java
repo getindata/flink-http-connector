@@ -35,6 +35,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpRequestFactory requestFactory;
 
+    private final HttpLookupConfig options;
+
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 
     public JavaNetHttpPollingClient(
@@ -46,6 +48,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.httpClient = httpClient;
         this.responseBodyDecoder = responseBodyDecoder;
         this.requestFactory = requestFactory;
+        this.options = options;
 
         this.httpPostRequestCallback = options.getHttpPostRequestCallback();
 
@@ -77,6 +80,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
 
         HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
+
         HttpResponse<String> response = httpClient.send(
             request.getHttpRequest(),
             BodyHandlers.ofString()

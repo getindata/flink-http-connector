@@ -1,11 +1,11 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
+import java.time.Duration;
+
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_USE_RAW;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.*;
 
 public class HttpLookupConnectorOptions {
 
@@ -53,4 +53,25 @@ public class HttpLookupConnectorOptions {
             ConfigOptions.key(SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER)
                     .stringType()
                     .defaultValue(Slf4jHttpLookupPostRequestCallbackFactory.IDENTIFIER);
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL =
+            ConfigOptions.key(OIDC_AUTH_TOKEN_ENDPOINT_URL)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("OIDC Token endpoint url.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST =
+            ConfigOptions.key(OIDC_AUTH_TOKEN_REQUEST)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("OIDC token request.");
+
+    public static final ConfigOption<Duration> SOURCE_LOOKUP_OIDC_AUTH_TOKEN_EXPIRY_REDUCTION =
+            ConfigOptions.key(OIDC_AUTH_TOKEN_EXPIRY_REDUCTION)
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(1))
+                    .withDescription("OIDC authorization access token expiry" +
+                            " reduction as a Duration." +
+                            " A new access token is obtained if the token" +
+                            " is older than it's expiry time minus this value.");
 }
