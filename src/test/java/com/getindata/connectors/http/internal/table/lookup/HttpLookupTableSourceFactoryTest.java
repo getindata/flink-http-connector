@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.URLEncoder;
 import java.util.*;
 
 import org.apache.flink.table.api.DataTypes;
@@ -13,7 +12,6 @@ import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.junit.jupiter.api.Test;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSource;
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class HttpLookupTableSourceFactoryTest {
 
@@ -35,41 +33,30 @@ public class HttpLookupTableSourceFactoryTest {
             UniqueConstraint.primaryKey("id", List.of("id"))
         );
     @Test
-    void validateHttpSourceOptions() {
+    void validateHttpSourceOptionsTokenRequest() {
 
         HttpLookupTableSourceFactory httpLookupTableSourceFactory
                 = new HttpLookupTableSourceFactory();
         TableConfig tableConfig  = new TableConfig();
         httpLookupTableSourceFactory.validateHttpSourceOptions(tableConfig);
         tableConfig.set(HttpLookupConnectorOptions
+                .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL,"sss");
+        try {
+            httpLookupTableSourceFactory.validateHttpSourceOptions(tableConfig);
+            new AssertionError("Expected error");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        tableConfig.set(HttpLookupConnectorOptions
                 .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key(), "bbb");
-        try {
-            httpLookupTableSourceFactory.validateHttpSourceOptions(tableConfig);
-            assertFalse(true, "Expected an error json processing error");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
 
-        String json = "{}";
-        String urlencoded = URLEncoder.encode(json);
+        String urlencoded = "grant_type=urn:ibm:params:oauth:grant-type:"
+                + "apikey&apikey=YMT-AAAAAgggggggU_LR";
         tableConfig.set(HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key(),
                 urlencoded);
-        try {
-            httpLookupTableSourceFactory.validateHttpSourceOptions(tableConfig);
-            assertFalse(true, "Expected an error as no grant-type.");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
-        json = "{\"grant-type\":\"password\"}";
-        urlencoded = URLEncoder.encode(json);
-        tableConfig.set(HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key(),
-                urlencoded);
+
         httpLookupTableSourceFactory.validateHttpSourceOptions(tableConfig);
-        json = "{\"grant-type\":\"test1\",\"parm\":\"testval\"}";
-        urlencoded = URLEncoder.encode(json);
-        tableConfig.set(HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key(),
-                urlencoded);
-        httpLookupTableSourceFactory.validateHttpSourceOptions(tableConfig);
+
     }
 
     @Test

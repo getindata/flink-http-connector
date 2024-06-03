@@ -78,13 +78,16 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     // TODO Add Retry Policy And configure TimeOut from properties
     private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
-
+        log.debug("queryAndProcess lookupData " + lookupData);
         HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
-
+        log.debug("queryAndProcess request.getHttpRequest() "
+                + request.getHttpRequest()
+                );
         HttpResponse<String> response = httpClient.send(
             request.getHttpRequest(),
             BodyHandlers.ofString()
         );
+        log.debug("queryAndProcess response " + response);
         return processHttpResponse(response, request);
     }
 

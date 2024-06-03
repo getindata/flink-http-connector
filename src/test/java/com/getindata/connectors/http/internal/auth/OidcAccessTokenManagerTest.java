@@ -81,6 +81,22 @@ public class OidcAccessTokenManagerTest {
         }
     }
     @Test
+    public void testAuthenticateWithRealisticToken() {
+
+        MockHttpClient authHttpClient = new MockHttpClient();
+
+        authHttpClient.setIsExpired(1);
+        authHttpClient.setAccessToken("Access1");
+        String url = "http://localhost";
+        OidcAccessTokenManager oidcAuth = new OidcAccessTokenManager(authHttpClient,
+                "grant_type=urn:ibm:params:oauth:grant-type:"
+                        + "apikey&apikey=YMT-AAAAAgggggggU_LR", url);
+
+        // apply the authorization to the httpRequest
+        String token1 = oidcAuth.authenticate();
+        assertThat(token1).isNotNull();
+    }
+    @Test
     public void testAuthenticateWithExpiryReduction() throws InterruptedException {
 
         MockHttpClient authHttpClient = new MockHttpClient();

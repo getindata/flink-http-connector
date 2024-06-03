@@ -25,6 +25,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +40,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
  * which can be short lived, for example an hour. The authenticate method will return an
  * un-expired access token, either from the cache or by requesting a new access token.
  */
+@Slf4j
 public class OidcAccessTokenManager {
 
     private static final Duration DEFAULT_TOKEN_EXPIRATION_REDUCTION = Duration.ofSeconds(1);
@@ -87,6 +89,7 @@ public class OidcAccessTokenManager {
      * Request an access token from the token endpoint
      */
     private void requestAccessToken() {
+        log.debug("requestAccessToken() called ");
         try {
             HttpRequest httpRequest =
                     HttpRequest.newBuilder()
@@ -100,11 +103,14 @@ public class OidcAccessTokenManager {
             //create ObjectMapper instance
             ObjectMapper objectMapper = new ObjectMapper();
             if (200 == response.statusCode()) {
+                log.debug("requestAccessToken() called response status code=200 ");
                 byte[] bytes = response.body();
                 JsonNode rootNode = objectMapper.readTree(bytes);
                 JsonNode tokenNode = rootNode.path("access_token");
                 JsonNode expiresInNode = rootNode.path("expires_in");
                 this.cachedAccessToken = tokenNode.textValue();
+                log.debug("requestAccessToken() response=" +  response.body());
+                log.debug("requestAccessToken() cache access token " +  this.cachedAccessToken );
                 /*
                  expiresIn is in seconds
                 */

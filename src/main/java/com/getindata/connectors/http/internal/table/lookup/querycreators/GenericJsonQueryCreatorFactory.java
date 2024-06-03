@@ -2,6 +2,8 @@ package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
 import java.util.Set;
 
+import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
@@ -20,6 +22,7 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConn
 /**
  * Factory for creating {@link GenericJsonQueryCreatorFactory}.
  */
+@Slf4j
 public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory {
 
     public static final String IDENTIFIER = "generic-json-query";
@@ -29,7 +32,7 @@ public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory
             ReadableConfig readableConfig,
             LookupRow lookupRow,
             DynamicTableFactory.Context dynamicTableFactoryContext) {
-
+        log.debug("createLookupQueryCreator");
         String formatIdentifier = readableConfig.get(LOOKUP_REQUEST_FORMAT);
         SerializationFormatFactory jsonFormatFactory =
             FactoryUtil.discoverFactory(
@@ -49,7 +52,7 @@ public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory
 
         SerializationSchema<RowData> serializationSchema =
             encoder.createRuntimeEncoder(null, lookupRow.getLookupPhysicalRowDataType());
-
+        log.debug("createLookupQueryCreator serializationSchema=" + serializationSchema);
         return new GenericJsonQueryCreator(serializationSchema);
     }
 

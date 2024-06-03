@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.URLDecoder;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -10,8 +9,6 @@ import java.util.stream.Collectors;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.catalog.Column;
@@ -88,23 +85,6 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
                 throw new IllegalArgumentException("Config option " +
                     SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key() + " is required, if " +
                         SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key() + " is configured.");
-            }
-        });
-        tableOptions.getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST).ifPresent(tokenRequest -> {
-            try {
-                String tokenRequestStr = URLDecoder.decode( tokenRequest, "UTF-8" );
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(tokenRequestStr);
-                JsonNode grantTypeNode = rootNode.get("grant-type");
-                if (grantTypeNode == null) {
-                    throw new IllegalArgumentException("Config option "
-                            + SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key()
-                            + " does not contain a grant-type. A grant-type is required.");
-                }
-            } catch (Exception  e) {
-                throw new IllegalArgumentException("Config option "
-                        + SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key()
-                        + "cannot be decoded into json ");
             }
         });
     }

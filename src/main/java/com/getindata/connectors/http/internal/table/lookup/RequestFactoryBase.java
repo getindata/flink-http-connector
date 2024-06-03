@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -23,6 +24,7 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConn
 /**
  * Base class for {@link HttpRequest} factories.
  */
+@Slf4j
 public abstract class RequestFactoryBase implements HttpRequestFactory{
 
     public static final String DEFAULT_REQUEST_TIMEOUT_SECONDS = "30";
@@ -80,14 +82,21 @@ public abstract class RequestFactoryBase implements HttpRequestFactory{
         }
         Optional<String> oidcAuthURL = this.options.getReadableConfig()
                 .getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL);
-
+        log.debug("buildLookupRequest " + oidcAuthURL);
         if (!oidcAuthURL.isEmpty()) {
+            log.debug("!oidcAuthURL.isEmpty()");
             Optional<String> oidcTokenRequest = this.options.getReadableConfig()
                     .getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST);
-
+            log.debug("oidcTokenRequest " + oidcTokenRequest.get());
             Optional<Duration> oidcExpiryReduction = this.options.getReadableConfig()
                     .getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_EXPIRY_REDUCTION);
-
+            if (oidcExpiryReduction == null || oidcExpiryReduction.isEmpty()) {
+                oidcExpiryReduction = Optional.ofNullable(Duration.ofSeconds(1));
+                log.debug("oidcExpiryReduction 1 " + oidcExpiryReduction);
+                log.debug("oidcExpiryReduction 2 " + oidcExpiryReduction.get());
+            } else {
+                log.debug("oidcExpiryReduction 3 " + oidcExpiryReduction.get());
+            }
             addAccessTokenToRequest(requestBuilder, oidcAuthURL,
                     oidcTokenRequest, oidcExpiryReduction);
         }

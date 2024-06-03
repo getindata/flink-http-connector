@@ -429,7 +429,7 @@ be requested if the current time is later than the cached token expiry time minu
 
 ### Restrictions at this time
 * No authentication is applied to the token request.
-* This authentication is only available for HTTP TableLookup Source.  
+* This authentication is only available for HTTP TableLookup Source.
 * The processing does not use the refresh token if it present. 
 
 ## Table API Connector Options
