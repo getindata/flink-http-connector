@@ -35,7 +35,6 @@ jobs:
       - name: Tests for Flink ${{ matrix.flink }}
         run: |
           mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test integration-test
-          cat target/site/jacoco/index.html | grep -o 'Total[^%]*%'
 
       - name: Test JavaDoc
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
@@ -49,4 +48,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
-        if: startsWith(matrix.flink, '1.15.0')
+        if: startsWith(matrix.flink, '1.18')
