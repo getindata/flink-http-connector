@@ -48,4 +48,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
-        if: startsWith(matrix.flink, '1.15.0')
+        if: startsWith(matrix.flink, '1.18')
