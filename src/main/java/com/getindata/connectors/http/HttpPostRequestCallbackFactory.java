@@ -13,16 +13,17 @@ import com.getindata.connectors.http.internal.table.sink.HttpDynamicSink;
  * other factories in
  * <pre>resources/META-INF/services/org.apache.flink.table.factories.Factory</pre>
  * file and then referenced by their identifiers in:
- * <li>
- *     The HttpSink DDL property field <i>gid.connector.http.sink.request-callback</i>
- *     for HTTP sink.
- * </li>
- * <li>
- *     The Http lookup DDL property field <i>gid.connector.http.source.lookup.request-callback</i>
- *     for HTTP lookup.
- * </li>
- *
- * <br />
+ * <ul>
+ *   <li>
+ *       The HttpSink DDL property field <i>gid.connector.http.sink.request-callback</i>
+ *       for HTTP sink.
+ *   </li>
+ *   <li>
+ *       The Http lookup DDL property field <i>gid.connector.http.source.lookup.request-callback</i>
+ *       for HTTP lookup.
+ *   </li>
+ * </ul>
+ * <br>
  *
  * <p>The following example shows the minimum Table API example to create a {@link HttpDynamicSink}
  * that uses a custom callback created by a factory that returns <i>my-callback</i> as its

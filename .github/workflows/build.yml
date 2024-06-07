@@ -38,7 +38,7 @@ jobs:
 
       - name: Test JavaDoc
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
-        if: startsWith(matrix.flink, '1.15.0')
+        if: startsWith(matrix.flink, '1.18')
 
       - name: Add coverage to PR
         id: jacoco
