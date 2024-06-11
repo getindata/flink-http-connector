@@ -35,6 +35,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private final HttpRequestFactory requestFactory;
 
+    private final HttpLookupConfig options;
+
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 
     public JavaNetHttpPollingClient(
@@ -46,6 +48,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.httpClient = httpClient;
         this.responseBodyDecoder = responseBodyDecoder;
         this.requestFactory = requestFactory;
+        this.options = options;
 
         this.httpPostRequestCallback = options.getHttpPostRequestCallback();
 
@@ -75,12 +78,16 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     // TODO Add Retry Policy And configure TimeOut from properties
     private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
-
+        log.debug("queryAndProcess lookupData " + lookupData);
         HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
+        log.debug("queryAndProcess request.getHttpRequest() "
+                + request.getHttpRequest()
+                );
         HttpResponse<String> response = httpClient.send(
             request.getHttpRequest(),
             BodyHandlers.ofString()
         );
+        log.debug("queryAndProcess response " + response);
         return processHttpResponse(response, request);
     }
 
