@@ -35,6 +35,7 @@ jobs:
       - name: Tests for Flink ${{ matrix.flink }}
         run: |
           mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test integration-test
+          ls -alt ${{ github.workspace }}/target/site/jacoco/
 
       - name: Test JavaDoc
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
