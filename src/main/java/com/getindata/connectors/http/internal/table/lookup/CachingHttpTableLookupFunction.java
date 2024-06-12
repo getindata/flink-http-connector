@@ -1,5 +1,9 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -8,18 +12,17 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
-import org.apache.flink.table.functions.TableFunction;
+import org.apache.flink.table.functions.LookupFunction;
 
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 
 @Slf4j
-public class HttpTableLookupFunction extends TableFunction<RowData> {
-
+public class CachingHttpTableLookupFunction extends LookupFunction {
     private final PollingClientFactory<RowData> pollingClientFactory;
 
     private final DeserializationSchema<RowData> responseSchemaDecoder;
@@ -36,16 +39,20 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
 
     private transient PollingClient<RowData> client;
 
-    public HttpTableLookupFunction(
+    private LookupCache cache;
+
+    public CachingHttpTableLookupFunction(
             PollingClientFactory<RowData> pollingClientFactory,
             DeserializationSchema<RowData> responseSchemaDecoder,
             LookupRow lookupRow,
-            HttpLookupConfig options) {
+            HttpLookupConfig options,
+            LookupCache cache) {
 
         this.pollingClientFactory = pollingClientFactory;
         this.responseSchemaDecoder = responseSchemaDecoder;
         this.lookupRow = lookupRow;
         this.options = options;
+        this.cache = cache;
     }
 
     @Override
@@ -53,28 +60,29 @@ public class HttpTableLookupFunction extends TableFunction<RowData> {
         super.open(context);
 
         this.responseSchemaDecoder.open(
-                SerializationSchemaUtils
-                        .createDeserializationInitContext(HttpTableLookupFunction.class));
+            SerializationSchemaUtils
+                .createDeserializationInitContext(CachingHttpTableLookupFunction.class));
 
         this.localHttpCallCounter = new AtomicInteger(0);
         this.client = pollingClientFactory
-                .createPollClient(options, responseSchemaDecoder);
+            .createPollClient(options, responseSchemaDecoder);
 
-        context.getMetricGroup()
-                .gauge("http-table-lookup-call-counter", () -> localHttpCallCounter.intValue());
+        context
+            .getMetricGroup()
+            .gauge("http-table-lookup-call-counter", () -> localHttpCallCounter.intValue());
     }
 
     /**
-     * This is a lookup method which is called by Flink framework in a runtime.
+     * This is a lookup method which is called by Flink framework at runtime.
      */
-    public void eval(Object... keys) {
-        lookupByKeys(keys)
-                .ifPresent(this::collect);
-    }
-
-    public Optional<RowData> lookupByKeys(Object[] keys) {
-        RowData rowData = GenericRowData.of(keys);
+    @Override
+    public Collection<RowData> lookup(RowData keyRow) throws IOException {
+        log.debug("lookup=" + lookupRow);
         localHttpCallCounter.incrementAndGet();
-        return client.pull(rowData);
+        Optional<RowData> rowData=  client.pull(keyRow);
+        List<RowData> result = new ArrayList<>();
+        rowData.ifPresent(row -> { result.add(row); });
+        log.debug("lookup result=" + result);
+        return result;
     }
 }

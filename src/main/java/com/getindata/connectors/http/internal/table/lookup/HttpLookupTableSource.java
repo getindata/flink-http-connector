@@ -13,9 +13,11 @@ import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.LookupTableSource;
-import org.apache.flink.table.connector.source.TableFunctionProvider;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
+import org.apache.flink.table.connector.source.lookup.LookupFunctionProvider;
+import org.apache.flink.table.connector.source.lookup.PartialCachingLookupProvider;
+import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.FactoryUtil;
@@ -46,17 +48,20 @@ public class HttpLookupTableSource
     private final DynamicTableFactory.Context dynamicTableFactoryContext;
 
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
+    private final LookupCache cache;
 
     public HttpLookupTableSource(
             DataType physicalRowDataType,
             HttpLookupConfig lookupConfig,
             DecodingFormat<DeserializationSchema<RowData>> decodingFormat,
-            DynamicTableFactory.Context dynamicTablecontext) {
+            DynamicTableFactory.Context dynamicTablecontext,
+            LookupCache cache) {
 
         this.physicalRowDataType = physicalRowDataType;
         this.lookupConfig = lookupConfig;
         this.decodingFormat = decodingFormat;
         this.dynamicTableFactoryContext = dynamicTablecontext;
+        this.cache = cache;
     }
 
     @Override
@@ -66,6 +71,7 @@ public class HttpLookupTableSource
 
     @Override
     public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext lookupContext) {
+        log.debug("getLookupRuntimeProvider Entry");
 
         LookupRow lookupRow = extractLookupRow(lookupContext.getKeys());
 
@@ -94,21 +100,41 @@ public class HttpLookupTableSource
         PollingClientFactory<RowData> pollingClientFactory =
             createPollingClientFactory(lookupQueryCreator, lookupConfig);
 
-        HttpTableLookupFunction dataLookupFunction =
-            new HttpTableLookupFunction(
-                pollingClientFactory,
-                responseSchemaDecoder,
-                lookupRow,
-                lookupConfig
-            );
+        // In line with the JDBC implementation and current requirements, we are only
+        // supporting Partial Caching for synchronous operations.
+        return getLookupRuntimeProvider(lookupRow, responseSchemaDecoder, pollingClientFactory);
+    }
 
+    protected LookupRuntimeProvider getLookupRuntimeProvider(LookupRow lookupRow,
+        DeserializationSchema<RowData> responseSchemaDecoder,
+        PollingClientFactory<RowData> pollingClientFactory) {
         if (lookupConfig.isUseAsync()) {
+            HttpTableLookupFunction dataLookupFunction =
+                    new HttpTableLookupFunction(
+                            pollingClientFactory,
+                            responseSchemaDecoder,
+                            lookupRow,
+                            lookupConfig
+                    );
             log.info("Using Async version of HttpLookupTable.");
             return AsyncTableFunctionProvider.of(
                 new AsyncHttpTableLookupFunction(dataLookupFunction));
         } else {
-            log.info("Using blocking version of HttpLookupTable.");
-            return TableFunctionProvider.of(dataLookupFunction);
+            CachingHttpTableLookupFunction dataLookupFunction =
+                    new CachingHttpTableLookupFunction(
+                            pollingClientFactory,
+                            responseSchemaDecoder,
+                            lookupRow,
+                            lookupConfig,
+                            cache
+                    );
+            if (cache != null) {
+                log.debug("PartialCachingLookupProvider; cache = " + cache);
+                return PartialCachingLookupProvider.of(dataLookupFunction, cache);
+            } else {
+                log.debug("Using LookupFunctionProvider.");
+                return LookupFunctionProvider.of(dataLookupFunction);
+            }
         }
     }
 
@@ -118,7 +144,8 @@ public class HttpLookupTableSource
             physicalRowDataType,
             lookupConfig,
             decodingFormat,
-            dynamicTableFactoryContext
+            dynamicTableFactoryContext,
+            cache
         );
     }
 
