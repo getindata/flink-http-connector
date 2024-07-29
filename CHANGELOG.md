@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for caching of lookup joins.
+
 ### Fixed
 
 -   Fixed issue in the logging code of the `JavaNetHttpPollingClient` which prevents showing the status code and response body when the log level is configured at DEBUG (or lower) level.
@@ -15,8 +19,6 @@
     `slf4j-lookup-logger`. If this parameter is not provided then the default SLF4J logger 
     [Slf4JHttpLookupPostRequestCallback](https://github.com/getindata/flink-http-connector/blob/main/src/main/java/com/getindata/connectors/http/internal/table/lookup/Slf4JHttpLookupPostRequestCallback.java)
     is used instead.
-
--   Added support for caching of synchronous lookup joins.
 
 ## [0.13.0] - 2024-04-03
 

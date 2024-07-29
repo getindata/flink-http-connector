@@ -424,12 +424,12 @@ is set to `'true'`, it will be used as header value as is, without any extra mod
 | url                                                           | required | The base URL that should be use for GET requests. For example _http://localhost:8080/client_                                                                                                                                                                                                                                                                      |
 | asyncPolling                                                  | optional | true/false - determines whether Async Polling should be used. Mechanism is based on Flink's Async I/O.                                                                                                                                                                                                                                                            |
 | lookup-method                                                 | optional | GET/POST/PUT (and any other) - determines what REST method should be used for lookup REST query. If not specified, `GET` method will be used.                                                                                                                                                                                                                     |
-| lookup.cache | optional | Enum possible values: `NONE`, `PARTIAL`. The cache strategy for the lookup table. Currently supports `NONE` (no caching) and `PARTIAL` (caching entries on lookup operation in external API).                                                                                                                                                                     |
-| lookup.partial-cache.max-rows | optional | The max number of rows of lookup cache, over this value, the oldest rows will be expired. `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                                                                        |
-| lookup.partial-cache.expire-after-write | optional | The max time to live for each rows in lookup cache after writing into the cache. Specify as a [Duration](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/deployment/config/#duration).  `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.          |
-| lookup.partial-cache.expire-after-access | optional | The max time to live for each rows in lookup cache after accessing the entry in the cache. Specify as a [Duration](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/deployment/config/#duration). `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details. |
-| lookup.partial-cache.cache-missing-key | optional | This is a boolean that defaults to true. Whether to store an empty value into the cache if the lookup key doesn't match any rows in the table. `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                   |
-| lookup.max-retries | optional | The max retry times if the lookup failed; default is 3. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                                                                                                                                                                      |
+| lookup.cache                                                  | optional | Enum possible values: `NONE`, `PARTIAL`. The cache strategy for the lookup table. Currently supports `NONE` (no caching) and `PARTIAL` (caching entries on lookup operation in external API).                                                                                                                                                                     |
+| lookup.partial-cache.max-rows                                 | optional | The max number of rows of lookup cache, over this value, the oldest rows will be expired. `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                                                                        |
+| lookup.partial-cache.expire-after-write                       | optional | The max time to live for each rows in lookup cache after writing into the cache. Specify as a [Duration](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/deployment/config/#duration).  `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.          |
+| lookup.partial-cache.expire-after-access                      | optional | The max time to live for each rows in lookup cache after accessing the entry in the cache. Specify as a [Duration](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/deployment/config/#duration). `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details. |
+| lookup.partial-cache.cache-missing-key                        | optional | This is a boolean that defaults to true. Whether to store an empty value into the cache if the lookup key doesn't match any rows in the table. `lookup.cache` must be set to `PARTIAL` to use this option. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                   |
+| lookup.max-retries                                            | optional | The max retry times if the lookup failed; default is 3. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                                                                                                                                                                      |
 | gid.connector.http.lookup.error.code                          | optional | List of HTTP status codes that should be treated as errors by HTTP Source, separated with comma.                                                                                                                                                                                                                                                                  |
 | gid.connector.http.lookup.error.code.exclude                  | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma.                                                                                                                                                                                                                                     |
 | gid.connector.http.security.cert.server                       | optional | Path to trusted HTTP server certificate that should be add to connectors key store. More than one path can be specified using `,` as path delimiter.                                                                                                                                                                                                              |
@@ -469,18 +469,20 @@ is set to `'true'`, it will be used as header value as is, without any extra mod
 
 
 ## Lookup Cache 
-The HTTP Client connector can be used in temporal join as a lookup source (also known as a dimension table).  
+The HTTP Client connector can be used in lookup join as a lookup source (also known as a dimension table).  
 
-By default, the lookup cache is not enabled. You can enable it by setting `lookup.cache` to `PARTIAL`. Caching is only enabled if `asyncPolling` = false.
-The scope of the cache is per job, so long running jobs can benefit from this caching.
+By default, the lookup cache is not enabled. You can enable it by setting `lookup.cache` to `PARTIAL`.
+The scope of the cache is per job, so long-running jobs can benefit from this caching.
 
-The lookup cache is used to improve the performance of temporal joins. By default, the lookup cache is not enabled, so all the API requests are sent on the network. When the lookup cache is enabled, Flink looks in the cache first, and only sends requests 
-on the network when there is no cached value, then the cache is updated with the returned rows. The oldest rows in this cache are expired when the cache hits the max cached rows `lookup.partial-cache.max-rows` or when the row exceeds the max time to live specified by `lookup.partial-cache.expire-after-write` or `lookup.partial-cache.expire-after-access`.
-The cached rows might not be the latest, but users can tune expiration options to a smaller value to have fresher data, but this may increase the number of API requests sent. So this is a balance between throughput and correctness.
-A good use case for enabling this cache, is when the API responses are very slowly changing; for example master or reference data. 
-There are many cases when caching is not appropriate, for example calling an API to get the latest stock price.    
+The lookup cache is used to improve the performance of temporal joins. By default, the lookup cache is not enabled,
+so all the API requests are sent on the network. When the lookup cache is enabled, Flink looks in the cache first,
+and only sends requests on the network when there is no cached value,  then the cache is updated with the returned rows.
+The oldest rows in this cache are expired when the cache hits the max cached rows `lookup.partial-cache.max-rows`
+or when the row exceeds the max time to live specified by `lookup.partial-cache.expire-after-write`
+or `lookup.partial-cache.expire-after-access`.
 
-By default, flink caches the empty query result for a Primary key. You can toggle this behaviour by setting `lookup.partial-cache.cache-missing-key` to false.
+By default, flink caches the empty query result for the primary key. You can toggle this behaviour by setting
+`lookup.partial-cache.cache-missing-key` to false.
 
 
 ## Build and deployment
@@ -568,7 +570,6 @@ The mapping from Http Json Response to SQL table schema is done via Flink's Json
 ## TODO
 
 ### HTTP TableLookup Source
-- Implement caches for async.
 - Think about Retry Policy for Http Request
 - Check other `//TODO`'s.
 

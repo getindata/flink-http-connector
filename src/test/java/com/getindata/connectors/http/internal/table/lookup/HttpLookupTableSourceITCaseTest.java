@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -24,6 +25,11 @@ import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.binary.BinaryStringData;
+import org.apache.flink.table.runtime.functions.table.lookup.LookupCacheManager;
+import org.apache.flink.table.test.lookup.cache.LookupCacheAssert;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.StringUtils;
@@ -770,6 +776,67 @@ public class HttpLookupTableSourceITCaseTest {
 
         // TODO add assert on values
         assertThat(collectedRows.size()).isEqualTo(5);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testHttpLookupJoinWithCache(boolean isAsync) throws Exception {
+        // GIVEN
+        LookupCacheManager.keepCacheOnRelease(true);
+
+        setupServerStub(wireMockServer);
+
+        String lookupTable =
+            "CREATE TABLE Customers ("
+                + "id STRING,"
+                + "id2 STRING,"
+                + "msg STRING,"
+                + "uuid STRING,"
+                + "details ROW<"
+                + "isActive BOOLEAN,"
+                + "nestedDetails ROW<"
+                + "balance STRING"
+                + ">"
+                + ">"
+                + ") WITH ("
+                + "'format' = 'json',"
+                + "'connector' = 'rest-lookup',"
+                + "'lookup-method' = 'GET',"
+                + "'url' = 'http://localhost:9090/client',"
+                + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                + (isAsync ? "'asyncPolling' = 'true'," : "")
+                + "'lookup.cache' = 'partial',"
+                + "'lookup.partial-cache.max-rows' = '100'"
+                + ")";
+
+        // WHEN
+        SortedSet<Row> rows = testLookupJoin(lookupTable);
+
+        // THEN
+        try {
+            assertEnrichedRows(rows);
+
+            LookupCacheAssert.assertThat(getCache()).hasSize(4)
+                .containsKey(GenericRowData.of(
+                    BinaryStringData.fromString("3"), BinaryStringData.fromString("4")))
+                .containsKey(GenericRowData.of(
+                    BinaryStringData.fromString("4"), BinaryStringData.fromString("5")))
+                .containsKey(GenericRowData.of(
+                    BinaryStringData.fromString("1"), BinaryStringData.fromString("2")))
+                .containsKey(GenericRowData.of(
+                    BinaryStringData.fromString("2"), BinaryStringData.fromString("3")));
+        } finally {
+            LookupCacheManager.getInstance().checkAllReleased();
+            LookupCacheManager.getInstance().clear();
+            LookupCacheManager.keepCacheOnRelease(false);
+        }
+    }
+
+    private LookupCache getCache() {
+        Map<String, LookupCacheManager.RefCountedCache> managedCaches =
+                LookupCacheManager.getInstance().getManagedCaches();
+        assertThat(managedCaches).as("There should be only 1 shared cache registered").hasSize(1);
+        return managedCaches.get(managedCaches.keySet().iterator().next()).getCache();
     }
 
     private @NotNull SortedSet<Row> testLookupJoin(String lookupTable) throws Exception {
