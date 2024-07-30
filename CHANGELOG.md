@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.15.0] - 2024-07-30
+
 ### Added
 
 -   Added support for caching of lookup joins.
@@ -199,7 +201,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.14.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.15.0...HEAD
+
+[0.15.0]: https://github.com/getindata/flink-http-connector/compare/0.14.0...0.15.0
 
 [0.14.0]: https://github.com/getindata/flink-http-connector/compare/0.13.0...0.14.0
 
