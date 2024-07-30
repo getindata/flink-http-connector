@@ -29,6 +29,9 @@ jobs:
           distribution: 'adopt'
           cache: maven
 
+      - name: debug gpg
+        run: gpg --list-secret-keys --keyid-format=long && gpg --list-secret-keys --keyid-format=long
+
       - name: Build for Flink ${{ matrix.flink }}
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} compile
 
