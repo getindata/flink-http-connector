@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -10,15 +11,19 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.connector.Projection;
 import org.apache.flink.table.connector.format.DecodingFormat;
-import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.LookupTableSource;
-import org.apache.flink.table.connector.source.TableFunctionProvider;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
+import org.apache.flink.table.connector.source.lookup.AsyncLookupFunctionProvider ;
+import org.apache.flink.table.connector.source.lookup.LookupFunctionProvider;
+import org.apache.flink.table.connector.source.lookup.PartialCachingAsyncLookupProvider;
+import org.apache.flink.table.connector.source.lookup.PartialCachingLookupProvider;
+import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.FactoryUtil;
+import org.apache.flink.table.functions.AsyncLookupFunction;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
@@ -46,17 +51,20 @@ public class HttpLookupTableSource
     private final DynamicTableFactory.Context dynamicTableFactoryContext;
 
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
+    @Nullable
+    private final LookupCache cache;
 
     public HttpLookupTableSource(
             DataType physicalRowDataType,
             HttpLookupConfig lookupConfig,
             DecodingFormat<DeserializationSchema<RowData>> decodingFormat,
-            DynamicTableFactory.Context dynamicTablecontext) {
-
+            DynamicTableFactory.Context dynamicTablecontext,
+            @Nullable LookupCache cache) {
         this.physicalRowDataType = physicalRowDataType;
         this.lookupConfig = lookupConfig;
         this.decodingFormat = decodingFormat;
         this.dynamicTableFactoryContext = dynamicTablecontext;
+        this.cache = cache;
     }
 
     @Override
@@ -66,6 +74,7 @@ public class HttpLookupTableSource
 
     @Override
     public LookupRuntimeProvider getLookupRuntimeProvider(LookupContext lookupContext) {
+        log.debug("getLookupRuntimeProvider Entry");
 
         LookupRow lookupRow = extractLookupRow(lookupContext.getKeys());
 
@@ -94,21 +103,38 @@ public class HttpLookupTableSource
         PollingClientFactory<RowData> pollingClientFactory =
             createPollingClientFactory(lookupQueryCreator, lookupConfig);
 
-        HttpTableLookupFunction dataLookupFunction =
-            new HttpTableLookupFunction(
-                pollingClientFactory,
-                responseSchemaDecoder,
-                lookupRow,
-                lookupConfig
-            );
+        return getLookupRuntimeProvider(lookupRow, responseSchemaDecoder, pollingClientFactory);
+    }
 
+    protected LookupRuntimeProvider getLookupRuntimeProvider(LookupRow lookupRow,
+        DeserializationSchema<RowData> responseSchemaDecoder,
+        PollingClientFactory<RowData> pollingClientFactory) {
+
+        HttpTableLookupFunction dataLookupFunction =
+                new HttpTableLookupFunction(
+                        pollingClientFactory,
+                        responseSchemaDecoder,
+                        lookupRow,
+                        lookupConfig
+                );
         if (lookupConfig.isUseAsync()) {
-            log.info("Using Async version of HttpLookupTable.");
-            return AsyncTableFunctionProvider.of(
-                new AsyncHttpTableLookupFunction(dataLookupFunction));
+            AsyncLookupFunction asyncLookupFunction =
+                    new AsyncHttpTableLookupFunction(dataLookupFunction);
+            if (cache != null) {
+                log.info("Using async version of HttpLookupTable with cache.");
+                return PartialCachingAsyncLookupProvider.of(asyncLookupFunction, cache);
+            } else {
+                log.info("Using async version of HttpLookupTable without cache.");
+                return AsyncLookupFunctionProvider.of(asyncLookupFunction);
+            }
         } else {
-            log.info("Using blocking version of HttpLookupTable.");
-            return TableFunctionProvider.of(dataLookupFunction);
+            if (cache != null) {
+                log.info("Using blocking version of HttpLookupTable with cache.");
+                return PartialCachingLookupProvider.of(dataLookupFunction, cache);
+            } else {
+                log.info("Using blocking version of HttpLookupTable without cache.");
+                return LookupFunctionProvider.of(dataLookupFunction);
+            }
         }
     }
 
@@ -118,7 +144,8 @@ public class HttpLookupTableSource
             physicalRowDataType,
             lookupConfig,
             decodingFormat,
-            dynamicTableFactoryContext
+            dynamicTableFactoryContext,
+            cache
         );
     }
 

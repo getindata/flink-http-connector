@@ -1,8 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,7 +8,7 @@ import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.functions.AsyncTableFunction;
+import org.apache.flink.table.functions.AsyncLookupFunction;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
@@ -19,7 +17,7 @@ import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 @Slf4j
 @RequiredArgsConstructor
-public class AsyncHttpTableLookupFunction extends AsyncTableFunction<RowData> {
+public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
 
     private static final String PULLING_THREAD_POOL_SIZE = "8";
 
@@ -73,29 +71,27 @@ public class AsyncHttpTableLookupFunction extends AsyncTableFunction<RowData> {
             );
     }
 
-    public void eval(CompletableFuture<Collection<RowData>> resultFuture, Object... keys) {
-
-        CompletableFuture<Optional<RowData>> future = new CompletableFuture<>();
-        future.completeAsync(() -> decorate.lookupByKeys(keys), pullingThreadPool);
+    @Override
+    public CompletableFuture<Collection<RowData>> asyncLookup(RowData keyRow) {
+        CompletableFuture<Collection<RowData>> future = new CompletableFuture<>();
+        future.completeAsync(() -> decorate.lookup(keyRow), pullingThreadPool);
 
         // We don't want to use ForkJoinPool at all. We are using a different thread pool
         // for publishing here intentionally to avoid thread starvation.
+        CompletableFuture<Collection<RowData>> resultFuture = new CompletableFuture<>();
         future.whenCompleteAsync(
-            (optionalResult, throwable) -> {
+            (result, throwable) -> {
                 if (throwable != null) {
                     log.error("Exception while processing Http Async request", throwable);
                     resultFuture.completeExceptionally(
                         new RuntimeException("Exception while processing Http Async request",
                             throwable));
                 } else {
-                    if (optionalResult.isPresent()) {
-                        resultFuture.complete(Collections.singleton(optionalResult.get()));
-                    } else {
-                        resultFuture.complete(Collections.emptyList());
-                    }
+                    resultFuture.complete(result);
                 }
             },
             publishingThreadPool);
+        return resultFuture;
     }
 
     public LookupRow getLookupRow() {

@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -13,8 +12,11 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,7 +84,7 @@ class AsyncHttpTableLookupFunctionTest {
 
         assertThat(result.size()).isEqualTo(rowKeys.length);
         assertThat(threadNames.size()).isEqualTo(rowKeys.length);
-        verify(decorate, times(rowKeys.length)).lookupByKeys(any());
+        verify(decorate, times(rowKeys.length)).lookup(any());
     }
 
     @Test
@@ -111,7 +113,7 @@ class AsyncHttpTableLookupFunctionTest {
                     throwable -> {
                         wasException.set(true);
                         latch.countDown();
-                        return Collections.emptyList();
+                        return emptyList();
                     });
         }
 
@@ -126,12 +128,12 @@ class AsyncHttpTableLookupFunctionTest {
         // -1 since one will have an exception
         assertThat(result.size()).isEqualTo(rowKeys.length - 1);
         assertThat(threadNames.size()).isEqualTo(rowKeys.length);
-        verify(decorate, times(rowKeys.length)).lookupByKeys(any());
+        verify(decorate, times(rowKeys.length)).lookup(any());
     }
 
     @Test
-    void shouldHandleEmptyOptionalResult() throws InterruptedException {
-        mockPollingWithEmptyOptional();
+    void shouldHandleEmptyCollectionResult() throws InterruptedException {
+        mockPollingWithEmptyList();
 
         final List<RowData> result = Collections.synchronizedList(new ArrayList<>());
 
@@ -169,48 +171,48 @@ class AsyncHttpTableLookupFunctionTest {
         // -1 since one will have one empty result.
         assertThat(result.size()).isEqualTo(rowKeys.length - 1);
         assertThat(threadNames.size()).isEqualTo(rowKeys.length);
-        verify(decorate, times(rowKeys.length)).lookupByKeys(any());
+        verify(decorate, times(rowKeys.length)).lookup(any());
     }
 
     private void mockPolling() {
-        when(decorate.lookupByKeys(any()))
+        when(decorate.lookup(any()))
             .thenAnswer(
                 invocationOnMock -> {
                     threadNames.add(Thread.currentThread().getName());
                     // make sure we pile up all keyRows on threads
                     barrier.await();
-                    return Optional.of(buildGenericRowData(
-                        Collections.singletonList(invocationOnMock.getArgument(0))));
+                    return singletonList(buildGenericRowData(
+                        singletonList(invocationOnMock.getArgument(0))));
                 });
     }
 
     private void mockPollingWithException() {
-        when(decorate.lookupByKeys(any()))
+        when(decorate.lookup(any()))
             .thenAnswer(
                 invocationOnMock -> {
                     threadNames.add(Thread.currentThread().getName());
                     // make sure we pile up all keyRows on threads
                     barrier.await();
-                    Integer argument = (Integer) ((Object[]) invocationOnMock.getArgument(0))[0];
+                    Integer argument = ((GenericRowData) invocationOnMock.getArgument(0)).getInt(0);
                     if (argument == 12) {
                         throw new RuntimeException("Exception On problematic item");
                     }
-                    return Optional.of(buildGenericRowData(Collections.singletonList(argument)));
+                    return singletonList(buildGenericRowData(singletonList(argument)));
                 });
     }
 
-    private void mockPollingWithEmptyOptional() {
-        when(decorate.lookupByKeys(any()))
+    private void mockPollingWithEmptyList() {
+        when(decorate.lookup(any()))
             .thenAnswer(
                 invocationOnMock -> {
                     threadNames.add(Thread.currentThread().getName());
                     // make sure we pile up all keyRows on threads
                     barrier.await();
-                    Integer argument = (Integer) ((Object[]) invocationOnMock.getArgument(0))[0];
+                    Integer argument = ((GenericRowData) invocationOnMock.getArgument(0)).getInt(0);
                     if (argument == 12) {
-                        return Optional.empty();
+                        return emptyList();
                     }
-                    return Optional.of(buildGenericRowData(Collections.singletonList(argument)));
+                    return singletonList(buildGenericRowData(singletonList(argument)));
                 });
     }
 }

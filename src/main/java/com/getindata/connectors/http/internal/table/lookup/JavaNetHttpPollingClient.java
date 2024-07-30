@@ -66,6 +66,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     @Override
     public Optional<RowData> pull(RowData lookupRow) {
         try {
+            log.debug("Optional<RowData> pull with Rowdata={}.", lookupRow);
             return queryAndProcess(lookupRow);
         } catch (Exception e) {
             log.error("Exception during HTTP request.", e);

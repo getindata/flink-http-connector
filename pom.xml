@@ -68,6 +68,7 @@ under the License.
 
     <!-- IMPORTANT: If you update Flink, remember to update link to its docs in maven-javadoc-plugin <links>
          section, omitting the patch part (so for 1.15.0 use 1.15). -->
+
     <flink.version>1.16.3</flink.version>
 
     <target.java.version>11</target.java.version>
@@ -296,7 +297,6 @@ under the License.
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
         <configuration>
-
         </configuration>
       </plugin>
 
