@@ -23,7 +23,7 @@ under the License.
 
   <groupId>com.getindata</groupId>
   <artifactId>flink-http-connector</artifactId>
-  <version>0.15.0-SNAPSHOT</version>
+  <version>0.16.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>flink-http-connector</name>
