@@ -42,8 +42,8 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           server-id: ossrh
-          server-username: ${{ secrets.SONATYPE_TOKEN_USERNAME }}
-          server-password: ${{ secrets.SONATYPE_TOKEN_PASSWORD }}
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PRIVATE_KEY_PASSWORD
 
@@ -51,6 +51,6 @@ jobs:
         if: github.event.release
         run: mvn deploy -P release
         env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_TOKEN_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASSWORD }}
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASSWORD }}
           GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
