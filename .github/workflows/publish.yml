@@ -42,7 +42,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           server-id: ossrh
-          server-username: testMe
+          server-username: ${{ secrets.SONATYPE_TOKEN_USERNAME }}
           server-password: testMe
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PRIVATE_KEY_PASSWORD
