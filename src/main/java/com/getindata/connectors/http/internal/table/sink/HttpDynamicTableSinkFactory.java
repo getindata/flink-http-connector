@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.base.table.AsyncDynamicTableSinkFactory;
 import org.apache.flink.connector.base.table.sink.options.AsyncSinkConfigurationValidator;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
@@ -82,6 +83,7 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         var options = super.optionalOptions();
         options.add(INSERT_METHOD);
         options.add(REQUEST_CALLBACK_IDENTIFIER);
+        options.add(DELIVERY_GUARANTEE);
         return options;
     }
 
@@ -94,6 +96,12 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
                         "Invalid option '%s'. It is expected to be either 'POST' or 'PUT'.",
                         INSERT_METHOD.key()
                     ));
+            }
+        });
+        tableOptions.getOptional(DELIVERY_GUARANTEE).ifPresent(deliveryGuarantee -> {
+            if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
+                throw new IllegalArgumentException("'exactly-once' semantic is not supported. " +
+                        "It is expected to be either 'none' or 'at-least-once.");
             }
         });
     }
