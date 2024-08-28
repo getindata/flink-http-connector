@@ -100,8 +100,6 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         );
         Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl),
             "The endpoint URL must be set when initializing HTTP Sink.");
-        Preconditions.checkArgument(deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE,
-                "Only at-least-once and none delivery guarantees are supported.");
         this.deliveryGuarantee = deliveryGuarantee;
         this.endpointUrl = endpointUrl;
         this.httpPostRequestCallback =
