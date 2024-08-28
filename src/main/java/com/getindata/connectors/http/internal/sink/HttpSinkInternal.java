@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
@@ -61,6 +62,8 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     private final String endpointUrl;
 
+    private final DeliveryGuarantee deliveryGuarantee;
+
     // having Builder instead of an instance of `SinkHttpClient`
     // makes it possible to serialize `HttpSink`
     private final SinkHttpClientBuilder sinkHttpClientBuilder;
@@ -79,6 +82,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         long maxBatchSizeInBytes,
         long maxTimeInBufferMS,
         long maxRecordSizeInBytes,
+        DeliveryGuarantee deliveryGuarantee,
         String endpointUrl,
         HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
         HeaderPreprocessor headerPreprocessor,
@@ -94,9 +98,11 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             maxTimeInBufferMS,
             maxRecordSizeInBytes
         );
-
         Preconditions.checkArgument(!StringUtils.isNullOrWhitespaceOnly(endpointUrl),
             "The endpoint URL must be set when initializing HTTP Sink.");
+        Preconditions.checkArgument(deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE,
+                "Only at-least-once and none delivery guarantees are supported.");
+        this.deliveryGuarantee = deliveryGuarantee;
         this.endpointUrl = endpointUrl;
         this.httpPostRequestCallback =
             Preconditions.checkNotNull(
@@ -132,6 +138,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxBatchSizeInBytes(),
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
+            deliveryGuarantee,
             endpointUrl,
             sinkHttpClientBuilder.build(
                 properties,
@@ -159,6 +166,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             getMaxBatchSizeInBytes(),
             getMaxTimeInBufferMS(),
             getMaxRecordSizeInBytes(),
+            deliveryGuarantee,
             endpointUrl,
             sinkHttpClientBuilder.build(
                 properties,

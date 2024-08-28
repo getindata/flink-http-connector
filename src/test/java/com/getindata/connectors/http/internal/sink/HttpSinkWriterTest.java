@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.connector.sink2.Sink.InitContext;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
@@ -70,6 +71,7 @@ class HttpSinkWriterTest {
             10,
             10,
             10,
+            DeliveryGuarantee.NONE,
             "http://localhost/client",
             httpClient,
             stateBuffer,
