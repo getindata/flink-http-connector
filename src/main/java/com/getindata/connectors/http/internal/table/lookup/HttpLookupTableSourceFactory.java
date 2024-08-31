@@ -104,8 +104,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
              LookupOptions.PARTIAL_CACHE_EXPIRE_AFTER_ACCESS,
              LookupOptions.PARTIAL_CACHE_EXPIRE_AFTER_WRITE,
              LookupOptions.PARTIAL_CACHE_MAX_ROWS,
-             LookupOptions.PARTIAL_CACHE_CACHE_MISSING_KEY,
-             LookupOptions.MAX_RETRIES);
+             LookupOptions.PARTIAL_CACHE_CACHE_MISSING_KEY);
     }
 
     private HttpLookupConfig getHttpLookupOptions(Context context, ReadableConfig readableConfig) {

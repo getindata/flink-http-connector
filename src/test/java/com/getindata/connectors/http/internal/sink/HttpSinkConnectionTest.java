@@ -274,6 +274,7 @@ public class HttpSinkConnectionTest {
                 .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
                 .setProperty("gid.connector.http.sink.error.code.exclude", "404, 405")
                 .setProperty("gid.connector.http.sink.error.code", "4XX")
+                .setProperty("gid.connector.http.sink.error-retryable.code.exclude", "404, 405")
                 .build();
         source.sinkTo(httpSink);
         env.execute("Http Sink test failed connection");

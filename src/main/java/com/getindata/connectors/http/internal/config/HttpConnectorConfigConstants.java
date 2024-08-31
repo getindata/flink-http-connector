@@ -39,13 +39,26 @@ public final class HttpConnectorConfigConstants {
     public static final String HTTP_ERROR_SINK_CODE_WHITE_LIST =
         GID_CONNECTOR_HTTP + "sink.error.code.exclude";
 
-    public static final String HTTP_ERROR_SINK_CODES_LIST = GID_CONNECTOR_HTTP + "sink.error.code";
+    public static final String HTTP_ERROR_SINK_CODES_LIST =
+            GID_CONNECTOR_HTTP + "sink.error-retryable.code";
+
+    public static final String HTTP_ERROR_RETRYABLE_SINK_CODE_WHITE_LIST =
+        GID_CONNECTOR_HTTP + "sink.error-retryable.code.exclude";
+
+    public static final String HTTP_ERROR_RETRYABLE_SINK_CODES_LIST =
+            GID_CONNECTOR_HTTP + "sink.error.code";
 
     public static final String HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST =
         GID_CONNECTOR_HTTP + "source.lookup.error.code.exclude";
 
     public static final String HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST =
         GID_CONNECTOR_HTTP + "source.lookup.error.code";
+
+    public static final String HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST =
+        GID_CONNECTOR_HTTP + "source.lookup.error-retryable.code.exclude";
+
+    public static final String HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODES_LIST =
+        GID_CONNECTOR_HTTP + "source.lookup.error-retryable.code";
     // -----------------------------------------------------
 
     public static final String SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER =
