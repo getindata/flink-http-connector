@@ -52,6 +52,23 @@ class GenericJsonQueryCreatorTest {
         row.setField(0, 11);
         row.setField(1, StringData.fromString("myUuid"));
 
+        this.jsonQueryCreator.createLookupQuery(row);
+        LookupQueryInfo lookupQuery = this.jsonQueryCreator.createLookupQuery(row);
+        assertThat(lookupQuery.getBodyBasedUrlQueryParameters().isEmpty());
+        assertThat(lookupQuery.getLookupQuery()).isEqualTo("{\"id\":11,\"uuid\":\"myUuid\"}");
+    }
+
+    @Test
+    public void shouldSerializeToJsonTwice() {
+        GenericRowData row = new GenericRowData(2);
+        row.setField(0, 11);
+        row.setField(1, StringData.fromString("myUuid"));
+
+        this.jsonQueryCreator.createLookupQuery(row);
+
+        // Call createLookupQuery two times
+        // to check that serialization schema is not opened Two times.
+        this.jsonQueryCreator.createLookupQuery(row);
         LookupQueryInfo lookupQuery = this.jsonQueryCreator.createLookupQuery(row);
         assertThat(lookupQuery.getBodyBasedUrlQueryParameters().isEmpty());
         assertThat(lookupQuery.getLookupQuery()).isEqualTo("{\"id\":11,\"uuid\":\"myUuid\"}");

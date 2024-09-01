@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.utils;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -24,8 +25,8 @@ import com.getindata.connectors.http.internal.security.SelfSignedTrustManager;
 public class JavaNetHttpClientFactory {
 
     /**
-     * Creates Java's {@link HttpClient} instance that will be using default, JVM shared {@link
-     * java.util.concurrent.ForkJoinPool} for async calls.
+     * Creates Java's {@link HttpClient} instance that will be using default, JVM shared
+     * {@link java.util.concurrent.ForkJoinPool} for async calls.
      *
      * @param properties properties used to build {@link SSLContext}
      * @return new {@link HttpClient} instance.
@@ -73,7 +74,9 @@ public class JavaNetHttpClientFactory {
      * @return new {@link SSLContext} instance.
      */
     private static SSLContext getSslContext(Properties properties) {
-        SecurityContext securityContext = createSecurityContext(properties);
+
+        String keyStorePath =
+            properties.getProperty(HttpConnectorConfigConstants.KEY_STORE_PATH, "");
 
         boolean selfSignedCert = Boolean.parseBoolean(
             properties.getProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "false"));
@@ -87,6 +90,21 @@ public class JavaNetHttpClientFactory {
 
         String clientPrivateKey = properties
             .getProperty(HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY, "");
+
+        if (StringUtils.isNullOrWhitespaceOnly(keyStorePath)
+            && !selfSignedCert
+            && serverTrustedCerts.length == 0
+            && StringUtils.isNullOrWhitespaceOnly(clientCert)
+            && StringUtils.isNullOrWhitespaceOnly(clientPrivateKey)) {
+
+            try {
+                return SSLContext.getDefault();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        SecurityContext securityContext = createSecurityContext(properties);
 
         for (String cert : serverTrustedCerts) {
             if (!StringUtils.isNullOrWhitespaceOnly(cert)) {
