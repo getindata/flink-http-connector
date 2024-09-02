@@ -24,8 +24,6 @@ import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecke
 import com.getindata.connectors.http.internal.status.HttpResponseStatus;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_RETRYABLE_SINK_CODES_LIST;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_RETRYABLE_SINK_CODE_WHITE_LIST;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST;
 
@@ -66,8 +64,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
                 .properties(properties)
                 .errorWhiteListPrefix(HTTP_ERROR_SINK_CODE_WHITE_LIST)
                 .errorCodePrefix(HTTP_ERROR_SINK_CODES_LIST)
-                .retryableWhiteListPrefix(HTTP_ERROR_RETRYABLE_SINK_CODE_WHITE_LIST)
-                .retryableCodePrefix(HTTP_ERROR_RETRYABLE_SINK_CODES_LIST)
+                .retryableWhiteListPrefix("")   // TODO: sink retries not implemented yet
+                .retryableCodePrefix("")
                 .build();
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
