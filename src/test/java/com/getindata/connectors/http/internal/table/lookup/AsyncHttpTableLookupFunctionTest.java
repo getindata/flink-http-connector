@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 import static com.getindata.connectors.http.internal.table.lookup.TableSourceHelper.buildGenericRowData;
 
+// FIXME: failing tests
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 class AsyncHttpTableLookupFunctionTest {
@@ -40,7 +41,13 @@ class AsyncHttpTableLookupFunctionTest {
     private final int[] rowKeys = {1, 2, 4, 12, 3};
 
     @Mock
-    private HttpTableLookupFunction decorate;
+    private HttpTableLookupFunctionBase decorate;
+
+    @Mock
+    private HttpRequestFactory requestFactory;
+
+    @Mock
+    private RawResponseBodyDecoder responseBodyDecoder;
 
     private AsyncHttpTableLookupFunction asyncFunction;
 
@@ -54,7 +61,8 @@ class AsyncHttpTableLookupFunctionTest {
 
         barrier = new CyclicBarrier(rowKeys.length);
         threadNames = Collections.synchronizedSet(new HashSet<>());
-        asyncFunction = new AsyncHttpTableLookupFunction(decorate);
+        asyncFunction =
+            new AsyncHttpTableLookupFunction(requestFactory, responseBodyDecoder, decorate);
         asyncFunction.open(Mockito.mock(FunctionContext.class));
     }
 

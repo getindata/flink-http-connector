@@ -80,6 +80,8 @@ public class HttpLookupTableSource
 
         DeserializationSchema<RowData> responseSchemaDecoder =
             decodingFormat.createRuntimeDecoder(lookupContext, physicalRowDataType);
+        RawResponseBodyDecoder responseBodyDecoder =
+            new RawResponseBodyDecoder(responseSchemaDecoder);
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
             FactoryUtil.discoverFactory(
@@ -100,26 +102,24 @@ public class HttpLookupTableSource
                 dynamicTableFactoryContext
             );
 
-        PollingClientFactory<RowData> pollingClientFactory =
-            createPollingClientFactory(lookupQueryCreator, lookupConfig);
+        HttpRequestFactory httpRequestFactory =
+            createHttpRequestFactory(lookupQueryCreator, lookupConfig);
 
-        return getLookupRuntimeProvider(lookupRow, responseSchemaDecoder, pollingClientFactory);
+        PollingClientFactory<byte[]> pollingClientFactory = new JavaNetHttpPollingClientFactory();
+        HttpTableLookupFunctionBase dataLookupFunctionBase = new HttpTableLookupFunctionBase(
+            pollingClientFactory, lookupRow, lookupConfig);
+
+        return getLookupRuntimeProvider(
+            httpRequestFactory, responseBodyDecoder, dataLookupFunctionBase);
     }
 
-    protected LookupRuntimeProvider getLookupRuntimeProvider(LookupRow lookupRow,
-        DeserializationSchema<RowData> responseSchemaDecoder,
-        PollingClientFactory<RowData> pollingClientFactory) {
-
-        HttpTableLookupFunction dataLookupFunction =
-                new HttpTableLookupFunction(
-                        pollingClientFactory,
-                        responseSchemaDecoder,
-                        lookupRow,
-                        lookupConfig
-                );
+    protected LookupRuntimeProvider getLookupRuntimeProvider(
+            HttpRequestFactory httpRequestFactory,
+            RawResponseBodyDecoder responseBodyDecoder,
+            HttpTableLookupFunctionBase dataLookupFunctionBase) {
         if (lookupConfig.isUseAsync()) {
-            AsyncLookupFunction asyncLookupFunction =
-                    new AsyncHttpTableLookupFunction(dataLookupFunction);
+            AsyncLookupFunction asyncLookupFunction = new AsyncHttpTableLookupFunction(
+                httpRequestFactory, responseBodyDecoder, dataLookupFunctionBase);
             if (cache != null) {
                 log.info("Using async version of HttpLookupTable with cache.");
                 return PartialCachingAsyncLookupProvider.of(asyncLookupFunction, cache);
@@ -128,6 +128,8 @@ public class HttpLookupTableSource
                 return AsyncLookupFunctionProvider.of(asyncLookupFunction);
             }
         } else {
+            HttpTableLookupFunction dataLookupFunction = new HttpTableLookupFunction(
+                httpRequestFactory, responseBodyDecoder, dataLookupFunctionBase);
             if (cache != null) {
                 log.info("Using blocking version of HttpLookupTable with cache.");
                 return PartialCachingLookupProvider.of(dataLookupFunction, cache);
@@ -163,7 +165,7 @@ public class HttpLookupTableSource
         return true;
     }
 
-    private PollingClientFactory<RowData> createPollingClientFactory(
+    private HttpRequestFactory createHttpRequestFactory(
             LookupQueryCreator lookupQueryCreator,
             HttpLookupConfig lookupConfig) {
 
@@ -174,7 +176,7 @@ public class HttpLookupTableSource
             HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader);
         String lookupMethod = lookupConfig.getLookupMethod();
 
-        HttpRequestFactory requestFactory = (lookupMethod.equalsIgnoreCase("GET")) ?
+        return (lookupMethod.equalsIgnoreCase("GET")) ?
             new GetRequestFactory(
                 lookupQueryCreator,
                 headerPreprocessor,
@@ -185,8 +187,6 @@ public class HttpLookupTableSource
                 headerPreprocessor,
                 lookupConfig
             );
-
-        return new JavaNetHttpPollingClientFactory(requestFactory);
     }
 
     private LookupRow extractLookupRow(int[][] keys) {

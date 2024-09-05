@@ -23,16 +23,23 @@ public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
 
     private static final String PUBLISHING_THREAD_POOL_SIZE = "4";
 
+    private final HttpRequestFactory requestFactory;
+    private final RawResponseBodyDecoder responseBodyDecoder;
+
     /**
      * The {@link org.apache.flink.table.functions.TableFunction} we want to decorate with
      * async framework.
      */
-    private final HttpTableLookupFunction decorate;
+    private final HttpTableLookupFunctionBase decorate;
 
     /**
      * Thread pool for polling data from Http endpoint.
      */
     private transient ExecutorService pullingThreadPool;
+    /**
+     * Thread pool for deserializing response.
+     */
+    private transient ExecutorService deserializationThreadPool;
 
     /**
      * Thread pool for publishing data to Flink.
@@ -43,6 +50,8 @@ public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
     public void open(FunctionContext context) throws Exception {
         super.open(context);
         decorate.open(context);
+
+        this.responseBodyDecoder.open();
 
         int pullingThreadPoolSize = Integer.parseInt(
             decorate.getOptions().getProperties().getProperty(
@@ -63,6 +72,13 @@ public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
                     "http-async-lookup-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER)
             );
 
+        deserializationThreadPool =
+            Executors.newFixedThreadPool(
+                1, // Size is one, since deserialization schemas might not be thread-safe.
+                new ExecutorThreadFactory(
+                    "http-async-lookup-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER)
+            );
+
         publishingThreadPool =
             Executors.newFixedThreadPool(
                 publishingThreadPoolSize,
@@ -73,19 +89,31 @@ public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
 
     @Override
     public CompletableFuture<Collection<RowData>> asyncLookup(RowData keyRow) {
-        CompletableFuture<Collection<RowData>> future = new CompletableFuture<>();
-        future.completeAsync(() -> decorate.lookup(keyRow), pullingThreadPool);
+        HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(keyRow);
+        CompletableFuture<Collection<byte[]>> future = new CompletableFuture<>();
+        future.completeAsync(() -> decorate.lookup(request), pullingThreadPool);
 
-        // We don't want to use ForkJoinPool at all. We are using a different thread pool
-        // for publishing here intentionally to avoid thread starvation.
-        CompletableFuture<Collection<RowData>> resultFuture = new CompletableFuture<>();
+        CompletableFuture<Collection<RowData>> deserializationFuture = new CompletableFuture<>();
         future.whenCompleteAsync(
             (result, throwable) -> {
                 if (throwable != null) {
                     log.error("Exception while processing Http Async request", throwable);
-                    resultFuture.completeExceptionally(
+                    deserializationFuture.completeExceptionally(
                         new RuntimeException("Exception while processing Http Async request",
-                            throwable));
+                        throwable));
+                } else {
+                    deserializationFuture.complete(responseBodyDecoder.deserialize(result));
+                }
+            },
+            deserializationThreadPool);
+
+        // We don't want to use ForkJoinPool at all. We are using a different thread pool
+        // for publishing here intentionally to avoid thread starvation.
+        CompletableFuture<Collection<RowData>> resultFuture = new CompletableFuture<>();
+        deserializationFuture.whenCompleteAsync(
+            (result, throwable) -> {
+                if (throwable != null) {
+                    resultFuture.completeExceptionally(throwable);
                 } else {
                     resultFuture.complete(result);
                 }
@@ -105,6 +133,7 @@ public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
     @Override
     public void close() throws Exception {
         this.publishingThreadPool.shutdownNow();
+        this.deserializationThreadPool.shutdownNow();
         this.pullingThreadPool.shutdownNow();
         super.close();
     }

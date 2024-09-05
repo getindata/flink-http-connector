@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -8,9 +7,6 @@ import java.util.Collections;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
@@ -25,28 +21,16 @@ import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
  * This implementation supports HTTP traffic only.
  */
 @Slf4j
-public class JavaNetHttpPollingClient implements PollingClient<RowData> {
+public class JavaNetHttpPollingClient implements PollingClient<byte[]> {
 
     private final HttpClient httpClient;
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
-    private final DeserializationSchema<RowData> responseBodyDecoder;
-
-    private final HttpRequestFactory requestFactory;
-
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 
-    public JavaNetHttpPollingClient(
-            HttpClient httpClient,
-            DeserializationSchema<RowData> responseBodyDecoder,
-            HttpLookupConfig options,
-            HttpRequestFactory requestFactory) {
-
+    public JavaNetHttpPollingClient(HttpClient httpClient, HttpLookupConfig options) {
         this.httpClient = httpClient;
-        this.responseBodyDecoder = responseBodyDecoder;
-        this.requestFactory = requestFactory;
-
         this.httpPostRequestCallback = options.getHttpPostRequestCallback();
 
         // TODO Inject this via constructor when implementing a response processor.
@@ -64,7 +48,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     @Override
-    public Optional<RowData> pull(RowData lookupRow) {
+    public Optional<byte[]> pull(HttpLookupSourceRequestEntry lookupRow) {
         try {
             log.debug("Optional<RowData> pull with Rowdata={}.", lookupRow);
             return queryAndProcess(lookupRow);
@@ -75,9 +59,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     // TODO Add Retry Policy And configure TimeOut from properties
-    private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
-
-        HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
+    private Optional<byte[]> queryAndProcess(HttpLookupSourceRequestEntry request)
+            throws Exception {
         HttpResponse<String> response = httpClient.send(
             request.getHttpRequest(),
             BodyHandlers.ofString()
@@ -85,9 +68,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         return processHttpResponse(response, request);
     }
 
-    private Optional<RowData> processHttpResponse(
+    private Optional<byte[]> processHttpResponse(
             HttpResponse<String> response,
-            HttpLookupSourceRequestEntry request) throws IOException {
+            HttpLookupSourceRequestEntry request) {
 
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
 
@@ -102,7 +85,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
                         "with Server response body [%s] ", statusCode, responseBody));
 
         if (notErrorCodeAndNotEmptyBody(responseBody, statusCode)) {
-            return Optional.ofNullable(responseBodyDecoder.deserialize(responseBody.getBytes()));
+            return Optional.of(responseBody.getBytes());
         } else {
             log.warn(
                 String.format("Returned Http status code was invalid or returned body was empty. "
@@ -116,10 +99,5 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private boolean notErrorCodeAndNotEmptyBody(String body, int statusCode) {
         return !(StringUtils.isNullOrWhitespaceOnly(body) || statusCodeChecker.isErrorCode(
             statusCode));
-    }
-
-    @VisibleForTesting
-    HttpRequestFactory getRequestFactory() {
-        return this.requestFactory;
     }
 }

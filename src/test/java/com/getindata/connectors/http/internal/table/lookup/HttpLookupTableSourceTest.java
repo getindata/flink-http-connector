@@ -76,7 +76,6 @@ class HttpLookupTableSourceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void shouldCreateTableSourceWithParams() {
         HttpLookupTableSource tableSource =
             (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());

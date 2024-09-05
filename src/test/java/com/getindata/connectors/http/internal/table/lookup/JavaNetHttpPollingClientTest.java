@@ -59,35 +59,22 @@ public class JavaNetHttpPollingClientTest {
 
     @Test
     public void shouldBuildClientWithoutHeaders() {
-
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            options,
-            new GetRequestFactory(
+        GetRequestFactory requestFactory = new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
                 headerPreprocessor,
                 options
-            )
         );
 
-        assertThat(
-            ((GetRequestFactory) client.getRequestFactory()).getHeadersAndValues())
-            .isEmpty();
+        assertThat(requestFactory.getHeadersAndValues()).isEmpty();
     }
 
     @Test
     public void shouldBuildGetClientUri() {
         // GIVEN
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-                httpClient,
-                decoder,
-                options,
-                new GetRequestFactory(
-                        new GenericGetQueryCreator(lookupRow),
-                        headerPreprocessor,
-                        options
-                )
+        GetRequestFactory requestFactory = new GetRequestFactory(
+                new GenericGetQueryCreator(lookupRow),
+                headerPreprocessor,
+                options
         );
 
         DataType lookupPhysicalDataType = row(List.of(
@@ -118,7 +105,7 @@ public class JavaNetHttpPollingClientTest {
         LookupQueryInfo lookupQueryInfo = queryCreator.createLookupQuery(lookupRowData);
 
         // WHEN
-        URI uri = ((GetRequestFactory) client.getRequestFactory()).constructGetUri(lookupQueryInfo);
+        URI uri = requestFactory.constructGetUri(lookupQueryInfo);
 
         // THEN
         assertThat(uri.toString()).isEqualTo(BASE_URL + "?id=1&uuid=2");
@@ -200,19 +187,13 @@ public class JavaNetHttpPollingClientTest {
             .properties(properties)
             .build();
 
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            lookupConfig,
-            new GetRequestFactory(
+        GetRequestFactory requestFactory = new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
                 headerPreprocessor,
                 lookupConfig
-            )
         );
 
-        String[] headersAndValues =
-            ((GetRequestFactory) client.getRequestFactory()).getHeadersAndValues();
+        String[] headersAndValues = requestFactory.getHeadersAndValues();
         assertThat(headersAndValues).hasSize(6);
 
         // THEN
