@@ -95,7 +95,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
                     response, request, "endpoint", Collections.emptyMap()
             );
         } catch (PostRequestCallbackException e) {
-            log.warn("Error during post request callback.", e);
+            log.debug("Error during post request callback.", e);
             return Optional.empty();
         }
 

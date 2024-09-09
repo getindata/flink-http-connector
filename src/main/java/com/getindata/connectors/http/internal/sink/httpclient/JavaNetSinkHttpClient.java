@@ -106,7 +106,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
                         optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
             } catch (PostRequestCallbackException e) {
                 failedCallback = true;
-                log.info("request marked as failed due to callback exception", e);
+                log.debug("request marked as failed due to callback exception", e);
             }
 
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
