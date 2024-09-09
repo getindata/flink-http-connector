@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for callbacks to mark requests as failed.
+
 ## [0.15.0] - 2024-07-30
 
 ### Added
