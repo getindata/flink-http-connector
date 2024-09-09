@@ -25,5 +25,5 @@ public interface HttpPostRequestCallback<RequestT> extends Serializable {
         RequestT requestEntry,
         String endpointUrl,
         Map<String, String> headerMap
-    );
+    ) throws PostRequestCallbackException;
 }

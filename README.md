@@ -375,6 +375,12 @@ and then reference identifier `rest-lookup-logger` in the HTTP lookup DDL proper
 is provided.
 
 
+- Callback Errors:
+
+   It is also possible to declare if a request should be considered failed from the [HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) by throwing a 
+[PostRequestCallbackException](src/main/java/com/getindata/connectors/http/PostRequestCallbackException.java).
+
+
 ## HTTP status code handler
 Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
 By default all 400s and 500s response codes will be interpreted as error code.

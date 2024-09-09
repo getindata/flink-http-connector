@@ -14,6 +14,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.PostRequestCallbackException;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
@@ -89,7 +90,14 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
             HttpResponse<String> response,
             HttpLookupSourceRequestEntry request) throws IOException {
 
-        this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
+        try {
+            this.httpPostRequestCallback.call(
+                    response, request, "endpoint", Collections.emptyMap()
+            );
+        } catch (PostRequestCallbackException e) {
+            log.warn("Error during post request callback.", e);
+            return Optional.empty();
+        }
 
         if (response == null) {
             return Optional.empty();
