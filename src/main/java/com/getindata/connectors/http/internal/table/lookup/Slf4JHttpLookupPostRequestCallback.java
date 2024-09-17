@@ -1,16 +1,18 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A {@link HttpPostRequestCallback} that logs pairs of request and response as <i>INFO</i> level
@@ -23,17 +25,18 @@ import com.getindata.connectors.http.internal.utils.ConfigUtils;
 public class Slf4JHttpLookupPostRequestCallback
         implements HttpPostRequestCallback<HttpLookupSourceRequestEntry> {
 
+    @SneakyThrows
     @Override
     public void call(
-            HttpResponse<String> response,
+            Response response,
             HttpLookupSourceRequestEntry requestEntry,
             String endpointUrl,
             Map<String, String> headerMap) {
 
-        HttpRequest httpRequest = requestEntry.getHttpRequest();
+        Request httpRequest = requestEntry.getHttpRequest();
         StringJoiner headers = new StringJoiner(";");
 
-        for (Entry<String, List<String>> reqHeaders : httpRequest.headers().map().entrySet()) {
+        for (Entry<String, List<String>> reqHeaders : httpRequest.headers().toMultimap().entrySet()) {
             StringJoiner values = new StringJoiner(";");
             for (String value : reqHeaders.getValue()) {
                 values.add(value);
@@ -43,12 +46,12 @@ public class Slf4JHttpLookupPostRequestCallback
         }
 
         if (response == null) {
-            log.warn("Null Http response for request " + httpRequest.uri().toString());
+            log.warn("Null Http response for request " + httpRequest.url().uri());
 
             log.info(
                 "Got response for a request.\n  Request:\n    URL: {}\n    " +
                     "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: null",
-                httpRequest.uri().toString(),
+                httpRequest.url().uri().toString(),
                 httpRequest.method(),
                 headers,
                 requestEntry.getLookupQueryInfo()
@@ -57,12 +60,12 @@ public class Slf4JHttpLookupPostRequestCallback
             log.info(
                 "Got response for a request.\n  Request:\n    URL: {}\n    " +
                     "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: {}\n    Body: {}",
-                httpRequest.uri().toString(),
+                httpRequest.url().uri().toString(),
                 httpRequest.method(),
                 headers,
                 requestEntry.getLookupQueryInfo(),
                 response,
-                response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
+                response.body() == null ? StringUtils.EMPTY : StringUtils.defaultString(response.body().string()).replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );
         }
 

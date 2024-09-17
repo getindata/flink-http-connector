@@ -3,6 +3,10 @@ package com.getindata.connectors.http.internal.table.sink;
 import java.util.Properties;
 import javax.annotation.Nullable;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
+import com.getindata.connectors.http.internal.SinkHttpClient;
+import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+import com.getindata.connectors.http.internal.sink.httpclient.RequestSubmitterFactory;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -121,7 +125,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
         SerializationSchema<RowData> serializationSchema =
             encodingFormat.createRuntimeEncoder(context, consumedDataType);
 
-        var insertMethod = tableOptions.get(INSERT_METHOD);
+        String insertMethod = tableOptions.get(INSERT_METHOD);
 
         HttpSinkBuilder<RowData> builder = HttpSink
             .<RowData>builder()

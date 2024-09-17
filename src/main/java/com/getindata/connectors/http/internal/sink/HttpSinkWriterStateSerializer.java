@@ -23,8 +23,8 @@ public class HttpSinkWriterStateSerializer
     @Override
     protected HttpSinkRequestEntry deserializeRequestFromStream(long requestSize,
         DataInputStream in) throws IOException {
-        var method = in.readUTF();
-        var bytes = new byte[(int) requestSize];
+        String method = in.readUTF();
+        byte[] bytes = new byte[(int) requestSize];
         in.read(bytes);
         return new HttpSinkRequestEntry(method, bytes);
     }

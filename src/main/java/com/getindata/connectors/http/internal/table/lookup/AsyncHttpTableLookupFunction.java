@@ -1,9 +1,11 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +76,7 @@ public class AsyncHttpTableLookupFunction extends AsyncLookupFunction {
     @Override
     public CompletableFuture<Collection<RowData>> asyncLookup(RowData keyRow) {
         CompletableFuture<Collection<RowData>> future = new CompletableFuture<>();
-        future.completeAsync(() -> decorate.lookup(keyRow), pullingThreadPool);
+        CompletableFuture.supplyAsync(() -> decorate.lookup(keyRow), pullingThreadPool).thenAccept(future::complete);
 
         // We don't want to use ForkJoinPool at all. We are using a different thread pool
         // for publishing here intentionally to avoid thread starvation.

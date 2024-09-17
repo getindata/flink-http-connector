@@ -1,10 +1,10 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Builder;
 import java.util.Arrays;
 import java.util.Map;
 
+import okhttp3.Headers;
+import okhttp3.Request;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -44,7 +44,7 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
         this.baseUrl = options.getUrl();
         this.lookupQueryCreator = lookupQueryCreator;
 
-        var headerMap = HttpHeaderUtils
+        Map<String, String> headerMap = HttpHeaderUtils
             .prepareHeaderMap(
                 HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX,
                 options.getProperties(),
@@ -66,10 +66,10 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
         LookupQueryInfo lookupQueryInfo = lookupQueryCreator.createLookupQuery(lookupRow);
         getLogger().debug("Created Http lookup query: " + lookupQueryInfo);
 
-        Builder requestBuilder = setUpRequestMethod(lookupQueryInfo);
+        Request.Builder requestBuilder = setUpRequestMethod(lookupQueryInfo);
 
         if (headersAndValues.length != 0) {
-            requestBuilder.headers(headersAndValues);
+            requestBuilder.headers(Headers.of(headersAndValues));
         }
 
         return new HttpLookupSourceRequestEntry(requestBuilder.build(), lookupQueryInfo);
@@ -82,7 +82,7 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
      * @param lookupQuery lookup query used for request query parameters or body.
      * @return {@link HttpRequest.Builder} for given lookupQuery.
      */
-    protected abstract Builder setUpRequestMethod(LookupQueryInfo lookupQuery);
+    protected abstract Request.Builder setUpRequestMethod(LookupQueryInfo lookupQuery);
 
     protected static StringBuilder resolvePathParameters(LookupQueryInfo lookupQueryInfo,
                                                          StringBuilder resolvedUrl) {

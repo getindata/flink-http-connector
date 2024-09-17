@@ -1,17 +1,17 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Collections;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.PollingClient;
@@ -27,7 +27,7 @@ import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 @Slf4j
 public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
-    private final HttpClient httpClient;
+    private final OkHttpClient httpClient;
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
@@ -38,7 +38,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 
     public JavaNetHttpPollingClient(
-            HttpClient httpClient,
+            OkHttpClient httpClient,
             DeserializationSchema<RowData> responseBodyDecoder,
             HttpLookupConfig options,
             HttpRequestFactory requestFactory) {
@@ -78,15 +78,14 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private Optional<RowData> queryAndProcess(RowData lookupData) throws Exception {
 
         HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
-        HttpResponse<String> response = httpClient.send(
-            request.getHttpRequest(),
-            BodyHandlers.ofString()
-        );
+        Response response = httpClient.newCall(
+                request.getHttpRequest()
+        ).execute();
         return processHttpResponse(response, request);
     }
 
     private Optional<RowData> processHttpResponse(
-            HttpResponse<String> response,
+            Response response,
             HttpLookupSourceRequestEntry request) throws IOException {
 
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
@@ -95,8 +94,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
             return Optional.empty();
         }
 
-        String responseBody = response.body();
-        int statusCode = response.statusCode();
+        ResponseBody body = response.body();
+        String responseBody = body == null ? StringUtils.EMPTY : body.string();
+        int statusCode = response.code();
 
         log.debug(String.format("Received status code [%s] for RestTableSource request " +
                         "with Server response body [%s] ", statusCode, responseBody));
@@ -114,8 +114,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     }
 
     private boolean notErrorCodeAndNotEmptyBody(String body, int statusCode) {
-        return !(StringUtils.isNullOrWhitespaceOnly(body) || statusCodeChecker.isErrorCode(
-            statusCode));
+        return !(StringUtils.isBlank(body) || statusCodeChecker.isErrorCode(statusCode));
     }
 
     @VisibleForTesting

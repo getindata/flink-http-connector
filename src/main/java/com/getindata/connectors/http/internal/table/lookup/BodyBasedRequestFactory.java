@@ -2,12 +2,12 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import org.slf4j.Logger;
 
 import com.getindata.connectors.http.LookupQueryCreator;
@@ -41,11 +41,12 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
      * @return {@link HttpRequest.Builder} for given lookupQuery.
      */
     @Override
-    protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
-        return HttpRequest.newBuilder()
-            .uri(constructUri(lookupQueryInfo))
-            .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()))
-            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
+    @SneakyThrows
+    protected Request.Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
+        return new Request.Builder()
+            .url(constructUri(lookupQueryInfo).toURL().toString())
+            .method(methodName, RequestBody.create(lookupQueryInfo.getLookupQuery().getBytes(StandardCharsets.UTF_8)));
+//            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
 
     @Override

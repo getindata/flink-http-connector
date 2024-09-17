@@ -1,9 +1,8 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.http.HttpRequest;
-
 import lombok.Data;
 import lombok.ToString;
+import okhttp3.Request;
 
 /**
  * Wrapper class around {@link HttpRequest} that contains information about an actual lookup request
@@ -16,7 +15,7 @@ public class HttpLookupSourceRequestEntry {
     /**
      * Wrapped {@link HttpRequest} object.
      */
-    private final HttpRequest httpRequest;
+    private final Request httpRequest;
 
     /**
      * This field represents lookup query. Depending on used REST request method, this field can
@@ -25,7 +24,7 @@ public class HttpLookupSourceRequestEntry {
      */
     private final LookupQueryInfo lookupQueryInfo;
 
-    public HttpLookupSourceRequestEntry(HttpRequest httpRequest, LookupQueryInfo lookupQueryInfo) {
+    public HttpLookupSourceRequestEntry(Request httpRequest, LookupQueryInfo lookupQueryInfo) {
         this.httpRequest = httpRequest;
         this.lookupQueryInfo = lookupQueryInfo;
     }

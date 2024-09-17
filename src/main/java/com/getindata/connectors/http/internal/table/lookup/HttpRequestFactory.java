@@ -1,7 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.Serializable;
-import java.net.http.HttpRequest;
 
 import org.apache.flink.table.data.RowData;
 

@@ -1,15 +1,11 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
-import java.net.http.HttpClient;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Response;
 import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
@@ -83,8 +79,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             List<HttpSinkRequestEntry> requestEntries,
             String endpointUrl) {
 
-        var responseFutures = requestSubmitter.submit(endpointUrl, requestEntries);
-        var allFutures = CompletableFuture.allOf(responseFutures.toArray(new CompletableFuture[0]));
+        List<CompletableFuture<JavaNetHttpResponseWrapper>> responseFutures = requestSubmitter.submit(endpointUrl, requestEntries);
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(responseFutures.toArray(new CompletableFuture[0]));
         return allFutures.thenApply(_void -> responseFutures.stream().map(CompletableFuture::join)
             .collect(Collectors.toList()));
     }
@@ -92,19 +88,19 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private SinkHttpClientResponse prepareSinkHttpClientResponse(
         List<JavaNetHttpResponseWrapper> responses,
         String endpointUrl) {
-        var successfulResponses = new ArrayList<HttpRequest>();
-        var failedResponses = new ArrayList<HttpRequest>();
+        List<HttpRequest> successfulResponses = new ArrayList<HttpRequest>();
+        List<HttpRequest> failedResponses = new ArrayList<HttpRequest>();
 
-        for (var response : responses) {
-            var sinkRequestEntry = response.getHttpRequest();
-            var optResponse = response.getResponse();
+        for (JavaNetHttpResponseWrapper response : responses) {
+            HttpRequest sinkRequestEntry = response.getHttpRequest();
+            Optional<Response> optResponse = response.getResponse();
 
             httpPostRequestCallback.call(
                 optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
 
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
-            if (optResponse.isEmpty() ||
-                statusCodeChecker.isErrorCode(optResponse.get().statusCode())) {
+            if (!optResponse.isPresent() ||
+                statusCodeChecker.isErrorCode(optResponse.get().code())) {
                 failedResponses.add(sinkRequestEntry);
             } else {
                 successfulResponses.add(sinkRequestEntry);

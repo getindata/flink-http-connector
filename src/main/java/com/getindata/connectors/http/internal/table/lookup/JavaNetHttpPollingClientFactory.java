@@ -1,7 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.http.HttpClient;
-
+import okhttp3.OkHttpClient;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 
@@ -21,7 +20,7 @@ public class JavaNetHttpPollingClientFactory implements PollingClientFactory<Row
             HttpLookupConfig options,
             DeserializationSchema<RowData> schemaDecoder) {
 
-        HttpClient httpClient = JavaNetHttpClientFactory.createClient(options.getProperties());
+        OkHttpClient httpClient = JavaNetHttpClientFactory.createClient(options.getProperties());
 
         return new JavaNetHttpPollingClient(
             httpClient,

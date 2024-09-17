@@ -11,6 +11,7 @@ import lombok.ToString;
 
 import com.getindata.connectors.http.internal.utils.uri.NameValuePair;
 import com.getindata.connectors.http.internal.utils.uri.URLEncodedUtils;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -60,7 +61,7 @@ public class LookupQueryInfo implements Serializable {
     }
 
     public boolean hasLookupQuery() {
-        return !lookupQuery.isBlank();
+        return !StringUtils.isBlank(lookupQuery);
     }
 
     public boolean hasBodyBasedUrlQueryParameters() {

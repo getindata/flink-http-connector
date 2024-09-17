@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
 import java.util.Set;
 
+import com.google.common.collect.Sets;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.factories.DynamicTableFactory;
@@ -33,11 +34,11 @@ public class GenericGetQueryCreatorFactory implements LookupQueryCreatorFactory 
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return Set.of();
+        return Sets.newHashSet();
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return Set.of();
+        return Sets.newHashSet();
     }
 }

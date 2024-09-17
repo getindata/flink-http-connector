@@ -2,11 +2,10 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Builder;
-import java.time.Duration;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Request;
 import org.slf4j.Logger;
 
 import com.getindata.connectors.http.LookupQueryCreator;
@@ -47,11 +46,12 @@ public class GetRequestFactory extends RequestFactoryBase {
      * @return {@link HttpRequest.Builder} for given GET lookupQuery
      */
     @Override
-    protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
-        return HttpRequest.newBuilder()
-            .uri(constructGetUri(lookupQueryInfo))
-            .GET()
-            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
+    @SneakyThrows
+    protected Request.Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
+        return new Request.Builder()
+            .url(constructGetUri(lookupQueryInfo).toURL().toString())
+            .get();
+//            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
     }
 
     URI constructGetUri(LookupQueryInfo lookupQueryInfo) {

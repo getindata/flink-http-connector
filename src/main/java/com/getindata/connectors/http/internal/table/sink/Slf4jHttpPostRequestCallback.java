@@ -1,15 +1,17 @@
 package com.getindata.connectors.http.internal.table.sink;
 
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A {@link HttpPostRequestCallback} that logs pairs of request and response as <i>INFO</i> level
@@ -22,8 +24,9 @@ import com.getindata.connectors.http.internal.utils.ConfigUtils;
 public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<HttpRequest> {
 
     @Override
+    @SneakyThrows
     public void call(
-        HttpResponse<String> response,
+        Response response,
         HttpRequest requestEntry,
         String endpointUrl,
         Map<String, String> headerMap) {
@@ -46,7 +49,7 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
                 requestEntry.method,
                 requestBody,
                 response,
-                response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
+                response.body() == null ? StringUtils.EMPTY : response.body().string().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
             );
         }
     }

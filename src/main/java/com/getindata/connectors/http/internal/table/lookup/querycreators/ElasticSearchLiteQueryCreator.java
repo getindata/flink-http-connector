@@ -39,7 +39,7 @@ public class ElasticSearchLiteQueryCreator implements LookupQueryCreator {
     public LookupQueryInfo createLookupQuery(RowData lookupDataRow) {
         Collection<LookupArg> lookupArgs = lookupRow.convertToLookupArgs(lookupDataRow);
 
-        var luceneQuery = lookupArgs.stream()
+        String luceneQuery = lookupArgs.stream()
             .map(ElasticSearchLiteQueryCreator::processLookupArg)
             .collect(Collectors.joining(ENCODED_SPACE + "AND" + ENCODED_SPACE));
 

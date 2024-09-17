@@ -4,16 +4,19 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import com.getindata.connectors.http.internal.SinkHttpClient;
@@ -64,7 +67,7 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
         this.endpointUrl = endpointUrl;
         this.sinkHttpClient = sinkHttpClient;
 
-        var metrics = context.metricGroup();
+        SinkWriterMetricGroup metrics = context.metricGroup();
         this.numRecordsSendErrorsCounter = metrics.getNumRecordsSendErrorsCounter();
 
         int sinkWriterThreadPollSize = Integer.parseInt(properties.getProperty(
@@ -84,7 +87,7 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     protected void submitRequestEntries(
             List<HttpSinkRequestEntry> requestEntries,
             Consumer<List<HttpSinkRequestEntry>> requestResult) {
-        var future = sinkHttpClient.putRequests(requestEntries, endpointUrl);
+        CompletableFuture<SinkHttpClientResponse> future = sinkHttpClient.putRequests(requestEntries, endpointUrl);
         future.whenCompleteAsync((response, err) -> {
             if (err != null) {
                 int failedRequestsNumber = requestEntries.size();

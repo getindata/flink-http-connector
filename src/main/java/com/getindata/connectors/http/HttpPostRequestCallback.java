@@ -1,7 +1,8 @@
 package com.getindata.connectors.http;
 
+import okhttp3.Response;
+
 import java.io.Serializable;
-import java.net.http.HttpResponse;
 import java.util.Map;
 
 /**
@@ -21,7 +22,7 @@ public interface HttpPostRequestCallback<RequestT> extends Serializable {
      * @param headerMap mapping of header names to header values
      */
     void call(
-        HttpResponse<String> response,
+        Response response,
         RequestT requestEntry,
         String endpointUrl,
         Map<String, String> headerMap

@@ -1,10 +1,10 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
-import java.net.http.HttpClient;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import okhttp3.OkHttpClient;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -25,12 +25,12 @@ public abstract class AbstractRequestSubmitter implements RequestSubmitter {
 
     protected final String[] headersAndValues;
 
-    protected final HttpClient httpClient;
+    protected final OkHttpClient httpClient;
 
     public AbstractRequestSubmitter(
             Properties properties,
             String[] headersAndValues,
-            HttpClient httpClient) {
+            OkHttpClient httpClient) {
 
         this.headersAndValues = headersAndValues;
         this.publishingThreadPool =

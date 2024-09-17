@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -177,8 +178,8 @@ public class SecurityContext {
     public void addMTlsCerts(String publicKeyPath, String privateKeyPath) {
 
         try {
-            byte[] publicData = Files.readAllBytes(Path.of(publicKeyPath));
-            byte[] privateData = Files.readAllBytes(Path.of(privateKeyPath));
+            byte[] publicData = Files.readAllBytes(Paths.get(publicKeyPath));
+            byte[] privateData = Files.readAllBytes(Paths.get(privateKeyPath));
             byte[] decodedPrivateData = decodePrivateData(privateKeyPath, privateData);
 
             CertificateFactory certificateFactory =

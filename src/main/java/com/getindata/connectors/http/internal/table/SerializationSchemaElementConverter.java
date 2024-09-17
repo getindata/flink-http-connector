@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.internal.table;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.connector.sink2.Sink.InitContext;
 import org.apache.flink.api.connector.sink2.SinkWriter.Context;
@@ -9,6 +10,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 import com.getindata.connectors.http.SchemaLifecycleAwareElementConverter;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 
+@Slf4j
 public class SerializationSchemaElementConverter
     implements SchemaLifecycleAwareElementConverter<RowData, HttpSinkRequestEntry> {
 

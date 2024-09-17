@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Sets;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
@@ -89,13 +90,13 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return Set.of(URL, FactoryUtil.FORMAT);
+        return Sets.newHashSet(URL, FactoryUtil.FORMAT);
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
 
-        return Set.of(
+        return Sets.newHashSet(
              URL_ARGS,
              ASYNC_POLLING,
              LOOKUP_METHOD,

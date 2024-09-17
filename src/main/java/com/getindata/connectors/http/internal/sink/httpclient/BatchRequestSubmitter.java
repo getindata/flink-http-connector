@@ -1,21 +1,20 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
+import com.getindata.connectors.http.internal.utils.HttpClientUtils;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -39,7 +38,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
     public BatchRequestSubmitter(
             Properties properties,
             String[] headersAndValue,
-            HttpClient httpClient) {
+            OkHttpClient httpClient) {
 
         super(properties, headersAndValue, httpClient);
 
@@ -57,11 +56,11 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             return Collections.emptyList();
         }
 
-        var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
+        List<CompletableFuture<JavaNetHttpResponseWrapper>> responseFutures = new ArrayList<>();
         String previousReqeustMethod = requestsToSubmit.get(0).method;
         List<HttpSinkRequestEntry> requestBatch = new ArrayList<>(httpRequestBatchSize);
 
-        for (var entry : requestsToSubmit) {
+        for (HttpSinkRequestEntry entry : requestsToSubmit) {
             if (requestBatch.size() == httpRequestBatchSize
                 || !previousReqeustMethod.equalsIgnoreCase(entry.method)) {
                 // break batch and submit
@@ -87,10 +86,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             List<HttpSinkRequestEntry> reqeustBatch) {
 
         HttpRequest httpRequest = buildHttpRequest(reqeustBatch, URI.create(endpointUrl));
-        return httpClient
-            .sendAsync(
-                httpRequest.getHttpRequest(),
-                HttpResponse.BodyHandlers.ofString())
+        return HttpClientUtils.sendAsyncRequest(httpClient, httpRequest.getHttpRequest())
             .exceptionally(ex -> {
                 // TODO This will be executed on a ForkJoinPool Thread... refactor this someday.
                 log.error("Request fatally failed because of an exception", ex);
@@ -102,37 +98,37 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             );
     }
 
-    private HttpRequest buildHttpRequest(List<HttpSinkRequestEntry> reqeustBatch, URI endpointUri) {
+    private HttpRequest buildHttpRequest(List<HttpSinkRequestEntry> requestBatch, URI endpointUri) {
 
         try {
-            var method = reqeustBatch.get(0).method;
-            List<byte[]> elements = new ArrayList<>(reqeustBatch.size());
+            String method = requestBatch.get(0).method;
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-            BodyPublisher publisher;
             // By default, Java's BodyPublishers.ofByteArrays(elements) will just put Jsons
             // into the HTTP body without any context.
             // What we do here is we pack every Json/byteArray into Json Array hence '[' and ']'
             // at the end, and we separate every element with comma.
-            elements.add(BATCH_START_BYTES);
-            for (HttpSinkRequestEntry entry : reqeustBatch) {
-                elements.add(entry.element);
-                elements.add(BATCH_ELEMENT_DELIM_BYTES);
+            outputStream.write(BATCH_START_BYTES);
+            for (int i = 0, last = requestBatch.size() - 1; i < requestBatch.size(); i++) {
+                HttpSinkRequestEntry entry = requestBatch.get(i);
+                outputStream.write(entry.element);
+                if (i != last) {
+                    outputStream.write(BATCH_ELEMENT_DELIM_BYTES);
+                }
             }
-            elements.set(elements.size() - 1, BATCH_END_BYTES);
-            publisher = BodyPublishers.ofByteArrays(elements);
+            outputStream.write(BATCH_END_BYTES);
 
-            Builder requestBuilder = java.net.http.HttpRequest
-                .newBuilder()
-                .uri(endpointUri)
-                .version(Version.HTTP_1_1)
-                .timeout(Duration.ofSeconds(httpRequestTimeOutSeconds))
-                .method(method, publisher);
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(endpointUri.toURL().toString())
+//                .(Version.HTTP_1_1)
+//                    .writeTimeout(Duration.ofSeconds(httpRequestTimeOutSeconds))
+                    .method(method, RequestBody.create(outputStream.toByteArray()));
 
             if (headersAndValues.length != 0) {
-                requestBuilder.headers(headersAndValues);
+                requestBuilder.headers(Headers.of(headersAndValues));
             }
 
-            return new HttpRequest(requestBuilder.build(), elements, method);
+            return new HttpRequest(requestBuilder.build(), null, method);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

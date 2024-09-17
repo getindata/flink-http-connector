@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Sets;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -22,9 +23,9 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
 
     private static final Set<HttpStatusCodeChecker> DEFAULT_ERROR_CODES =
-        Set.of(
-            new TypeStatusCodeChecker(HttpResponseCodeType.CLIENT_ERROR),
-            new TypeStatusCodeChecker(HttpResponseCodeType.SERVER_ERROR)
+        Sets.newHashSet(
+                new TypeStatusCodeChecker(HttpResponseCodeType.CLIENT_ERROR),
+                new TypeStatusCodeChecker(HttpResponseCodeType.SERVER_ERROR)
         );
 
     private static final int MIN_HTTP_STATUS_CODE = 100;

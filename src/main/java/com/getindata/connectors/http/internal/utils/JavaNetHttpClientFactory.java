@@ -1,18 +1,21 @@
 package com.getindata.connectors.http.internal.utils;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpClient.Redirect;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import java.util.concurrent.ExecutorService;
+import javax.net.ssl.*;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Dispatcher;
+import okhttp3.OkHttpClient;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -30,14 +33,15 @@ public class JavaNetHttpClientFactory {
      * @param properties properties used to build {@link SSLContext}
      * @return new {@link HttpClient} instance.
      */
-    public static HttpClient createClient(Properties properties) {
+    public static OkHttpClient createClient(Properties properties) {
 
-        SSLContext sslContext = getSslContext(properties);
-
-        return HttpClient.newBuilder()
-            .followRedirects(Redirect.NORMAL)
-            .sslContext(sslContext)
-            .build();
+//        SSLContext sslContext = getSslContext(properties);
+        return new OkHttpClient.Builder()
+                .followRedirects(true)
+//                .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) getTrustedManagers()[0])
+                .sslSocketFactory(getSSLSocketFactory(),  getX509TrustManager())
+                .hostnameVerifier(getHostnameVerifier())
+                .build();
     }
 
     /**
@@ -48,15 +52,56 @@ public class JavaNetHttpClientFactory {
      * @param executor   {@link Executor} for async calls.
      * @return new {@link HttpClient} instance.
      */
-    public static HttpClient createClient(Properties properties, Executor executor) {
+    public static OkHttpClient createClient(Properties properties, ExecutorService executor) {
 
-        SSLContext sslContext = getSslContext(properties);
+//        SSLContext sslContext = getSslContext(properties);
 
-        return HttpClient.newBuilder()
-            .followRedirects(Redirect.NORMAL)
-            .sslContext(sslContext)
-            .executor(executor)
-            .build();
+        return new OkHttpClient.Builder().followRedirects(true)
+//                .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) getTrustedManagers()[0])
+                .sslSocketFactory(getSSLSocketFactory(),  getX509TrustManager())
+                .hostnameVerifier(getHostnameVerifier())
+                .dispatcher(createDispatcher(executor))
+                .build();
+    }
+
+    public static Dispatcher createDispatcher(ExecutorService executorService) {
+        Dispatcher dispatcher = new Dispatcher(executorService);
+        dispatcher.setMaxRequests(64);
+        dispatcher.setMaxRequestsPerHost(16);
+        return dispatcher;
+    }
+
+
+    /**
+     * description 忽略https证书验证
+     */
+    private static SSLSocketFactory getSSLSocketFactory() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, getTrustedManagers(), new SecureRandom());
+            return sslContext.getSocketFactory();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SneakyThrows
+    private static X509TrustManager getX509TrustManager() {
+        X509TrustManager trustManager = null;
+        try {
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init((KeyStore) null);
+            TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+            if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
+                throw new IllegalStateException("Unexpected default trust managers:" + Arrays.toString(trustManagers));
+            }
+            trustManager = (X509TrustManager) trustManagers[0];
+        } catch (Exception e) {
+            log.error("create X509TrustManager error", e);
+            throw e;
+        }
+
+        return trustManager;
     }
 
     /**
@@ -117,6 +162,26 @@ public class JavaNetHttpClientFactory {
         }
     }
 
+    private static TrustManager[] getTrustedManagers() {
+
+        return new TrustManager[]{
+                new X509TrustManager() {
+                    @Override
+                    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                        return new java.security.cert.X509Certificate[]{};
+                    }
+                }
+        };
+    }
+
     private static List<TrustManager> wrapWithSelfSignedManagers(TrustManager[] trustManagers) {
         log.warn("Creating Trust Managers for self-signed certificates - not Recommended. "
             + "Use [" + HttpConnectorConfigConstants.SERVER_TRUSTED_CERT + "] "
@@ -154,4 +219,19 @@ public class JavaNetHttpClientFactory {
         }
     }
 
+
+
+    /**
+     * description 忽略https证书验证
+     */
+    private static HostnameVerifier getHostnameVerifier() {
+        HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+
+            @Override
+            public boolean verify(String s, SSLSession sslSession) {
+                return true;
+            }
+        };
+        return hostnameVerifier;
+    }
 }

@@ -3,6 +3,7 @@ package com.getindata.connectors.http.internal.table.sink;
 import java.util.Properties;
 import java.util.Set;
 
+import com.google.common.collect.Sets;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.base.table.AsyncDynamicTableSinkFactory;
@@ -74,12 +75,12 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return Set.of(URL, FactoryUtil.FORMAT);
+        return Sets.newHashSet(URL, FactoryUtil.FORMAT);
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        var options = super.optionalOptions();
+        Set<ConfigOption<?>> options = super.optionalOptions();
         options.add(INSERT_METHOD);
         options.add(REQUEST_CALLBACK_IDENTIFIER);
         return options;
@@ -88,7 +89,7 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
     private void validateHttpSinkOptions(ReadableConfig tableOptions)
         throws IllegalArgumentException {
         tableOptions.getOptional(INSERT_METHOD).ifPresent(insertMethod -> {
-            if (!Set.of("POST", "PUT").contains(insertMethod)) {
+            if (!Sets.newHashSet("POST", "PUT").contains(insertMethod)) {
                 throw new IllegalArgumentException(
                     String.format(
                         "Invalid option '%s'. It is expected to be either 'POST' or 'PUT'.",

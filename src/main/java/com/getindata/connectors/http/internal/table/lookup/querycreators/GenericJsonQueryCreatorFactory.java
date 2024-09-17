@@ -1,5 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -60,11 +61,11 @@ public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return Set.of();
+        return Collections.emptySet();
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return Set.of();
+        return Collections.emptySet();
     }
 }

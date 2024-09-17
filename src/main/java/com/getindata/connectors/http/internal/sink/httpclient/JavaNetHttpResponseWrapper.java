@@ -1,12 +1,12 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
-import java.net.http.HttpResponse;
 import java.util.Optional;
 
 import lombok.Data;
 import lombok.NonNull;
 
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
+import okhttp3.Response;
 
 /**
  * A wrapper structure around an HTTP response, keeping a reference to a particular {@link
@@ -25,9 +25,9 @@ final class JavaNetHttpResponseWrapper {
     /**
      * A response to an HTTP request based on {@link HttpSinkRequestEntry}.
      */
-    private final HttpResponse<String> response;
+    private final Response response;
 
-    public Optional<HttpResponse<String>> getResponse() {
+    public Optional<Response> getResponse() {
         return Optional.ofNullable(response);
     }
 }
