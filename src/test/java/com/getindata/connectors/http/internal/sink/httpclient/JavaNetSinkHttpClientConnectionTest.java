@@ -5,6 +5,7 @@ import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterEach;
@@ -67,30 +68,26 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
     }
 
     @Test
-    public void testHttpPostRequestCallbackWithException() {
+    public void testHttpPostRequestCallbackWithFailedRequestException() throws ExecutionException, InterruptedException {
         wireMockServer = new WireMockServer(SERVER_PORT);
         wireMockServer.start();
         mockEndPoint(wireMockServer);
 
-        try {
-            JavaNetSinkHttpClient client =
-                    new JavaNetSinkHttpClient(
-                            properties,
-                            new TestPostRequestCallbackWithException(),
-                            headerPreprocessor,
-                            perRequestSubmitterFactory);
-            HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
-            SinkHttpClientResponse response =
-                    client.putRequests(
-                            Collections.singletonList(requestEntry),
-                            "https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT
-                    ).get();
+        JavaNetSinkHttpClient client =
+                new JavaNetSinkHttpClient(
+                        properties,
+                        new TestPostRequestCallbackWithException(),
+                        headerPreprocessor,
+                        perRequestSubmitterFactory);
+        HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
+        SinkHttpClientResponse response =
+                client.putRequests(
+                        Collections.singletonList(requestEntry),
+                        "https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT
+                ).get();
 
-            assertThat(response.getSuccessfulRequests()).isEmpty();
-            assertThat(response.getFailedRequests()).isNotEmpty();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        assertThat(response.getSuccessfulRequests()).isEmpty();
+        assertThat(response.getFailedRequests()).isNotEmpty();
     }
 
     @Test
