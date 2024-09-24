@@ -383,7 +383,7 @@ is provided.
   This allows control over the connector's behavior when an HTTP response does not meet your expectations
   whether based on the response body or headers.
 
-  Currently, there are no side effects, as the connector does not
+  Currently, the only side effect is to incremenet the [numRecordsSendErrors counter](https://github.com/getindata/flink-http-connector?tab=readme-ov-file#http-sink-2), as the connector does not
   support retries yet. However, once retry functionality is implemented, this will allow users to specify if requests should be retried.
 
 
