@@ -377,8 +377,14 @@ is provided.
 
 - Callback Errors:
 
-   It is also possible to declare if a request should be considered failed from the [HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) by throwing a 
-[PostRequestCallbackException](src/main/java/com/getindata/connectors/http/PostRequestCallbackException.java).
+  Throw a [FailedRequestException](src/main/java/com/getindata/connectors/http/FailedRequestException.java) to indicate a
+  failed request.
+
+  This allows control over the connector's behavior when an HTTP response does not meet your expectations
+  whether based on the response body or headers.
+
+  Currently, there are no side effects, as the connector does not
+  support retries yet. However, once retry functionality is implemented, this will allow users to specify if requests should be retried.
 
 
 ## HTTP status code handler

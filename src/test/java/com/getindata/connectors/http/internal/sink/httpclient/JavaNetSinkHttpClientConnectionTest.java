@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.PostRequestCallbackException;
+import com.getindata.connectors.http.FailedRequestException;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -406,8 +406,8 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
                 HttpRequest requestEntry,
                 String endpointUrl,
                 Map<String, String> headerMap
-        ) throws PostRequestCallbackException {
-            throw new PostRequestCallbackException("Test exception");
+        ) throws FailedRequestException {
+            throw new FailedRequestException("Test exception");
         }
     }
 }

@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.PostRequestCallbackException;
+import com.getindata.connectors.http.FailedRequestException;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
@@ -104,9 +104,9 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             try {
                 httpPostRequestCallback.call(
                         optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
-            } catch (PostRequestCallbackException e) {
+            } catch (FailedRequestException e) {
                 failedCallback = true;
-                log.debug("request marked as failed due to callback exception", e);
+                log.debug("FailedRequestException thrown by httpPostRequestCallback", e);
             }
 
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
