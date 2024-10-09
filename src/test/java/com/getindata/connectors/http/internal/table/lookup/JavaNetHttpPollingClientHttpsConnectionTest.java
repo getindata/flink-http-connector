@@ -1,7 +1,9 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -32,6 +34,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
@@ -96,11 +99,9 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
-        setUpPollingClientFactory(wireMockServer.baseUrl());
-
         properties.setProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "true");
 
-        testPollingClientConnection();
+        setupAndTestConnection();
     }
 
     @ParameterizedTest
@@ -120,14 +121,11 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
-        setUpPollingClientFactory(wireMockServer.baseUrl());
-
         properties.setProperty(
-            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
-            trustedCert.getAbsolutePath()
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+                trustedCert.getAbsolutePath()
         );
-
-        testPollingClientConnection();
+        setupAndTestConnection();
     }
 
     @ParameterizedTest
@@ -154,22 +152,19 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
-        setUpPollingClientFactory(wireMockServer.baseUrl());
-
         properties.setProperty(
-            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
-            serverTrustedCert.getAbsolutePath()
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+                serverTrustedCert.getAbsolutePath()
         );
         properties.setProperty(
-            HttpConnectorConfigConstants.CLIENT_CERT,
-            clientCert.getAbsolutePath()
+                HttpConnectorConfigConstants.CLIENT_CERT,
+                clientCert.getAbsolutePath()
         );
         properties.setProperty(
-            HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
-            clientPrivateKey.getAbsolutePath()
+                HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
+                clientPrivateKey.getAbsolutePath()
         );
-
-        testPollingClientConnection();
+        setupAndTestConnection();
     }
 
     @Test
@@ -198,21 +193,38 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         wireMockServer.start();
         setupServerStub();
-        setUpPollingClientFactory(wireMockServer.baseUrl());
+        properties.setProperty(
+                HttpConnectorConfigConstants.KEY_STORE_PASSWORD,
+                password
+        );
+        properties.setProperty(
+                HttpConnectorConfigConstants.KEY_STORE_PATH,
+                clientKeyStoreFile.getAbsolutePath()
+        );
+        properties.setProperty(
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+                serverTrustedCert.getAbsolutePath()
+        );
+        setupAndTestConnection();
+    }
 
-        properties.setProperty(
-            HttpConnectorConfigConstants.KEY_STORE_PASSWORD,
-            password
+    private void setupAndTestConnection() {
+        // test with basic auth
+        setupAndTestConnectionWithAuth(
+                HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor());
+        // test with OIDC auth
+        setupAndTestConnectionWithAuth(
+                HttpHeaderUtils.createOIDCAuthorizationHeaderPreprocessor(
+                        Optional.of("http://abc"),
+                        Optional.of("aaa"),
+                        Optional.of(Duration.ofSeconds(5))
+                )
         );
-        properties.setProperty(
-            HttpConnectorConfigConstants.KEY_STORE_PATH,
-            clientKeyStoreFile.getAbsolutePath()
-        );
-        properties.setProperty(
-            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
-            serverTrustedCert.getAbsolutePath()
-        );
+    }
 
+    private void setupAndTestConnectionWithAuth(HeaderPreprocessor headerPreprocessor) {
+        setUpPollingClientFactory(wireMockServer.baseUrl(),
+                headerPreprocessor);
         testPollingClientConnection();
     }
 
@@ -299,7 +311,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
                         .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
     }
 
-    private void setUpPollingClientFactory(String baseUrl) {
+    private void setUpPollingClientFactory(String baseUrl, HeaderPreprocessor headerPreprocessor) {
 
         LookupRow lookupRow = new LookupRow()
             .addLookupEntry(
@@ -317,7 +329,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
         GetRequestFactory requestFactory = new GetRequestFactory(
             new GenericGetQueryCreator(lookupRow),
-            HttpHeaderUtils.createDefaultHeaderPreprocessor(),
+            headerPreprocessor,
             HttpLookupConfig.builder()
                 .url(baseUrl + ENDPOINT)
                 .build()

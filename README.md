@@ -337,6 +337,9 @@ CREATE TABLE http (
 )
 ```
 
+Note that when using OIDC, it adds an `Authentication` header with the bearer token; this will override 
+an existing `Authorization` header specified in configuration.
+
 #### Custom request/response callback
 
 - Http Sink processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
@@ -410,13 +413,30 @@ In this special case, you can configure connector to trust all certificates with
 To enable this option use `gid.connector.http.security.cert.server.allowSelfSigned` property setting its value to `true`.
 
 ## Basic Authentication
-The connector supports Basic Authentication mechanism using HTTP `Authorization` header.
+The connector supports Basic Authentication using a HTTP `Authorization` header.
 The header value can be set via properties, similarly as for other headers. The connector converts the passed value to Base64 and uses it for the request.
 If the used value starts with the prefix `Basic `, or `gid.connector.http.source.lookup.use-raw-authorization-header`
 is set to `'true'`, it will be used as header value as is, without any extra modification.
 
+## OIDC Bearer Authentication
+The connector supports Bearer Authentication using a HTTP `Authorization` header. The [OAuth 2.0 rcf](https://datatracker.ietf.org/doc/html/rfc6749) mentions [Obtaining Authorization](https://datatracker.ietf.org/doc/html/rfc6749#section-4)
+and an authorization grant. OIDC makes use of this [authorisation grant](https://datatracker.ietf.org/doc/html/rfc6749#section-1.3) in a [Token Request](https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest) by including a [OAuth grant type](https://oauth.net/2/grant-types/) and associated properties, the response is the [token response](https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse). 
+
+If you want to use this authorization then you should supply the `Token Request` body in `application/x-www-form-urlencoded` encoding
+in configuration property `gid.connector.http.security.oidc.token.request`. See [grant extension](https://datatracker.ietf.org/doc/html/rfc6749#section-4.5) for
+an example of a customised grant type token request. The supplied `token request` will be issued to the
+[token end point](https://datatracker.ietf.org/doc/html/rfc6749#section-3.2), whose url should be supplied in configuration property 
+`gid.connector.http.security.oidc.token.endpoint.url`. The returned `access token` is then cached and used for subsequent requests; if the token has expired then
+ a new one is requested. There is a property `gid.connector.http.security.oidc.token.expiry.reduction`, that defaults to 1 second; new tokens will
+be requested if the current time is later than the cached token expiry time minus `gid.connector.http.security.oidc.token.expiry.reduction`.
+
+### Restrictions at this time
+* No authentication is applied to the token request. 
+* The processing does not use the refresh token if it present. 
+
 ## Table API Connector Options
 ### HTTP TableLookup Source
+
 | Option                                                        | Required | Description/Value                                                                                                                                                                                                                                                                                                                                                 |
 |---------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connector                                                     | required | The Value should be set to _rest-lookup_                                                                                                                                                                                                                                                                                                                          |
@@ -436,19 +456,22 @@ is set to `'true'`, it will be used as header value as is, without any extra mod
 | gid.connector.http.security.cert.client                       | optional | Path to trusted certificate that should be used by connector's HTTP client for mTLS communication.                                                                                                                                                                                                                                                                |
 | gid.connector.http.security.key.client                        | optional | Path to trusted private key that should be used by connector's HTTP client for mTLS communication.                                                                                                                                                                                                                                                                |
 | gid.connector.http.security.cert.server.allowSelfSigned       | optional | Accept untrusted certificates for TLS communication.                                                                                                                                                                                                                                                                                                              |
+| gid.connector.http.security.oidc.token.request                | optional | OIDC `Token Request` body in `application/x-www-form-urlencoded` encoding                                                                                                                                                          |
+| gid.connector.http.security.oidc.token.endpoint.url           | optional | OIDC `Token Endpoint` url, to which the token request will be issued                                                                                                                                                               |
+| gid.connector.http.security.oidc.token.expiry.reduction       | optional | OIDC tokens will be requested if the current time is later than the cached token expiry time minus this value.                                                                                                                     |
 | gid.connector.http.source.lookup.request.timeout              | optional | Sets HTTP request timeout in seconds. If not specified, the default value of 30 seconds will be used.                                                                                                                                                                                                                                                             |
 | gid.connector.http.source.lookup.request.thread-pool.size     | optional | Sets the size of pool thread for HTTP lookup request processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 8 threads will be used.                                                                                                                                 |
 | gid.connector.http.source.lookup.response.thread-pool.size    | optional | Sets the size of pool thread for HTTP lookup response processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 4 threads will be used.                                                                                                                                |
 | gid.connector.http.source.lookup.use-raw-authorization-header | optional | If set to `'true'`, uses the raw value set for the `Authorization` header, without transformation for Basic Authentication (base64, addition of "Basic " prefix). If not specified, defaults to `'false'`.                                                                                                                                                        |
 | gid.connector.http.source.lookup.request-callback             | optional | Specify which `HttpLookupPostRequestCallback` implementation to use. By default, it is set to `slf4j-lookup-logger` corresponding to `Slf4jHttpLookupPostRequestCallback`.                                                                                                                                                                                        |
 
-
 ### HTTP Sink
+
 | Option                                                  | Required | Description/Value                                                                                                                                                                                                                                |
 |---------------------------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | connector                                               | required | Specify what connector to use. For HTTP Sink it should be set to _'http-sink'_.                                                                                                                                                                  |
-| url                                                     | required | The base URL that should be use for HTTP requests. For example _http://localhost:8080/client_.                                                                                                                                                   |
 | format                                                  | required | Specify what format to use.                                                                                                                                                                                                                      |
+| url                                                     | required | The base URL that should be use for HTTP requests. For example _http://localhost:8080/client_.                                                                                                                                                   |
 | insert-method                                           | optional | Specify which HTTP method to use in the request. The value should be set either to `POST` or `PUT`.                                                                                                                                              |
 | sink.batch.max-size                                     | optional | Maximum number of elements that may be passed in a batch to be written downstream.                                                                                                                                                               |
 | sink.requests.max-inflight                              | optional | The maximum number of in flight requests that may exist, if any more in flight requests need to be initiated once the maximum has been reached, then it will be blocked until some have completed.                                               |

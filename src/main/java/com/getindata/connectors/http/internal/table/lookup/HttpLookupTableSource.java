@@ -37,7 +37,7 @@ import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreatorFactory;
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreatorFactory;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_QUERY_CREATOR_IDENTIFIER;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.*;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 @Slf4j
@@ -82,16 +82,18 @@ public class HttpLookupTableSource
             decodingFormat.createRuntimeDecoder(lookupContext, physicalRowDataType);
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
-            FactoryUtil.discoverFactory(
-                this.dynamicTableFactoryContext.getClassLoader(),
-                LookupQueryCreatorFactory.class,
-                lookupConfig.getReadableConfig().getOptional(LOOKUP_QUERY_CREATOR_IDENTIFIER)
-                    .orElse(
-                        (lookupConfig.getLookupMethod().equalsIgnoreCase("GET") ?
-                            GenericGetQueryCreatorFactory.IDENTIFIER :
-                            GenericJsonQueryCreatorFactory.IDENTIFIER)
-                    )
-            );
+                FactoryUtil.discoverFactory(
+                        this.dynamicTableFactoryContext.getClassLoader(),
+                        LookupQueryCreatorFactory.class,
+                        lookupConfig.getReadableConfig().getOptional(
+                                LOOKUP_QUERY_CREATOR_IDENTIFIER)
+                                .orElse(
+                                        (lookupConfig.getLookupMethod()
+                                                .equalsIgnoreCase("GET") ?
+                                                GenericGetQueryCreatorFactory.IDENTIFIER :
+                                                GenericJsonQueryCreatorFactory.IDENTIFIER)
+                                )
+                );
         ReadableConfig readableConfig = lookupConfig.getReadableConfig();
         LookupQueryCreator lookupQueryCreator =
             lookupQueryCreatorFactory.createLookupQueryCreator(
@@ -107,8 +109,10 @@ public class HttpLookupTableSource
     }
 
     protected LookupRuntimeProvider getLookupRuntimeProvider(LookupRow lookupRow,
-        DeserializationSchema<RowData> responseSchemaDecoder,
-        PollingClientFactory<RowData> pollingClientFactory) {
+                                                             DeserializationSchema<RowData>
+                                                                     responseSchemaDecoder,
+                                                             PollingClientFactory<RowData>
+                                                                     pollingClientFactory) {
 
         HttpTableLookupFunction dataLookupFunction =
                 new HttpTableLookupFunction(
@@ -167,11 +171,8 @@ public class HttpLookupTableSource
             LookupQueryCreator lookupQueryCreator,
             HttpLookupConfig lookupConfig) {
 
-        boolean useRawAuthHeader =
-            lookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.USE_RAW_AUTH_HEADER);
-
-        HeaderPreprocessor headerPreprocessor =
-            HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader);
+        HeaderPreprocessor headerPreprocessor =  HttpHeaderUtils.createHeaderPreprocessor(
+                lookupConfig.getReadableConfig());
         String lookupMethod = lookupConfig.getLookupMethod();
 
         HttpRequestFactory requestFactory = (lookupMethod.equalsIgnoreCase("GET")) ?
@@ -185,7 +186,7 @@ public class HttpLookupTableSource
                 headerPreprocessor,
                 lookupConfig
             );
-
+        log.info("requestFactory is " + requestFactory);
         return new JavaNetHttpPollingClientFactory(requestFactory);
     }
 

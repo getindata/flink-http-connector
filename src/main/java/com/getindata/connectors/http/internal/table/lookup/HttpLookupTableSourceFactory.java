@@ -59,6 +59,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             HttpConnectorConfigConstants.GID_CONNECTOR_HTTP,
             LOOKUP_REQUEST_FORMAT.key()
         );
+        validateHttpLookupSourceOptions(readable);
 
         DecodingFormat<DeserializationSchema<RowData>> decodingFormat =
             helper.discoverDecodingFormat(
@@ -81,6 +82,17 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             getLookupCache(readable)
         );
     }
+    protected void validateHttpLookupSourceOptions(ReadableConfig tableOptions)
+            throws IllegalArgumentException {
+        // ensure that there is an OIDC token request if we have an OIDC token endpoint
+        tableOptions.getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL).ifPresent(url -> {
+            if (tableOptions.getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST).isEmpty()) {
+                throw new IllegalArgumentException("Config option " +
+                    SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key() + " is required, if " +
+                        SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key() + " is configured.");
+            }
+        });
+    }
 
     @Override
     public String factoryIdentifier() {
@@ -94,7 +106,6 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-
         return Set.of(
              URL_ARGS,
              ASYNC_POLLING,
@@ -105,7 +116,11 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
              LookupOptions.PARTIAL_CACHE_EXPIRE_AFTER_WRITE,
              LookupOptions.PARTIAL_CACHE_MAX_ROWS,
              LookupOptions.PARTIAL_CACHE_CACHE_MISSING_KEY,
-             LookupOptions.MAX_RETRIES);
+             LookupOptions.MAX_RETRIES,
+             SOURCE_LOOKUP_OIDC_AUTH_TOKEN_EXPIRY_REDUCTION,
+             SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST,
+             SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL
+        );
     }
 
     private HttpLookupConfig getHttpLookupOptions(Context context, ReadableConfig readableConfig) {

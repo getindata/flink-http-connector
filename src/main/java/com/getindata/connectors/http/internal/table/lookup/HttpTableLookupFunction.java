@@ -67,6 +67,7 @@ public class HttpTableLookupFunction extends LookupFunction {
     public Collection<RowData> lookup(RowData keyRow) {
         localHttpCallCounter.incrementAndGet();
         Optional<RowData> result = client.pull(keyRow);
+
         return result.map(Collections::singletonList).orElse(Collections.emptyList());
     }
 }
