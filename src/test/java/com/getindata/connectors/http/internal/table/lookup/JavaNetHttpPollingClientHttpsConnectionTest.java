@@ -122,8 +122,8 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         wireMockServer.start();
         setupServerStub();
         properties.setProperty(
-                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
-                trustedCert.getAbsolutePath()
+            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+            trustedCert.getAbsolutePath()
         );
         setupAndTestConnection();
     }
@@ -153,16 +153,16 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         wireMockServer.start();
         setupServerStub();
         properties.setProperty(
-                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
-                serverTrustedCert.getAbsolutePath()
+            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+            serverTrustedCert.getAbsolutePath()
         );
         properties.setProperty(
-                HttpConnectorConfigConstants.CLIENT_CERT,
-                clientCert.getAbsolutePath()
+            HttpConnectorConfigConstants.CLIENT_CERT,
+            clientCert.getAbsolutePath()
         );
         properties.setProperty(
-                HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
-                clientPrivateKey.getAbsolutePath()
+            HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
+            clientPrivateKey.getAbsolutePath()
         );
         setupAndTestConnection();
     }
@@ -194,16 +194,16 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         wireMockServer.start();
         setupServerStub();
         properties.setProperty(
-                HttpConnectorConfigConstants.KEY_STORE_PASSWORD,
-                password
+            HttpConnectorConfigConstants.KEY_STORE_PASSWORD,
+            password
         );
         properties.setProperty(
-                HttpConnectorConfigConstants.KEY_STORE_PATH,
-                clientKeyStoreFile.getAbsolutePath()
+            HttpConnectorConfigConstants.KEY_STORE_PATH,
+            clientKeyStoreFile.getAbsolutePath()
         );
         properties.setProperty(
-                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
-                serverTrustedCert.getAbsolutePath()
+            HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+            serverTrustedCert.getAbsolutePath()
         );
         setupAndTestConnection();
     }

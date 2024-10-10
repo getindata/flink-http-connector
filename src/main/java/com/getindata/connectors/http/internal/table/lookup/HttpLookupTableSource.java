@@ -82,18 +82,18 @@ public class HttpLookupTableSource
             decodingFormat.createRuntimeDecoder(lookupContext, physicalRowDataType);
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
-                FactoryUtil.discoverFactory(
-                        this.dynamicTableFactoryContext.getClassLoader(),
-                        LookupQueryCreatorFactory.class,
-                        lookupConfig.getReadableConfig().getOptional(
-                                LOOKUP_QUERY_CREATOR_IDENTIFIER)
-                                .orElse(
-                                        (lookupConfig.getLookupMethod()
-                                                .equalsIgnoreCase("GET") ?
-                                                GenericGetQueryCreatorFactory.IDENTIFIER :
-                                                GenericJsonQueryCreatorFactory.IDENTIFIER)
-                                )
-                );
+            FactoryUtil.discoverFactory(
+                    this.dynamicTableFactoryContext.getClassLoader(),
+                    LookupQueryCreatorFactory.class,
+                    lookupConfig.getReadableConfig().getOptional(
+                            LOOKUP_QUERY_CREATOR_IDENTIFIER)
+                            .orElse(
+                                    (lookupConfig.getLookupMethod()
+                                            .equalsIgnoreCase("GET") ?
+                                            GenericGetQueryCreatorFactory.IDENTIFIER :
+                                            GenericJsonQueryCreatorFactory.IDENTIFIER)
+                            )
+            );
         ReadableConfig readableConfig = lookupConfig.getReadableConfig();
         LookupQueryCreator lookupQueryCreator =
             lookupQueryCreatorFactory.createLookupQueryCreator(
