@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Added support for OIDC Bearer tokens.
+
 ## [0.15.0] - 2024-07-30
 
 ### Added

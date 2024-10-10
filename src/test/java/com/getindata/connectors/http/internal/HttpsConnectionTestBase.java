@@ -36,7 +36,7 @@ public abstract class HttpsConnectionTestBase {
 
     public void setUp() {
         this.properties = new Properties();
-        this.headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+        this.headerPreprocessor = HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor();
     }
 
     public void tearDown() {

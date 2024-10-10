@@ -67,7 +67,7 @@ public class HttpSinkBuilder<InputT> extends
         DEFAULT_POST_REQUEST_CALLBACK = new Slf4jHttpPostRequestCallback();
 
     private static final HeaderPreprocessor DEFAULT_HEADER_PREPROCESSOR =
-        HttpHeaderUtils.createDefaultHeaderPreprocessor();
+        HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor();
 
     private final Properties properties = new Properties();
 

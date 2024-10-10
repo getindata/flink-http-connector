@@ -53,7 +53,7 @@ public class JavaNetHttpPollingClientTest {
 
     @BeforeEach
     public void setUp() {
-        this.headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+        this.headerPreprocessor = HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor();
         this.options = HttpLookupConfig.builder().url(BASE_URL).build();
     }
 
@@ -155,7 +155,7 @@ public class JavaNetHttpPollingClientTest {
         BodyBasedRequestFactory requestFactory = new BodyBasedRequestFactory(
                 "POST",
                 new GenericJsonQueryCreator(jsonSerializer),
-                HttpHeaderUtils.createDefaultHeaderPreprocessor(),
+                HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor(),
                 HttpLookupConfig.builder()
                         .url(BASE_URL)
                         .build()

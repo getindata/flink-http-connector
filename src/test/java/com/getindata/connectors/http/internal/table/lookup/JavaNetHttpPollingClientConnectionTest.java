@@ -325,7 +325,7 @@ class JavaNetHttpPollingClientConnectionTest {
 
         return new GetRequestFactory(
             new GenericGetQueryCreator(lookupRow),
-            HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader),
+            HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor(useRawAuthHeader),
             HttpLookupConfig.builder()
                 .url(getBaseUrl())
                 .properties(properties)
@@ -348,7 +348,7 @@ class JavaNetHttpPollingClientConnectionTest {
         return new BodyBasedRequestFactory(
             methodName,
             new GenericJsonQueryCreator(jsonSerializer),
-            HttpHeaderUtils.createDefaultHeaderPreprocessor(useRawAuthHeader),
+            HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor(useRawAuthHeader),
             HttpLookupConfig.builder()
                 .url(getBaseUrl())
                 .properties(properties)

@@ -129,7 +129,7 @@ public class HttpDynamicSink extends AsyncDynamicTableSink<HttpSinkRequestEntry>
             .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
             .setHttpPostRequestCallback(httpPostRequestCallback)
             // In future header preprocessor could be set via custom factory
-            .setHttpHeaderPreprocessor(HttpHeaderUtils.createDefaultHeaderPreprocessor())
+            .setHttpHeaderPreprocessor(HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor())
             .setElementConverter(
                 new SerializationSchemaElementConverter(insertMethod, serializationSchema))
             .setProperties(properties);

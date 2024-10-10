@@ -50,7 +50,7 @@ class JavaNetSinkHttpClientTest {
     @BeforeEach
     public void setUp() {
         postRequestCallback = new Slf4jHttpPostRequestCallback();
-        headerPreprocessor = HttpHeaderUtils.createDefaultHeaderPreprocessor();
+        headerPreprocessor = HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor();
         httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
         when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
         when(httpClientBuilder.sslContext(any())).thenReturn(httpClientBuilder);
