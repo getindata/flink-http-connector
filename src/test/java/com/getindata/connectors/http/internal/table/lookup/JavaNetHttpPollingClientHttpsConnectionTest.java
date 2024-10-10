@@ -215,8 +215,8 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         // test with OIDC auth
         setupAndTestConnectionWithAuth(
                 HttpHeaderUtils.createOIDCAuthorizationHeaderPreprocessor(
-                        Optional.of("http://abc"),
-                        Optional.of("aaa"),
+                       "http://abc",
+                       "aaa",
                         Optional.of(Duration.ofSeconds(5))
                 )
         );

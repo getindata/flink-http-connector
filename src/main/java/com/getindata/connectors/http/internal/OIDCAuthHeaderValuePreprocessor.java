@@ -26,11 +26,11 @@ public class OIDCAuthHeaderValuePreprocessor implements HeaderValuePreprocessor 
      * @param oidcExpiryReduction OIDC token expiry reduction
      */
 
-    public OIDCAuthHeaderValuePreprocessor(Optional<String> oidcAuthURL,
-                                           Optional<String> oidcTokenRequest,
+    public OIDCAuthHeaderValuePreprocessor(String oidcAuthURL,
+                                           String oidcTokenRequest,
                                            Optional<Duration> oidcExpiryReduction) {
-        this.oidcAuthURL = oidcAuthURL.get();
-        this.oidcTokenRequest = oidcTokenRequest.get();
+        this.oidcAuthURL = oidcAuthURL;
+        this.oidcTokenRequest = oidcTokenRequest;
         if (oidcExpiryReduction.isPresent()) {
             this.oidcExpiryReduction = oidcExpiryReduction.get();
         }
