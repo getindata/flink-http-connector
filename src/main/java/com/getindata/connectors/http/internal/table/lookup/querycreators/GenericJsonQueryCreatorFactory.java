@@ -16,6 +16,7 @@ import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.LookupQueryCreatorFactory;
 import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.utils.SynchronizedSerializationSchema;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.ASYNC_POLLING;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_REQUEST_FORMAT;
 
 /**
@@ -48,8 +49,14 @@ public class GenericJsonQueryCreatorFactory implements LookupQueryCreatorFactory
             queryFormatAwareConfiguration
         );
 
-        SerializationSchema<RowData> serializationSchema = new SynchronizedSerializationSchema<>(
-            encoder.createRuntimeEncoder(null, lookupRow.getLookupPhysicalRowDataType()));
+        final SerializationSchema<RowData> serializationSchema;
+        if (readableConfig.get(ASYNC_POLLING)) {
+            serializationSchema = new SynchronizedSerializationSchema<>(
+                encoder.createRuntimeEncoder(null, lookupRow.getLookupPhysicalRowDataType()));
+        } else {
+            serializationSchema =
+                encoder.createRuntimeEncoder(null, lookupRow.getLookupPhysicalRowDataType());
+        }
 
         return new GenericJsonQueryCreator(serializationSchema);
     }
