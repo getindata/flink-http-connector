@@ -6,6 +6,10 @@
 
 -   Added support for OIDC Bearer tokens.
 
+### Fixed
+
+-   Ensured SerializationSchema is used in thread-safe way.
+
 ## [0.15.0] - 2024-07-30
 
 ### Added
@@ -15,7 +19,6 @@
 ### Fixed
 
 -   Fixed issue in the logging code of the `JavaNetHttpPollingClient` which prevents showing the status code and response body when the log level is configured at DEBUG (or lower) level.
--   Ensured SerializationSchema is used in thread-safe way.
 
 ## [0.14.0] - 2024-05-10
 
