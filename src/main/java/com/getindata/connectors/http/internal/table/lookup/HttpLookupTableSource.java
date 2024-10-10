@@ -83,15 +83,15 @@ public class HttpLookupTableSource
 
         LookupQueryCreatorFactory lookupQueryCreatorFactory =
             FactoryUtil.discoverFactory(
-                    this.dynamicTableFactoryContext.getClassLoader(),
-                    LookupQueryCreatorFactory.class,
-                    lookupConfig.getReadableConfig().getOptional(
-                            LOOKUP_QUERY_CREATOR_IDENTIFIER)
-                            .orElse(
-                                    (lookupConfig.getLookupMethod()
-                                            .equalsIgnoreCase("GET") ?
-                                            GenericGetQueryCreatorFactory.IDENTIFIER :
-                                            GenericJsonQueryCreatorFactory.IDENTIFIER)
+                this.dynamicTableFactoryContext.getClassLoader(),
+                LookupQueryCreatorFactory.class,
+                lookupConfig.getReadableConfig().getOptional(
+                        LOOKUP_QUERY_CREATOR_IDENTIFIER)
+                        .orElse(
+                                (lookupConfig.getLookupMethod()
+                                        .equalsIgnoreCase("GET") ?
+                                        GenericGetQueryCreatorFactory.IDENTIFIER :
+                                        GenericJsonQueryCreatorFactory.IDENTIFIER)
                             )
             );
         ReadableConfig readableConfig = lookupConfig.getReadableConfig();
