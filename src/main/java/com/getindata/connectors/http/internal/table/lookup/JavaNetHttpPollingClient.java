@@ -13,8 +13,8 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.StringUtils;
 
-import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.FailedRequestException;
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;

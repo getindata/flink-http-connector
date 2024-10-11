@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.FailedRequestException;
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -68,7 +68,8 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
     }
 
     @Test
-    public void testHttpPostRequestCallbackWithFailedRequestException() throws ExecutionException, InterruptedException {
+    public void testHttpPostRequestCallbackWithFailedRequestException()
+            throws ExecutionException, InterruptedException {
         wireMockServer = new WireMockServer(SERVER_PORT);
         wireMockServer.start();
         mockEndPoint(wireMockServer);
