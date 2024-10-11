@@ -1,8 +1,11 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.io.File;
+import java.net.http.HttpResponse;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterEach;
@@ -19,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.getindata.connectors.http.FailedRequestException;
+import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HttpsConnectionTestBase;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -60,6 +65,30 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
             "http://localhost:",
             SERVER_PORT,
             batchRequestSubmitterFactory);
+    }
+
+    @Test
+    public void testHttpPostRequestCallbackWithFailedRequestException()
+            throws ExecutionException, InterruptedException {
+        wireMockServer = new WireMockServer(SERVER_PORT);
+        wireMockServer.start();
+        mockEndPoint(wireMockServer);
+
+        JavaNetSinkHttpClient client =
+                new JavaNetSinkHttpClient(
+                        properties,
+                        new TestPostRequestCallbackWithException(),
+                        headerPreprocessor,
+                        perRequestSubmitterFactory);
+        HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("GET", new byte[0]);
+        SinkHttpClientResponse response =
+                client.putRequests(
+                        Collections.singletonList(requestEntry),
+                        "https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT
+                ).get();
+
+        assertThat(response.getSuccessfulRequests()).isEmpty();
+        assertThat(response.getFailedRequests()).isNotEmpty();
     }
 
     @Test
@@ -365,5 +394,18 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
                     .withStatus(200)
                     .withBody("{}"))
         );
+    }
+
+    public static class TestPostRequestCallbackWithException
+            implements HttpPostRequestCallback<HttpRequest> {
+        @Override
+        public void call(
+                HttpResponse<String> response,
+                HttpRequest requestEntry,
+                String endpointUrl,
+                Map<String, String> headerMap
+        ) throws FailedRequestException {
+            throw new FailedRequestException("Test exception");
+        }
     }
 }

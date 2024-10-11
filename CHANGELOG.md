@@ -4,6 +4,7 @@
 
 ### Added
 
+-   Added support for callbacks to mark requests as failed.
 -   Added support for OIDC Bearer tokens.
 
 ## [0.15.0] - 2024-07-30

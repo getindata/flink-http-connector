@@ -378,6 +378,18 @@ and then reference identifier `rest-lookup-logger` in the HTTP lookup DDL proper
 is provided.
 
 
+- Callback Errors:
+
+  Throw a [FailedRequestException](src/main/java/com/getindata/connectors/http/FailedRequestException.java) to indicate a
+  failed request.
+
+  This allows control over the connector's behavior when an HTTP response does not meet your expectations
+  whether based on the response body or headers.
+
+  Currently, the only side effect is to incremenet the [numRecordsSendErrors counter](https://github.com/getindata/flink-http-connector?tab=readme-ov-file#http-sink-2), as the connector does not
+  support retries yet. However, once retry functionality is implemented, this will allow users to specify if requests should be retried.
+
+
 ## HTTP status code handler
 Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
 By default all 400s and 500s response codes will be interpreted as error code.
