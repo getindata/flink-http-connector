@@ -1,12 +1,9 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
@@ -16,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class HttpLookupTableSourceFactoryTest {
 
@@ -36,6 +34,29 @@ public class HttpLookupTableSourceFactoryTest {
             Collections.emptyList(),
             UniqueConstraint.primaryKey("id", List.of("id"))
         );
+
+    @Test
+    void validateHttpLookupSourceOptions() {
+
+        HttpLookupTableSourceFactory httpLookupTableSourceFactory
+                = new HttpLookupTableSourceFactory();
+        TableConfig tableConfig  = new TableConfig();
+        httpLookupTableSourceFactory.validateHttpLookupSourceOptions(tableConfig);
+        tableConfig.set(HttpLookupConnectorOptions
+                .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key(), "aaa");
+
+        try {
+            httpLookupTableSourceFactory.validateHttpLookupSourceOptions(tableConfig);
+            assertFalse(true, "Expected an error.");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        // should now work.
+        tableConfig.set(HttpLookupConnectorOptions
+            .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key(), "bbb");
+
+        httpLookupTableSourceFactory.validateHttpLookupSourceOptions(tableConfig);
+    }
 
     @Test
     void shouldCreateForMandatoryFields() {
