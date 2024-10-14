@@ -98,10 +98,8 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                 //  to the `numRecordsSendErrors` metric. It is due to the fact we do not have
                 //  a clear image how we want to do it, so it would be both efficient and correct.
                 //requestResult.accept(requestEntries);
-            } else if (response.getFailedNotRetryableRequests().size()
-                + response.getFailedRetryableRequests().size() > 0) {
-                int failedRequestsNumber = response.getFailedNotRetryableRequests().size()
-                    + response.getFailedRetryableRequests().size();
+            } else if (response.getFailedRequests().size() > 0) {
+                int failedRequestsNumber = response.getFailedRequests().size();
                 log.error("Http Sink failed to write and will retry {} requests",
                     failedRequestsNumber);
                 numRecordsSendErrorsCounter.inc(failedRequestsNumber);

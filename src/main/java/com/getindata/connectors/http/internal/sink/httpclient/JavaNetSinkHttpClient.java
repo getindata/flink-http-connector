@@ -16,7 +16,6 @@ import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
-import com.getindata.connectors.http.internal.SinkHttpClientResponse.ResponseItem;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
@@ -98,7 +97,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private SinkHttpClientResponse prepareSinkHttpClientResponse(
         List<JavaNetHttpResponseWrapper> responses,
         String endpointUrl) {
-        var responseItems = new ArrayList<ResponseItem>();
+        var successfulResponses = new ArrayList<HttpRequest>();
+        var failedResponses = new ArrayList<HttpRequest>();
 
         for (var response : responses) {
             var sinkRequestEntry = response.getHttpRequest();
@@ -107,14 +107,19 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             httpPostRequestCallback.call(
                 optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
 
-            // Empty indicates that HttpClient.sendAsync() failed with exception.
-            HttpResponseStatus status = optResponse.isEmpty()
-                ? HttpResponseStatus.FAILURE_RETRYABLE
-                : statusCodeChecker.checkStatus(optResponse.get().statusCode());
-            responseItems.add(new ResponseItem(sinkRequestEntry, status));
+            // TODO Add response processor here and orchestrate it with statusCodeChecker.
+            if (optResponse.isEmpty() ||
+                statusCodeChecker.checkStatus(optResponse.get().statusCode()).equals(
+                    HttpResponseStatus.FAILURE_RETRYABLE) ||
+                statusCodeChecker.checkStatus(optResponse.get().statusCode()).equals(
+                    HttpResponseStatus.FAILURE_NOT_RETRYABLE)) {
+                failedResponses.add(sinkRequestEntry);
+            } else {
+                successfulResponses.add(sinkRequestEntry);
+            }
         }
 
-        return new SinkHttpClientResponse(responseItems);
+        return new SinkHttpClientResponse(successfulResponses, failedResponses);
     }
 
     @VisibleForTesting
