@@ -341,7 +341,8 @@ class JavaNetSinkHttpClientConnectionTest extends HttpsConnectionTestBase {
                 ).get();
 
             assertThat(response.getSuccessfulRequests()).isNotEmpty();
-            assertThat(response.getFailedRequests()).isEmpty();
+            assertThat(response.getFailedNotRetryableRequests()).isEmpty();
+            assertThat(response.getFailedRetryableRequests()).isEmpty();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

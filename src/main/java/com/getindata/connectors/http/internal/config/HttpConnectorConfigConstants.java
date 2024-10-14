@@ -28,13 +28,13 @@ public final class HttpConnectorConfigConstants {
         + "source.lookup.header.";
 
     public static final String OIDC_AUTH_TOKEN_REQUEST = GID_CONNECTOR_HTTP
-            + "security.oidc.token.request";
+        + "security.oidc.token.request";
 
     public static final String OIDC_AUTH_TOKEN_ENDPOINT_URL = GID_CONNECTOR_HTTP
-            + "security.oidc.token.endpoint.url";
+        + "security.oidc.token.endpoint.url";
 
     public static final String OIDC_AUTH_TOKEN_EXPIRY_REDUCTION = GID_CONNECTOR_HTTP
-            + "security.oidc.token.expiry.reduction";
+        + "security.oidc.token.expiry.reduction";
     /**
      * Whether to use the raw value of the Authorization header. If set, it prevents
      * the special treatment of the header for Basic Authentication, thus preserving the passed
@@ -54,6 +54,12 @@ public final class HttpConnectorConfigConstants {
 
     public static final String HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST =
         GID_CONNECTOR_HTTP + "source.lookup.error.code";
+
+    public static final String HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST =
+        GID_CONNECTOR_HTTP + "source.lookup.error-retryable.code.exclude";
+
+    public static final String HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODES_LIST =
+        GID_CONNECTOR_HTTP + "source.lookup.error-retryable.code";
     // -----------------------------------------------------
 
     public static final String SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER =
