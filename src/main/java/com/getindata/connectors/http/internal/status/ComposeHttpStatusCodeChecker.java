@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.StringUtils;
+import static org.apache.flink.util.StringUtils.isNullOrWhitespaceOnly;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 
@@ -35,8 +35,7 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
 
     public ComposeHttpStatusCodeChecker(ComposeHttpStatusCodeCheckerConfig config) {
         // Handle deprecated configuration for backward compatibility.
-        if (!StringUtils.isNullOrWhitespaceOnly(config.getDeprecatedCodePrefix()) ||
-            !StringUtils.isNullOrWhitespaceOnly(config.getDeprecatedErrorWhiteListPrefix())) {
+        if (areDeprecatedPropertiesUsed(config)) {
             notRetryableErrorStatusCodes = buildPredicate(config, config.getDeprecatedCodePrefix(),
                 config.getDeprecatedErrorWhiteListPrefix(), DEFAULT_DEPRECATED_ERROR_CODES);
             retryableErrorStatusCodes = integer -> false;
@@ -48,6 +47,17 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         }
     }
 
+    private boolean areDeprecatedPropertiesUsed(ComposeHttpStatusCodeCheckerConfig config) {
+        boolean whiteListDefined =
+            !isNullOrWhitespaceOnly(config.getDeprecatedErrorWhiteListPrefix());
+        boolean codeListDefined = !isNullOrWhitespaceOnly(config.getDeprecatedCodePrefix());
+
+        return (whiteListDefined && !isNullOrWhitespaceOnly(
+            config.getProperties().getProperty(config.getDeprecatedErrorWhiteListPrefix())))
+            || (codeListDefined && !isNullOrWhitespaceOnly(
+            config.getProperties().getProperty(config.getDeprecatedCodePrefix())));
+    }
+
     private Predicate<Integer> buildPredicate(
         ComposeHttpStatusCodeCheckerConfig config,
         String errorCodePrefix,
@@ -55,8 +65,10 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         Predicate<Integer> defaultErrorCodes) {
         Properties properties = config.getProperties();
 
-        String errorCodes = properties.getProperty(errorCodePrefix, "");
-        String whitelistCodes = properties.getProperty(whiteListPrefix, "");
+        String errorCodes =
+            errorCodePrefix == null ? "" : properties.getProperty(errorCodePrefix, "");
+        String whitelistCodes =
+            whiteListPrefix == null ? "" : properties.getProperty(whiteListPrefix, "");
 
         Predicate<Integer> errorPredicate =
             prepareErrorCodes(errorCodes).orElse(defaultErrorCodes);
@@ -74,7 +86,7 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
      */
     private Optional<Predicate<Integer>> prepareErrorCodes(String statusCodesStr) {
         return Arrays.stream(statusCodesStr.split(HttpConnectorConfigConstants.PROP_DELIM))
-            .filter(code -> !StringUtils.isNullOrWhitespaceOnly(code))
+            .filter(code -> !isNullOrWhitespaceOnly(code))
             .map(code -> code.toUpperCase().trim())
             .map(codeStr -> {
                 Preconditions.checkArgument(

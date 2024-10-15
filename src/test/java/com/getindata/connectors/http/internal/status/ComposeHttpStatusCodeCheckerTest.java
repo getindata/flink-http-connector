@@ -17,10 +17,11 @@ import static com.getindata.connectors.http.internal.status.HttpResponseStatus.S
 
 class ComposeHttpStatusCodeCheckerTest {
 
-    private static final String NOT_RETRYABLE_CODE_PROPERTY = "error.code";
-    private static final String NOT_RETRYABLE_WHITELIST_PROPERTY = "error.code.exclude";
-    private static final String RETRYABLE_CODE_PROPERTY = "retryable.code";
-    private static final String RETRYABLE_WHITELIST_PROPERTY = "retryable.code.exclude";
+    private static final String NOT_RETRYABLE_CODE_PROPERTY = "error.non-retryable.code";
+    private static final String NOT_RETRYABLE_WHITELIST_PROPERTY =
+        "error.non-retryable.code.exclude";
+    private static final String RETRYABLE_CODE_PROPERTY = "error.retryable.code";
+    private static final String RETRYABLE_WHITELIST_PROPERTY = "error.retryable.code.exclude";
 
     @Test
     void shouldReturnAppropriateStatusByDefault() {
