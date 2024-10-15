@@ -23,39 +23,40 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
     private static final int MIN_HTTP_STATUS_CODE = 100;
     private static final int MAX_HTTP_STATUS_CODE = 599;
 
-    private static final Predicate<Integer> DEFAULT_ERROR_CODES =
+    private static final Predicate<Integer> DEFAULT_NON_RETRYABLE_ERROR_CODES =
         new TypeStatusCodeCheckerPredicate(HttpResponseCodeType.CLIENT_ERROR);
     private static final Predicate<Integer> DEFAULT_RETRYABLE_ERROR_CODES =
         new TypeStatusCodeCheckerPredicate(HttpResponseCodeType.SERVER_ERROR);
     private static final Predicate<Integer> DEFAULT_DEPRECATED_ERROR_CODES =
-        DEFAULT_ERROR_CODES.or(DEFAULT_RETRYABLE_ERROR_CODES);
+        DEFAULT_NON_RETRYABLE_ERROR_CODES.or(DEFAULT_RETRYABLE_ERROR_CODES);
 
     private final Predicate<Integer> retryableErrorStatusCodes;
-    private final Predicate<Integer> notRetryableErrorStatusCodes;
+    private final Predicate<Integer> nonRetryableErrorStatusCodes;
 
     public ComposeHttpStatusCodeChecker(ComposeHttpStatusCodeCheckerConfig config) {
         // Handle deprecated configuration for backward compatibility.
         if (areDeprecatedPropertiesUsed(config)) {
-            notRetryableErrorStatusCodes = buildPredicate(config, config.getDeprecatedCodePrefix(),
-                config.getDeprecatedErrorWhiteListPrefix(), DEFAULT_DEPRECATED_ERROR_CODES);
+            nonRetryableErrorStatusCodes = buildPredicate(config, config.getErrorCodePrefix(),
+                config.getWhiteListPrefix(), DEFAULT_DEPRECATED_ERROR_CODES);
             retryableErrorStatusCodes = integer -> false;
         } else {
-            retryableErrorStatusCodes = buildPredicate(config, config.getRetryableCodePrefix(),
-                config.getRetryableWhiteListPrefix(), DEFAULT_RETRYABLE_ERROR_CODES);
-            notRetryableErrorStatusCodes = buildPredicate(config, config.getErrorCodePrefix(),
-                config.getErrorWhiteListPrefix(), DEFAULT_ERROR_CODES);
+            retryableErrorStatusCodes = buildPredicate(config, config.getRetryableErrorCodePrefix(),
+                config.getRetryableErrorWhiteListPrefix(), DEFAULT_RETRYABLE_ERROR_CODES);
+            nonRetryableErrorStatusCodes =
+                buildPredicate(config, config.getNonRetryableErrorCodePrefix(),
+                    config.getNonRetryableErrorWhiteListPrefix(),
+                    DEFAULT_NON_RETRYABLE_ERROR_CODES);
         }
     }
 
     private boolean areDeprecatedPropertiesUsed(ComposeHttpStatusCodeCheckerConfig config) {
-        boolean whiteListDefined =
-            !isNullOrWhitespaceOnly(config.getDeprecatedErrorWhiteListPrefix());
-        boolean codeListDefined = !isNullOrWhitespaceOnly(config.getDeprecatedCodePrefix());
+        boolean whiteListDefined = !isNullOrWhitespaceOnly(config.getWhiteListPrefix());
+        boolean codeListDefined = !isNullOrWhitespaceOnly(config.getErrorCodePrefix());
 
         return (whiteListDefined && !isNullOrWhitespaceOnly(
-            config.getProperties().getProperty(config.getDeprecatedErrorWhiteListPrefix())))
-            || (codeListDefined && !isNullOrWhitespaceOnly(
-            config.getProperties().getProperty(config.getDeprecatedCodePrefix())));
+            config.getProperties().getProperty(config.getWhiteListPrefix()))) ||
+            (codeListDefined && !isNullOrWhitespaceOnly(
+                config.getProperties().getProperty(config.getErrorCodePrefix())));
     }
 
     private Predicate<Integer> buildPredicate(
@@ -143,8 +144,8 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
                 MAX_HTTP_STATUS_CODE)
         );
 
-        if (notRetryableErrorStatusCodes.test(statusCode)) {
-            return HttpResponseStatus.FAILURE_NOT_RETRYABLE;
+        if (nonRetryableErrorStatusCodes.test(statusCode)) {
+            return HttpResponseStatus.FAILURE_NON_RETRYABLE;
         } else if (retryableErrorStatusCodes.test(statusCode)) {
             return HttpResponseStatus.FAILURE_RETRYABLE;
         } else {
@@ -157,17 +158,17 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public static class ComposeHttpStatusCodeCheckerConfig {
 
-        private final String deprecatedErrorWhiteListPrefix;
-
-        private final String deprecatedCodePrefix;
-
-        private final String errorWhiteListPrefix;
+        private final String whiteListPrefix;
 
         private final String errorCodePrefix;
 
-        private final String retryableWhiteListPrefix;
+        private final String nonRetryableErrorWhiteListPrefix;
 
-        private final String retryableCodePrefix;
+        private final String nonRetryableErrorCodePrefix;
+
+        private final String retryableErrorWhiteListPrefix;
+
+        private final String retryableErrorCodePrefix;
 
         private final Properties properties;
     }

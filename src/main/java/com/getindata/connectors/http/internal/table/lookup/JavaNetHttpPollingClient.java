@@ -79,12 +79,13 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         ComposeHttpStatusCodeCheckerConfig checkerConfig =
             ComposeHttpStatusCodeCheckerConfig.builder()
                 .properties(options.getProperties())
-                .deprecatedErrorWhiteListPrefix(HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST)
-                .deprecatedCodePrefix(HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST)
-                .errorWhiteListPrefix(HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST)
-                .errorCodePrefix(HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODES_LIST)
-                .retryableWhiteListPrefix(HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST)
-                .retryableCodePrefix(HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODES_LIST)
+                .whiteListPrefix(HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST)
+                .errorCodePrefix(HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST)
+                .nonRetryableErrorWhiteListPrefix(
+                    HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST)
+                .nonRetryableErrorCodePrefix(HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODES_LIST)
+                .retryableErrorWhiteListPrefix(HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST)
+                .retryableErrorCodePrefix(HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODES_LIST)
                 .build();
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
@@ -157,7 +158,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
             );
             Response parsedResponse = processHttpResponse(httpResponse, request);
             if (parsedResponse.getStatus() == HttpResponseStatus.SUCCESS
-                || parsedResponse.getStatus() == HttpResponseStatus.FAILURE_NOT_RETRYABLE) {
+                || parsedResponse.getStatus() == HttpResponseStatus.FAILURE_NON_RETRYABLE) {
                 return parsedResponse.getRowData();
             } else {
                 if (tryCount == maxRetryCount) {
@@ -197,9 +198,9 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         if (httpResponseStatus == HttpResponseStatus.SUCCESS) {
             log.trace("Returned successful status code [%s].");
             return Response.success(responseBodyDecoder.deserialize(responseBody.getBytes()));
-        } else if (httpResponseStatus == HttpResponseStatus.FAILURE_NOT_RETRYABLE) {
+        } else if (httpResponseStatus == HttpResponseStatus.FAILURE_NON_RETRYABLE) {
             log.warn(format("Returned not retryable error status code [%s].", statusCode));
-            return Response.notRetryable();
+            return Response.nonRetryable();
         } else if (httpResponseStatus == HttpResponseStatus.FAILURE_RETRYABLE) {
             log.warn(format("Returned retryable error status code [%s].", statusCode));
             return Response.retryable();
@@ -220,8 +221,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
             return new Response(HttpResponseStatus.SUCCESS, rowData);
         }
 
-        static Response notRetryable() {
-            return new Response(HttpResponseStatus.FAILURE_NOT_RETRYABLE, null);
+        static Response nonRetryable() {
+            return new Response(HttpResponseStatus.FAILURE_NON_RETRYABLE, null);
         }
 
         static Response retryable() {

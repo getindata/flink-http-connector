@@ -16,5 +16,5 @@ public enum HttpResponseStatus {
     /**
      * Request failed but cannot be retried.
      */
-    FAILURE_NOT_RETRYABLE,
+    FAILURE_NON_RETRYABLE,
 }

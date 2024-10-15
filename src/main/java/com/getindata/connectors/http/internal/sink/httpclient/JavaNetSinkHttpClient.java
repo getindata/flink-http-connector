@@ -61,12 +61,12 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         ComposeHttpStatusCodeCheckerConfig checkerConfig =
             ComposeHttpStatusCodeCheckerConfig.builder()
                 .properties(properties)
-                .deprecatedErrorWhiteListPrefix(HTTP_ERROR_SINK_CODE_WHITE_LIST)
-                .deprecatedCodePrefix(HTTP_ERROR_SINK_CODES_LIST)
-                .errorWhiteListPrefix("")      // TODO: sink not refactored yet
-                .errorCodePrefix("")
-                .retryableWhiteListPrefix("")
-                .retryableCodePrefix("")
+                .whiteListPrefix(HTTP_ERROR_SINK_CODE_WHITE_LIST)
+                .errorCodePrefix(HTTP_ERROR_SINK_CODES_LIST)
+                .nonRetryableErrorWhiteListPrefix("")      // TODO: sink not refactored yet
+                .nonRetryableErrorCodePrefix("")
+                .retryableErrorWhiteListPrefix("")
+                .retryableErrorCodePrefix("")
                 .build();
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
