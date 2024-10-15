@@ -436,11 +436,11 @@ class JavaNetHttpPollingClientConnectionTest {
     private static Properties prepareErrorCodeProperties(String errorCodeList, String whiteList) {
         Properties properties = new Properties();
         properties.setProperty(
-            HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST,
+            HttpConnectorConfigConstants.HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST,
             whiteList
         );
         properties.setProperty(
-            HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST,
+            HttpConnectorConfigConstants.HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODES_LIST,
             errorCodeList
         );
 

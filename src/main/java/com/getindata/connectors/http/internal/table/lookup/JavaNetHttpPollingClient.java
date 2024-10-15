@@ -7,6 +7,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODES_LIST;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST;
 import static java.lang.String.format;
 
 import lombok.AllArgsConstructor;
@@ -30,8 +34,6 @@ import com.getindata.connectors.http.internal.status.HttpResponseStatus;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODES_LIST;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_RESTART_STRATEGY_EXPONENTIAL_DELAY_ATTEMPTS;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_RESTART_STRATEGY_EXPONENTIAL_DELAY_INITIAL_DELAY;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_RESTART_STRATEGY_EXPONENTIAL_DELAY_MAX_DELAY;
@@ -77,8 +79,10 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         ComposeHttpStatusCodeCheckerConfig checkerConfig =
             ComposeHttpStatusCodeCheckerConfig.builder()
                 .properties(options.getProperties())
-                .errorWhiteListPrefix(HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST)
-                .errorCodePrefix(HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST)
+                .deprecatedErrorWhiteListPrefix(HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST)
+                .deprecatedCodePrefix(HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST)
+                .errorWhiteListPrefix(HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST)
+                .errorCodePrefix(HTTP_ERROR_NON_RETRYABLE_SOURCE_LOOKUP_CODES_LIST)
                 .retryableWhiteListPrefix(HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODE_WHITE_LIST)
                 .retryableCodePrefix(HTTP_ERROR_RETRYABLE_SOURCE_LOOKUP_CODES_LIST)
                 .build();

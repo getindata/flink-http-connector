@@ -379,18 +379,26 @@ is provided.
 
 
 ## HTTP status code handler
-Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
-By default all 400s and 500s response codes will be interpreted as error code.
+
+Http Sink and Lookup Source connectors allow defining list of HTTP status codes for which connector either retry
+request according to defined strategy, or returns empty result. 
+By default, all 400s are interpreted as non-retryable errors, while 500s response codes as retryable errors.
 
 This behavior can be changed by using below properties in table definition (DDL) for Sink and Lookup Source or passing it via 
 `setProperty' method from Sink's builder. The property names are:
-- `gid.connector.http.sink.error.code` and `gid.connector.http.source.lookup.error.code` used to defined HTTP status code value that should be treated as error for example 404.
+- `gid.connector.http.sink.error.non-retryable.code` and `gid.connector.http.source.lookup.error.non-retryable.code`, allow to define HTTP status code values that should be treated as non-retryable error.
+- `gid.connector.http.sink.error.retryable.code` and `gid.connector.http.source.lookup.error.retryable.code`, allow to define HTTP status code values that should be treated as retryable error.
+
 Many status codes can be defined in one value, where each code should be separated with comma, for example:
 `401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
 An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors.
-- `gid.connector.http.sink.error.code.exclude` and `gid.connector.http.source.lookup.error.code.exclude` used to exclude a HTTP code from error list.
-   Many status codes can be defined in one value, where each code should be separated with comma, for example:
-  `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
+
+Another set of properties are:
+- `gid.connector.http.sink.error.non-retryable.code.exclude` and `gid.connector.http.source.lookup.error.non-retryable.code.exclude` used to exclude an HTTP code from non-retryable error list.
+- `gid.connector.http.sink.error.retryable.code.exclude` and `gid.connector.http.source.lookup.error.retryable.code.exclude` used to exclude an HTTP code from retryable error list.
+
+Many status codes can be defined in one value, where each code should be separated with comma, for example:
+`401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
 
 ## TLS and mTLS support
 Both Http Sink and Lookup Source connectors supports Https communication using TLS 1.2 and mTLS.
@@ -455,8 +463,12 @@ be requested if the current time is later than the cached token expiry time minu
 | lookup.retry-strategy.exponential-delay.attempts              | optional | The number of times that connector retries lookup execution before connector returns empty result.                                                                                                                                                                                                                                                                |
 | lookup.retry-strategy.exponential-delay.initial-delay         | optional | Initial delay between two consecutive retry attempts.                                                                                                                                                                                                                                                                                                             |
 | lookup.retry-strategy.exponential-delay.max-delay             | optional | The highest possible duration between two consecutive retry attempts.                                                                                                                                                                                                                                                                                             |
-| gid.connector.http.lookup.error.code                          | optional | List of HTTP status codes that should be treated as errors by HTTP Source, separated with comma.                                                                                                                                                                                                                                                                  |
-| gid.connector.http.lookup.error.code.exclude                  | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma.                                                                                                                                                                                                                                     |
+| gid.connector.http.lookup.error.code                          | optional | (Deprecated) List of HTTP status codes that should be treated as errors by HTTP Source, separated with comma.                                                                                                                                                                                                                                                     |
+| gid.connector.http.lookup.error.code.exclude                  | optional | (Deprecated) List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma.                                                                                                                                                                                                                        |
+| gid.connector.http.lookup.error.non-retryable.code            | optional | List of HTTP status codes that should be treated as errors for which HTTP Source should not retry request, separated with comma.                                                                                                                                                                                                                                  |
+| gid.connector.http.lookup.error.non-retryable.code.exclude    | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma.                                                                                                                                                                                                                                     |
+| gid.connector.http.lookup.error.retryable.code                | optional | List of HTTP status codes that should be treated as errors for which HTTP Source should retry request, separated with comma.                                                                                                                                                                                                                                      |
+| gid.connector.http.lookup.error.retryable.code.exclude        | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup-retryable.error.code` list, separated with comma.                                                                                                                                                                                                                           |
 | gid.connector.http.security.cert.server                       | optional | Path to trusted HTTP server certificate that should be add to connectors key store. More than one path can be specified using `,` as path delimiter.                                                                                                                                                                                                              |
 | gid.connector.http.security.cert.client                       | optional | Path to trusted certificate that should be used by connector's HTTP client for mTLS communication.                                                                                                                                                                                                                                                                |
 | gid.connector.http.security.key.client                        | optional | Path to trusted private key that should be used by connector's HTTP client for mTLS communication.                                                                                                                                                                                                                                                                |
