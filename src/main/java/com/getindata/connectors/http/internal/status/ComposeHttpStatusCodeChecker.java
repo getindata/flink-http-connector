@@ -88,23 +88,23 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         return Arrays.stream(statusCodesStr.split(HttpConnectorConfigConstants.PROP_DELIM))
             .filter(code -> !isNullOrWhitespaceOnly(code))
             .map(code -> code.toUpperCase().trim())
-            .map(codeStr -> {
-                Preconditions.checkArgument(
-                    codeStr.length() == 3,
-                    "Status code should contain three characters. Provided [%s]",
-                    codeStr);
-
-                // at this point we have trim, upper case 3 character status code.
-                if (isTypeCode(codeStr)) {
-                    int code = Integer.parseInt(codeStr.replace("X", ""));
-                    return new TypeStatusCodeCheckerPredicate(
-                        HttpResponseCodeType.getByCode(code));
-                } else {
-                    return new SingleValueHttpStatusCodeCheckerPredicate(
-                        Integer.parseInt(codeStr));
-                }
-            })
+            .map(this::prepareErrorCode)
             .reduce(Predicate::or);
+    }
+
+    private Predicate<Integer> prepareErrorCode(String codeString) {
+        Preconditions.checkArgument(
+            codeString.length() == 3,
+            "Status code should contain three characters. Provided [%s]",
+            codeString);
+
+        // at this point we have trim, upper case 3 character status code.
+        if (isTypeCode(codeString)) {
+            int code = Integer.parseInt(codeString.replace("X", ""));
+            return new TypeStatusCodeCheckerPredicate(HttpResponseCodeType.getByCode(code));
+        } else {
+            return new SingleValueHttpStatusCodeCheckerPredicate(Integer.parseInt(codeString));
+        }
     }
 
     /**

@@ -110,14 +110,12 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
                 optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
 
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
-            if (optResponse.isEmpty() ||
-                statusCodeChecker.checkStatus(optResponse.get().statusCode()).equals(
-                    HttpResponseStatus.FAILURE_RETRYABLE) ||
-                statusCodeChecker.checkStatus(optResponse.get().statusCode()).equals(
-                    HttpResponseStatus.FAILURE_NOT_RETRYABLE)) {
-                failedResponses.add(sinkRequestEntry);
-            } else {
+            if (optResponse.isPresent() &&
+                statusCodeChecker.checkStatus(optResponse.get().statusCode())
+                    .equals(HttpResponseStatus.SUCCESS)) {
                 successfulResponses.add(sinkRequestEntry);
+            } else {
+                failedResponses.add(sinkRequestEntry);
             }
         }
 

@@ -46,18 +46,18 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     private final Counter numRecordsSendErrorsCounter;
 
     public HttpSinkWriter(
-        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter,
-        Sink.InitContext context,
-        int maxBatchSize,
-        int maxInFlightRequests,
-        int maxBufferedRequests,
-        long maxBatchSizeInBytes,
-        long maxTimeInBufferMS,
-        long maxRecordSizeInBytes,
-        String endpointUrl,
-        SinkHttpClient sinkHttpClient,
-        Collection<BufferedRequestState<HttpSinkRequestEntry>> bufferedRequestStates,
-        Properties properties) {
+            ElementConverter<InputT, HttpSinkRequestEntry> elementConverter,
+            Sink.InitContext context,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long maxBatchSizeInBytes,
+            long maxTimeInBufferMS,
+            long maxRecordSizeInBytes,
+            String endpointUrl,
+            SinkHttpClient sinkHttpClient,
+            Collection<BufferedRequestState<HttpSinkRequestEntry>> bufferedRequestStates,
+            Properties properties) {
 
         super(elementConverter, context, maxBatchSize, maxInFlightRequests, maxBufferedRequests,
             maxBatchSizeInBytes, maxTimeInBufferMS, maxRecordSizeInBytes, bufferedRequestStates);
@@ -82,8 +82,8 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
     // TODO: Reintroduce retries by adding backoff policy
     @Override
     protected void submitRequestEntries(
-        List<HttpSinkRequestEntry> requestEntries,
-        Consumer<List<HttpSinkRequestEntry>> requestResult) {
+            List<HttpSinkRequestEntry> requestEntries,
+            Consumer<List<HttpSinkRequestEntry>> requestResult) {
         var future = sinkHttpClient.putRequests(requestEntries, endpointUrl);
         future.whenCompleteAsync((response, err) -> {
             if (err != null) {
