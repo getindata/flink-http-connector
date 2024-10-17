@@ -1,15 +1,16 @@
 package com.getindata.connectors.http.internal.status;
 
+import java.util.function.Predicate;
+
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 
 /**
- * An implementation of {@link HttpStatusCodeChecker} that validates status code against
- * constant value.
+ * Predicate that validates status code against constant value.
  */
 @RequiredArgsConstructor
 @EqualsAndHashCode
-public class SingleValueHttpStatusCodeChecker implements HttpStatusCodeChecker {
+class SingleValueHttpStatusCodeCheckerPredicate implements Predicate<Integer> {
 
     /**
      * A reference http status code to compare with.
@@ -18,11 +19,12 @@ public class SingleValueHttpStatusCodeChecker implements HttpStatusCodeChecker {
 
     /**
      * Validates given statusCode against constant value.
+     *
      * @param statusCode http status code to assess.
-     * @return true if status code is considered as error or false if not.
+     * @return <code>true</code> if status code is equal to expected value.
      */
     @Override
-    public boolean isErrorCode(int statusCode) {
+    public boolean test(Integer statusCode) {
         return errorCode == statusCode;
     }
 }

@@ -1,138 +1,111 @@
 package com.getindata.connectors.http.internal.status;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.StringUtils;
+import static org.apache.flink.util.StringUtils.isNullOrWhitespaceOnly;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 
 /**
  * An implementation of {@link HttpStatusCodeChecker} that checks Http Status code against
- * white list, concrete value or {@link HttpResponseCodeType}
+ * white list, concrete value or {@link HttpResponseCodeType}.
  */
 public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
 
-    private static final Set<HttpStatusCodeChecker> DEFAULT_ERROR_CODES =
-        Set.of(
-            new TypeStatusCodeChecker(HttpResponseCodeType.CLIENT_ERROR),
-            new TypeStatusCodeChecker(HttpResponseCodeType.SERVER_ERROR)
-        );
-
     private static final int MIN_HTTP_STATUS_CODE = 100;
+    private static final int MAX_HTTP_STATUS_CODE = 599;
 
-    /**
-     * Set of {@link HttpStatusCodeChecker} for white listed status codes.
-     */
-    private final Set<WhiteListHttpStatusCodeChecker> excludedCodes;
+    private static final Predicate<Integer> DEFAULT_NON_RETRYABLE_ERROR_CODES =
+        new TypeStatusCodeCheckerPredicate(HttpResponseCodeType.CLIENT_ERROR);
+    private static final Predicate<Integer> DEFAULT_RETRYABLE_ERROR_CODES =
+        new TypeStatusCodeCheckerPredicate(HttpResponseCodeType.SERVER_ERROR);
+    private static final Predicate<Integer> DEFAULT_DEPRECATED_ERROR_CODES =
+        DEFAULT_NON_RETRYABLE_ERROR_CODES.or(DEFAULT_RETRYABLE_ERROR_CODES);
 
-    /**
-     * Set of {@link HttpStatusCodeChecker} that check status code againts value match or {@link
-     * HttpResponseCodeType} match.
-     */
-    private final Set<HttpStatusCodeChecker> errorCodes;
+    private final Predicate<Integer> retryableErrorStatusCodes;
+    private final Predicate<Integer> nonRetryableErrorStatusCodes;
 
     public ComposeHttpStatusCodeChecker(ComposeHttpStatusCodeCheckerConfig config) {
-        excludedCodes = prepareWhiteList(config);
-        errorCodes = prepareErrorCodes(config);
+        // Handle deprecated configuration for backward compatibility.
+        if (areDeprecatedPropertiesUsed(config)) {
+            nonRetryableErrorStatusCodes = buildPredicate(config, config.getErrorCodePrefix(),
+                config.getWhiteListPrefix(), DEFAULT_DEPRECATED_ERROR_CODES);
+            retryableErrorStatusCodes = integer -> false;
+        } else {
+            retryableErrorStatusCodes = buildPredicate(config, config.getRetryableErrorCodePrefix(),
+                config.getRetryableErrorWhiteListPrefix(), DEFAULT_RETRYABLE_ERROR_CODES);
+            nonRetryableErrorStatusCodes =
+                buildPredicate(config, config.getNonRetryableErrorCodePrefix(),
+                    config.getNonRetryableErrorWhiteListPrefix(),
+                    DEFAULT_NON_RETRYABLE_ERROR_CODES);
+        }
     }
 
-    /**
-     * Checks whether given status code is considered as a error code.
-     * This implementation checks if status code matches any single value mask like "404"
-     * or http type mask such as "4XX". Code that matches one of those masks and is not on a
-     * white list will be considered as error code.
-     * @param statusCode http status code to assess.
-     * @return true if status code is considered as error or false if not.
-     */
-    public boolean isErrorCode(int statusCode) {
+    private boolean areDeprecatedPropertiesUsed(ComposeHttpStatusCodeCheckerConfig config) {
+        boolean whiteListDefined = !isNullOrWhitespaceOnly(config.getWhiteListPrefix());
+        boolean codeListDefined = !isNullOrWhitespaceOnly(config.getErrorCodePrefix());
 
-        Preconditions.checkArgument(
-            statusCode >= MIN_HTTP_STATUS_CODE,
-            String.format(
-                "Provided invalid Http status code %s,"
-                    + " status code should be equal or bigger than %d.",
-                statusCode,
-                MIN_HTTP_STATUS_CODE)
-        );
-
-        boolean isWhiteListed = excludedCodes.stream()
-            .anyMatch(check -> check.isWhiteListed(statusCode));
-
-        return !isWhiteListed
-            && errorCodes.stream()
-                .anyMatch(httpStatusCodeChecker -> httpStatusCodeChecker.isErrorCode(statusCode));
+        return (whiteListDefined && !isNullOrWhitespaceOnly(
+            config.getProperties().getProperty(config.getWhiteListPrefix()))) ||
+            (codeListDefined && !isNullOrWhitespaceOnly(
+                config.getProperties().getProperty(config.getErrorCodePrefix())));
     }
 
-    private Set<HttpStatusCodeChecker> prepareErrorCodes(
-            ComposeHttpStatusCodeCheckerConfig config) {
-
+    private Predicate<Integer> buildPredicate(
+        ComposeHttpStatusCodeCheckerConfig config,
+        String errorCodePrefix,
+        String whiteListPrefix,
+        Predicate<Integer> defaultErrorCodes) {
         Properties properties = config.getProperties();
-        String errorCodePrefix = config.getErrorCodePrefix();
 
         String errorCodes =
-            properties.getProperty(errorCodePrefix, "");
+            errorCodePrefix == null ? "" : properties.getProperty(errorCodePrefix, "");
+        String whitelistCodes =
+            whiteListPrefix == null ? "" : properties.getProperty(whiteListPrefix, "");
 
-        if (StringUtils.isNullOrWhitespaceOnly(errorCodes)) {
-            return DEFAULT_ERROR_CODES;
-        } else {
-            String[] splitCodes = errorCodes.split(HttpConnectorConfigConstants.PROP_DELIM);
-            return prepareErrorCodes(splitCodes);
-        }
+        Predicate<Integer> errorPredicate =
+            prepareErrorCodes(errorCodes).orElse(defaultErrorCodes);
+        Predicate<Integer> whitelistPredicate =
+            prepareErrorCodes(whitelistCodes).orElse(i -> false);
+
+        return errorPredicate.and(Predicate.not(whitelistPredicate));
     }
 
     /**
-     * Process given array of status codes and assign them to
-     * {@link SingleValueHttpStatusCodeChecker} for full codes such as 100, 404 etc. or to
-     * {@link TypeStatusCodeChecker} for codes that were constructed with "XX" mask
+     * Process given string containing comma-separated list of status codes and assign them to
+     * {@link SingleValueHttpStatusCodeCheckerPredicate} for full codes such as 100, 404 etc. or to
+     * {@link TypeStatusCodeCheckerPredicate} for codes that were constructed with "XX" mask.
+     * In the end, all conditions are reduced to a single predicate.
      */
-    private Set<HttpStatusCodeChecker> prepareErrorCodes(String[] statusCodes) {
-
-        Set<HttpStatusCodeChecker> errorCodes = new HashSet<>();
-        for (String sCode : statusCodes) {
-            if (!StringUtils.isNullOrWhitespaceOnly(sCode)) {
-                String trimCode = sCode.toUpperCase().trim();
-                Preconditions.checkArgument(
-                    trimCode.length() == 3,
-                    "Status code should contain three characters. Provided [%s]",
-                    trimCode);
-
-                // at this point we have trim, upper case 3 character status code.
-                if (isTypeCode(trimCode)) {
-                    int code = Integer.parseInt(trimCode.replace("X", ""));
-                    errorCodes.add(new TypeStatusCodeChecker(HttpResponseCodeType.getByCode(code)));
-                } else {
-                    errorCodes.add(
-                        new SingleValueHttpStatusCodeChecker(Integer.parseInt(trimCode))
-                    );
-                }
-            }
-        }
-        return (errorCodes.isEmpty()) ? DEFAULT_ERROR_CODES : errorCodes;
+    private Optional<Predicate<Integer>> prepareErrorCodes(String statusCodesStr) {
+        return Arrays.stream(statusCodesStr.split(HttpConnectorConfigConstants.PROP_DELIM))
+            .filter(code -> !isNullOrWhitespaceOnly(code))
+            .map(code -> code.toUpperCase().trim())
+            .map(this::prepareErrorCode)
+            .reduce(Predicate::or);
     }
 
-    private Set<WhiteListHttpStatusCodeChecker> prepareWhiteList(
-            ComposeHttpStatusCodeCheckerConfig config) {
+    private Predicate<Integer> prepareErrorCode(String codeString) {
+        Preconditions.checkArgument(
+            codeString.length() == 3,
+            "Status code should contain three characters. Provided [%s]",
+            codeString);
 
-        Properties properties = config.getProperties();
-        String whiteListPrefix = config.getWhiteListPrefix();
-
-        return Arrays.stream(
-                properties.getProperty(whiteListPrefix, "")
-                    .split(HttpConnectorConfigConstants.PROP_DELIM))
-            .filter(sCode -> !StringUtils.isNullOrWhitespaceOnly(sCode))
-            .map(String::trim)
-            .mapToInt(Integer::parseInt)
-            .mapToObj(WhiteListHttpStatusCodeChecker::new)
-            .collect(Collectors.toSet());
+        // at this point we have trim, upper case 3 character status code.
+        if (isTypeCode(codeString)) {
+            int code = Integer.parseInt(codeString.replace("X", ""));
+            return new TypeStatusCodeCheckerPredicate(HttpResponseCodeType.getByCode(code));
+        } else {
+            return new SingleValueHttpStatusCodeCheckerPredicate(Integer.parseInt(codeString));
+        }
     }
 
     /**
@@ -147,6 +120,39 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         return code.charAt(1) == 'X' && code.charAt(2) == 'X';
     }
 
+    /**
+     * Checks whether given status code is considered as an error code.
+     * This implementation checks if status code matches any single value mask like "404"
+     * or http type mask such as "4XX". Code that matches one of those masks and is not on a
+     * white list will be considered as error code.
+     *
+     * @param statusCode http status code to assess.
+     * @return <code>SUCCESS</code> if statusCode is considered as success,
+     * <code>FAILURE_RETRYABLE</code> if the status code indicates transient error,
+     * otherwise <code>FAILURE_NON_RETRYABLE</code>.
+     */
+    @Override
+    public HttpResponseStatus checkStatus(int statusCode) {
+        Preconditions.checkArgument(
+            statusCode >= MIN_HTTP_STATUS_CODE && statusCode <= MAX_HTTP_STATUS_CODE,
+            String.format(
+                "Provided invalid Http status code %s,"
+                    + " status code should be equal or bigger than %d."
+                    + " and equal or lower than %d.",
+                statusCode,
+                MIN_HTTP_STATUS_CODE,
+                MAX_HTTP_STATUS_CODE)
+        );
+
+        if (nonRetryableErrorStatusCodes.test(statusCode)) {
+            return HttpResponseStatus.FAILURE_NON_RETRYABLE;
+        } else if (retryableErrorStatusCodes.test(statusCode)) {
+            return HttpResponseStatus.FAILURE_RETRYABLE;
+        } else {
+            return HttpResponseStatus.SUCCESS;
+        }
+    }
+
     @Data
     @Builder
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -155,6 +161,14 @@ public class ComposeHttpStatusCodeChecker implements HttpStatusCodeChecker {
         private final String whiteListPrefix;
 
         private final String errorCodePrefix;
+
+        private final String nonRetryableErrorWhiteListPrefix;
+
+        private final String nonRetryableErrorCodePrefix;
+
+        private final String retryableErrorWhiteListPrefix;
+
+        private final String retryableErrorCodePrefix;
 
         private final Properties properties;
     }

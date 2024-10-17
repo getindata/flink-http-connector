@@ -20,8 +20,11 @@ import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstant
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
+import com.getindata.connectors.http.internal.status.HttpResponseStatus;
 import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST;
 
 /**
  * An implementation of {@link SinkHttpClient} that uses Java 11's {@link HttpClient}. This
@@ -41,10 +44,10 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private final RequestSubmitter requestSubmitter;
 
     public JavaNetSinkHttpClient(
-            Properties properties,
-            HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
-            HeaderPreprocessor headerPreprocessor,
-            RequestSubmitterFactory requestSubmitterFactory) {
+        Properties properties,
+        HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
+        HeaderPreprocessor headerPreprocessor,
+        RequestSubmitterFactory requestSubmitterFactory) {
 
         this.httpPostRequestCallback = httpPostRequestCallback;
         this.headerMap = HttpHeaderUtils.prepareHeaderMap(
@@ -58,8 +61,12 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         ComposeHttpStatusCodeCheckerConfig checkerConfig =
             ComposeHttpStatusCodeCheckerConfig.builder()
                 .properties(properties)
-                .whiteListPrefix(HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST)
-                .errorCodePrefix(HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST)
+                .whiteListPrefix(HTTP_ERROR_SINK_CODE_WHITE_LIST)
+                .errorCodePrefix(HTTP_ERROR_SINK_CODES_LIST)
+                .nonRetryableErrorWhiteListPrefix("")      // TODO: sink not refactored yet
+                .nonRetryableErrorCodePrefix("")
+                .retryableErrorWhiteListPrefix("")
+                .retryableErrorCodePrefix("")
                 .build();
 
         this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
@@ -80,8 +87,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     }
 
     private CompletableFuture<List<JavaNetHttpResponseWrapper>> submitRequests(
-            List<HttpSinkRequestEntry> requestEntries,
-            String endpointUrl) {
+        List<HttpSinkRequestEntry> requestEntries,
+        String endpointUrl) {
 
         var responseFutures = requestSubmitter.submit(endpointUrl, requestEntries);
         var allFutures = CompletableFuture.allOf(responseFutures.toArray(new CompletableFuture[0]));
@@ -103,11 +110,12 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
                 optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
 
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
-            if (optResponse.isEmpty() ||
-                statusCodeChecker.isErrorCode(optResponse.get().statusCode())) {
-                failedResponses.add(sinkRequestEntry);
-            } else {
+            if (optResponse.isPresent() &&
+                statusCodeChecker.checkStatus(optResponse.get().statusCode())
+                    .equals(HttpResponseStatus.SUCCESS)) {
                 successfulResponses.add(sinkRequestEntry);
+            } else {
+                failedResponses.add(sinkRequestEntry);
             }
         }
 
