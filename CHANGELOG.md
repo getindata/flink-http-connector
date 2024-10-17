@@ -6,6 +6,10 @@
 
 -   Added support for OIDC Bearer tokens.
 
+### Fixed
+
+-   Ensured SerializationSchema is used in thread-safe way.
+
 ## [0.15.0] - 2024-07-30
 
 ### Added
