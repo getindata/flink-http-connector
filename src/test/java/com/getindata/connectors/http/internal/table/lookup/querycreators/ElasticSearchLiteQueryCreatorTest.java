@@ -18,6 +18,25 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTabl
 
 public class ElasticSearchLiteQueryCreatorTest {
 
+
+    @Test
+    public void testWithEmptyLookupResult() {
+
+        // GIVEN
+        LookupRow lookupRow = new LookupRow();
+        lookupRow.setLookupPhysicalRowDataType(DataTypes.STRING());
+
+        GenericRowData lookupDataRow = GenericRowData.of(StringData.fromString("val1"));
+
+        // WHEN
+        var queryCreator = new ElasticSearchLiteQueryCreator(lookupRow);
+        var createdQuery = queryCreator.createLookupQuery(lookupDataRow);
+
+        // THEN
+        assertThat(createdQuery.getLookupQuery()).isEqualTo("");
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
+    }
+
     @Test
     public void testQueryCreationForSingleQueryStringParam() {
 
