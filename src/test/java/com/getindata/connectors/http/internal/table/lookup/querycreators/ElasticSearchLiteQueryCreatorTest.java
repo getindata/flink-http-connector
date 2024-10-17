@@ -20,7 +20,7 @@ public class ElasticSearchLiteQueryCreatorTest {
 
 
     @Test
-    public void testWithEmptyLookup() {
+    public void testWithEmptyLookupResult() {
 
         // GIVEN
         LookupRow lookupRow = new LookupRow();
