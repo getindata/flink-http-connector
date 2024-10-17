@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.utils;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -73,7 +74,8 @@ public class JavaNetHttpClientFactory {
      * @return new {@link SSLContext} instance.
      */
     private static SSLContext getSslContext(Properties properties) {
-        SecurityContext securityContext = createSecurityContext(properties);
+        String keyStorePath =
+                properties.getProperty(HttpConnectorConfigConstants.KEY_STORE_PATH, "");
 
         boolean selfSignedCert = Boolean.parseBoolean(
             properties.getProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "false"));
@@ -88,6 +90,22 @@ public class JavaNetHttpClientFactory {
         String clientPrivateKey = properties
             .getProperty(HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY, "");
 
+        if (StringUtils.isNullOrWhitespaceOnly(keyStorePath)
+                && !selfSignedCert
+                // checking the property in this way so that serverTrustedCerts is not left and null
+                // or empty, which causes the http client to error.
+                && (properties.getProperty(HttpConnectorConfigConstants.SERVER_TRUSTED_CERT)
+                    == null)
+                && StringUtils.isNullOrWhitespaceOnly(clientCert)
+                && StringUtils.isNullOrWhitespaceOnly(clientPrivateKey)) {
+            try {
+                return SSLContext.getDefault();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        SecurityContext securityContext = createSecurityContext(properties);
         for (String cert : serverTrustedCerts) {
             if (!StringUtils.isNullOrWhitespaceOnly(cert)) {
                 securityContext.addCertToTrustStore(cert);
