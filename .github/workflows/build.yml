@@ -49,4 +49,3 @@ jobs:
           min-coverage-overall: 40
           min-coverage-changed-files: 60
         if: startsWith(matrix.flink, '1.18') && github.event.pull_request.head.repo.fork == false
-        continue-on-error: true
