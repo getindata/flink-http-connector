@@ -4,6 +4,7 @@
 
 ### Added
 
+-   Added support for built in JVM certificates if no security is configured.
 -   Added support for OIDC Bearer tokens.
 
 ### Fixed
