@@ -392,18 +392,21 @@ An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s
    Many status codes can be defined in one value, where each code should be separated with comma, for example:
   `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
 
-## TLS and mTLS support
-Both Http Sink and Lookup Source connectors supports Https communication using TLS 1.2 and mTLS.
-To enable Https communication simply use `https` protocol in endpoint's URL.
-If certificate used by HTTP server is self-signed, or it is signed byt not globally recognize CA
-you would have to add this certificate to connector's keystore as trusted certificate.
-In order to do so, use `gid.connector.http.security.cert.server` connector property,
-which value is a path to the certificate. You can also use your organization's CA Root certificate.
-You can specify many certificate, separating each path with `,`.
+## TLS (more secure replacement for SSL) and mTLS support
 
-You can also configure connector to use mTLS. For this simply use `gid.connector.http.security.cert.client`
-and `gid.connector.http.security.key.client` connector properties to specify path to certificate and
-private key that should be used by connector. Key MUST be in `PCKS8` format. Both PEM and DER keys are
+Both Http Sink and Lookup Source connectors support HTTPS communication using TLS 1.2 and mTLS.
+To enable Https communication simply use `https` protocol in endpoint's URL.
+
+To specify certificate(s) to be used by the server, use `gid.connector.http.security.cert.server` connector property;
+the value is a comma separated list of paths to certificate(s), for example you can use your organization's CA
+Root certificate, or a self-signed certificate.
+
+Note that if there are no security properties for a `https` url then, the JVMs default certificates are
+used - allowing use of globally recognized CAs without the need for configuration.
+
+You can also configure the connector to use mTLS. For this simply use `gid.connector.http.security.cert.client`
+and `gid.connector.http.security.key.client` connector properties to specify paths to the certificate and
+private key. The key MUST be in `PCKS8` format. Both PEM and DER keys are
 allowed.
 
 All properties can be set via Sink's builder `.setProperty(...)` method or through Sink and Source table DDL.
@@ -415,7 +418,7 @@ To enable this option use `gid.connector.http.security.cert.server.allowSelfSign
 ## Basic Authentication
 The connector supports Basic Authentication using a HTTP `Authorization` header.
 The header value can be set via properties, similarly as for other headers. The connector converts the passed value to Base64 and uses it for the request.
-If the used value starts with the prefix `Basic `, or `gid.connector.http.source.lookup.use-raw-authorization-header`
+If the used value starts with the prefix `Basic`, or `gid.connector.http.source.lookup.use-raw-authorization-header`
 is set to `'true'`, it will be used as header value as is, without any extra modification.
 
 ## OIDC Bearer Authentication
@@ -452,13 +455,13 @@ be requested if the current time is later than the cached token expiry time minu
 | lookup.max-retries                                            | optional | The max retry times if the lookup failed; default is 3. See the following <a href="#lookup-cache">Lookup Cache</a> section for more details.                                                                                                                                                                                                                      |
 | gid.connector.http.lookup.error.code                          | optional | List of HTTP status codes that should be treated as errors by HTTP Source, separated with comma.                                                                                                                                                                                                                                                                  |
 | gid.connector.http.lookup.error.code.exclude                  | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.lookup.error.code` list, separated with comma.                                                                                                                                                                                                                                     |
-| gid.connector.http.security.cert.server                       | optional | Path to trusted HTTP server certificate that should be add to connectors key store. More than one path can be specified using `,` as path delimiter.                                                                                                                                                                                                              |
+| gid.connector.http.security.cert.server                       | optional | Comma separated paths to trusted HTTP server certificates that should be added to the connectors trust store.                                                                                                                                                                                                                                                     |
 | gid.connector.http.security.cert.client                       | optional | Path to trusted certificate that should be used by connector's HTTP client for mTLS communication.                                                                                                                                                                                                                                                                |
 | gid.connector.http.security.key.client                        | optional | Path to trusted private key that should be used by connector's HTTP client for mTLS communication.                                                                                                                                                                                                                                                                |
 | gid.connector.http.security.cert.server.allowSelfSigned       | optional | Accept untrusted certificates for TLS communication.                                                                                                                                                                                                                                                                                                              |
-| gid.connector.http.security.oidc.token.request                | optional | OIDC `Token Request` body in `application/x-www-form-urlencoded` encoding                                                                                                                                                          |
-| gid.connector.http.security.oidc.token.endpoint.url           | optional | OIDC `Token Endpoint` url, to which the token request will be issued                                                                                                                                                               |
-| gid.connector.http.security.oidc.token.expiry.reduction       | optional | OIDC tokens will be requested if the current time is later than the cached token expiry time minus this value.                                                                                                                     |
+| gid.connector.http.security.oidc.token.request                | optional | OIDC `Token Request` body in `application/x-www-form-urlencoded` encoding                                                                                                                                                                                                                                                                                         |
+| gid.connector.http.security.oidc.token.endpoint.url           | optional | OIDC `Token Endpoint` url, to which the token request will be issued                                                                                                                                                                                                                                                                                              |
+| gid.connector.http.security.oidc.token.expiry.reduction       | optional | OIDC tokens will be requested if the current time is later than the cached token expiry time minus this value.                                                                                                                                                                                                                                                    |
 | gid.connector.http.source.lookup.request.timeout              | optional | Sets HTTP request timeout in seconds. If not specified, the default value of 30 seconds will be used.                                                                                                                                                                                                                                                             |
 | gid.connector.http.source.lookup.request.thread-pool.size     | optional | Sets the size of pool thread for HTTP lookup request processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 8 threads will be used.                                                                                                                                 |
 | gid.connector.http.source.lookup.response.thread-pool.size    | optional | Sets the size of pool thread for HTTP lookup response processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 4 threads will be used.                                                                                                                                |
