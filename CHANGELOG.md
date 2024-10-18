@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.16.0] - 2024-10-18
+
 ### Added
 
 -   Added support for built in JVM certificates if no security is configured.
@@ -210,7 +212,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.15.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.16.0...HEAD
+
+[0.16.0]: https://github.com/getindata/flink-http-connector/compare/0.15.0...0.16.0
 
 [0.15.0]: https://github.com/getindata/flink-http-connector/compare/0.14.0...0.15.0
 
