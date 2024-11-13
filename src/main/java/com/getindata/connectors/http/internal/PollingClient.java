@@ -1,6 +1,6 @@
 package com.getindata.connectors.http.internal;
 
-import java.util.Optional;
+import java.util.Collection;
 
 import org.apache.flink.table.data.RowData;
 
@@ -14,5 +14,5 @@ public interface PollingClient<T> {
      * @param lookupRow A {@link RowData} containing request parameters.
      * @return an optional result of data lookup.
      */
-    Optional<T> pull(RowData lookupRow);
+    Collection<T> pull(RowData lookupRow);
 }

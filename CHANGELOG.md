@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+-   Allow to fetch multiple results from REST API endpoint (`gid.connector.http.source.lookup.result-type`).
+
 ## [0.16.0] - 2024-10-18
 
 ### Added

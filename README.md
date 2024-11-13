@@ -171,6 +171,16 @@ Because of that, if AsyncIO timer passes, Flink will throw TimeoutException whic
 The HTTP request timeouts on the other hand will not cause Job restart. In that case, exception will be logged into application logs.
 To avoid job restart on timeouts caused by Lookup queries, the value of `gid.connector.http.source.lookup.request.timeout` should be smaller than `table.exec.async-lookup.timeout`.
 
+#### Lookup multiple results
+
+Typically, join can return zero, one or more results. What is more, there are lots of possible REST API designs and
+pagination methods. Currently, the connector supports only two simple approaches (`gid.connector.http.source.lookup.result-type`):
+
+- `single-value` - REST API returns single object.
+- `array` - REST API returns array of objects. Pagination is not supported yet.
+
+Please be informed that the mechanism will be enhanced in the future. See [HTTP-118](https://github.com/getindata/flink-http-connector/issues/118).
+
 ### HTTP Sink
 The following example shows the minimum Table API example to create a [HttpDynamicSink](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicSink.java) that writes JSON values to an HTTP endpoint using POST method, assuming Flink has JAR of [JSON serializer](https://nightlies.apache.org/flink/flink-docs-release-1.15/docs/connectors/table/formats/json/) installed:
 

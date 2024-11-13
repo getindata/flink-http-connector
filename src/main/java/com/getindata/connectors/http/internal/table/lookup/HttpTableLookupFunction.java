@@ -1,8 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.AccessLevel;
@@ -66,7 +64,6 @@ public class HttpTableLookupFunction extends LookupFunction {
     @Override
     public Collection<RowData> lookup(RowData keyRow) {
         localHttpCallCounter.incrementAndGet();
-        Optional<RowData> result = client.pull(keyRow);
-        return result.map(Collections::singletonList).orElse(Collections.emptyList());
+        return client.pull(keyRow);
     }
 }

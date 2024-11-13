@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -261,7 +262,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
     private void testPollingClientConnection() {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(properties);
-        RowData result = pollingClient.pull(lookupRowData).orElseThrow();
+        Collection<RowData> result = pollingClient.pull(lookupRowData);
 
         assertResult(result);
     }
@@ -337,8 +338,9 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         this.pollingClientFactory = new JavaNetHttpPollingClientFactory(requestFactory);
     }
 
-    private void assertResult(RowData result) {
-
+    private void assertResult(Collection<RowData> results) {
+        assertThat(results).hasSize(1);
+        RowData result = results.iterator().next();
         assertThat(result.getArity()).isEqualTo(4);
         assertThat(result.getString(1)
             .toString()).isEqualTo("Returned HTTP message for parameter PARAM, COUNTER");

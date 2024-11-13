@@ -43,6 +43,9 @@ public final class HttpConnectorConfigConstants {
     public static final String LOOKUP_SOURCE_HEADER_USE_RAW = GID_CONNECTOR_HTTP
         + "source.lookup.use-raw-authorization-header";
 
+    public static final String RESULT_TYPE = GID_CONNECTOR_HTTP
+        + "source.lookup.result-type";
+
     // --------- Error code handling configuration ---------
     public static final String HTTP_ERROR_SINK_CODE_WHITE_LIST =
         GID_CONNECTOR_HTTP + "sink.error.code.exclude";

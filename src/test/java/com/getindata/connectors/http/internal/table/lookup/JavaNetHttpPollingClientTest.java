@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.util.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.Configuration;
@@ -63,6 +64,7 @@ public class JavaNetHttpPollingClientTest {
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
             decoder,
+            new ObjectMapper(),
             options,
             new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
@@ -82,6 +84,7 @@ public class JavaNetHttpPollingClientTest {
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
                 httpClient,
                 decoder,
+            new ObjectMapper(),
                 options,
                 new GetRequestFactory(
                         new GenericGetQueryCreator(lookupRow),
@@ -203,6 +206,7 @@ public class JavaNetHttpPollingClientTest {
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
             decoder,
+            new ObjectMapper(),
             lookupConfig,
             new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
