@@ -2,7 +2,6 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.net.http.HttpClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
 
@@ -27,7 +26,6 @@ public class JavaNetHttpPollingClientFactory implements PollingClientFactory<Row
         return new JavaNetHttpPollingClient(
             httpClient,
             schemaDecoder,
-            new ObjectMapper(),
             options,
             requestFactory
         );

@@ -33,15 +33,18 @@ import static com.getindata.connectors.http.internal.config.HttpConnectorConfigC
 @Slf4j
 public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
+    private static final String RESULT_TYPE_SINGLE_VALUE = "single-value";
+    private static final String RESULT_TYPE_ARRAY = "array";
+
     private final HttpClient httpClient;
 
     private final HttpStatusCodeChecker statusCodeChecker;
 
     private final DeserializationSchema<RowData> responseBodyDecoder;
 
-    private final ObjectMapper objectMapper;
-
     private final HttpRequestFactory requestFactory;
+
+    private final ObjectMapper objectMapper;
 
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
 
@@ -50,15 +53,14 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
             DeserializationSchema<RowData> responseBodyDecoder,
-            ObjectMapper objectMapper,
             HttpLookupConfig options,
             HttpRequestFactory requestFactory) {
 
         this.httpClient = httpClient;
         this.responseBodyDecoder = responseBodyDecoder;
-        this.objectMapper = objectMapper;
         this.requestFactory = requestFactory;
 
+        this.objectMapper = new ObjectMapper();
         this.httpPostRequestCallback = options.getHttpPostRequestCallback();
 
         // TODO Inject this via constructor when implementing a response processor.
@@ -138,21 +140,31 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private Collection<RowData> deserialize(String responseBody) throws IOException {
         byte[] rawBytes = responseBody.getBytes();
-        String resultType = options.getProperties().getProperty(RESULT_TYPE, "single-value");
-        if (resultType.equals("single-value")) {
-            return Collections.singletonList(responseBodyDecoder.deserialize(rawBytes));
-        } else if (resultType.equals("array")) {
+        String resultType =
+            options.getProperties().getProperty(RESULT_TYPE, RESULT_TYPE_SINGLE_VALUE);
+        if (resultType.equals(RESULT_TYPE_SINGLE_VALUE)) {
+            RowData deserialized = responseBodyDecoder.deserialize(rawBytes);
+            // deserialize() returns null if deserialization fails
+            return deserialized != null
+                ? Collections.singletonList(deserialized)
+                : Collections.emptyList();
+        } else if (resultType.equals(RESULT_TYPE_ARRAY)) {
             List<JsonNode> rawObjects =
                 objectMapper.readValue(rawBytes, new TypeReference<>() {
                 });
-            List<RowData> result = new ArrayList<>(rawObjects.size());
+            List<RowData> result = new ArrayList<>();
             for (JsonNode rawObject : rawObjects) {
-                result.add(responseBodyDecoder.deserialize(rawObject.toString().getBytes()));
+                RowData deserialized =
+                    responseBodyDecoder.deserialize(rawObject.toString().getBytes());
+                // deserialize() returns null if deserialization fails
+                if (deserialized != null) {
+                    result.add(deserialized);
+                }
             }
             return result;
         } else {
             throw new IllegalStateException(
-                String.format("Unknown lookup source result type '%'.", resultType));
+                String.format("Unknown lookup source result type '%s'.", resultType));
         }
     }
 }
