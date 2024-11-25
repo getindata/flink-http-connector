@@ -61,6 +61,8 @@ class JavaNetHttpPollingClientConnectionTest {
 
     private static final String SAMPLES_FOLDER = "/http/";
     private static final String SAMPLES_FOLDER_ARRAY_RESULT = "/http-array-result/";
+    private static final String SAMPLES_FOLDER_ARRAY_RESULT_WITH_NULLS =
+        "/http-array-result-with-nulls/";
 
     private static final String ENDPOINT = "/service";
 
@@ -231,6 +233,36 @@ class JavaNetHttpPollingClientConnectionTest {
         assertThat(detailsRow2.getBoolean(0)).isEqualTo(false); // isActive
         RowData nestedDetailsRow2 = detailsRow2.getRow(1, 1);
         assertThat(nestedDetailsRow2.getString(0).toString()).isEqualTo("$22,001.99");
+    }
+
+    @Test
+    void shouldQuery200WithArrayResultWithNulls() {
+        // GIVEN
+        this.stubMapping = setUpServerStubArrayResultWithNulls(200);
+
+        Properties properties = new Properties();
+        properties.putAll(this.properties);
+        properties.setProperty(RESULT_TYPE, "array");
+
+        // WHEN
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(getBaseUrl(), properties);
+
+        // WHEN
+        Collection<RowData> results = pollingClient.pull(lookupRowData);
+
+        // THEN
+        wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
+
+        assertThat(results).hasSize(1);
+
+        Iterator<RowData> iterator = results.iterator();
+
+        RowData firstResult = iterator.next();
+        assertThat(firstResult.getArity()).isEqualTo(4);
+        RowData detailsRow1 = firstResult.getRow(3, 2);
+        assertThat(detailsRow1.getBoolean(0)).isEqualTo(true); // isActive
+        RowData nestedDetailsRow1 = detailsRow1.getRow(1, 1);
+        assertThat(nestedDetailsRow1.getString(0).toString()).isEqualTo("$1,729.34");
     }
 
     @ParameterizedTest
@@ -472,6 +504,17 @@ class JavaNetHttpPollingClientConnectionTest {
                     aResponse()
                         .withStatus(status)
                         .withBody(readTestFile(SAMPLES_FOLDER_ARRAY_RESULT + "HttpResult.json"))));
+    }
+
+    private StubMapping setUpServerStubArrayResultWithNulls(int status) {
+        return wireMockServer.stubFor(
+            get(urlEqualTo(ENDPOINT + "?id=1&uuid=2"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(status)
+                        .withBody(readTestFile(
+                            SAMPLES_FOLDER_ARRAY_RESULT_WITH_NULLS + "HttpResult.json"))));
     }
 
     private StubMapping setupServerStubForBasicAuth() {
