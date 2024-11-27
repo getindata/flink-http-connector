@@ -12,6 +12,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -154,11 +155,13 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
                 });
             List<RowData> result = new ArrayList<>();
             for (JsonNode rawObject : rawObjects) {
-                RowData deserialized =
-                    responseBodyDecoder.deserialize(rawObject.toString().getBytes());
-                // deserialize() returns null if deserialization fails
-                if (deserialized != null) {
-                    result.add(deserialized);
+                if (!(rawObject instanceof NullNode)) {
+                    RowData deserialized =
+                        responseBodyDecoder.deserialize(rawObject.toString().getBytes());
+                    // deserialize() returns null if deserialization fails
+                    if (deserialized != null) {
+                        result.add(deserialized);
+                    }
                 }
             }
             return result;
