@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -144,30 +145,36 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         String resultType =
             options.getProperties().getProperty(RESULT_TYPE, RESULT_TYPE_SINGLE_VALUE);
         if (resultType.equals(RESULT_TYPE_SINGLE_VALUE)) {
-            RowData deserialized = responseBodyDecoder.deserialize(rawBytes);
-            // deserialize() returns null if deserialization fails
-            return deserialized != null
-                ? Collections.singletonList(deserialized)
-                : Collections.emptyList();
+            return deserializeSingleValue(rawBytes);
         } else if (resultType.equals(RESULT_TYPE_ARRAY)) {
-            List<JsonNode> rawObjects =
-                objectMapper.readValue(rawBytes, new TypeReference<>() {
-                });
-            List<RowData> result = new ArrayList<>();
-            for (JsonNode rawObject : rawObjects) {
-                if (!(rawObject instanceof NullNode)) {
-                    RowData deserialized =
-                        responseBodyDecoder.deserialize(rawObject.toString().getBytes());
-                    // deserialize() returns null if deserialization fails
-                    if (deserialized != null) {
-                        result.add(deserialized);
-                    }
-                }
-            }
-            return result;
+            return deserializeArray(rawBytes);
         } else {
             throw new IllegalStateException(
                 String.format("Unknown lookup source result type '%s'.", resultType));
         }
+    }
+
+    private List<RowData> deserializeSingleValue(byte[] rawBytes) throws IOException {
+        return Optional.ofNullable(responseBodyDecoder.deserialize(rawBytes))
+            .map(Collections::singletonList)
+            .orElse(Collections.emptyList());
+    }
+
+    private List<RowData> deserializeArray(byte[] rawBytes) throws IOException {
+        List<JsonNode> rawObjects =
+            objectMapper.readValue(rawBytes, new TypeReference<>() {
+            });
+        List<RowData> result = new ArrayList<>();
+        for (JsonNode rawObject : rawObjects) {
+            if (!(rawObject instanceof NullNode)) {
+                RowData deserialized =
+                    responseBodyDecoder.deserialize(rawObject.toString().getBytes());
+                // deserialize() returns null if deserialization fails
+                if (deserialized != null) {
+                    result.add(deserialized);
+                }
+            }
+        }
+        return result;
     }
 }
