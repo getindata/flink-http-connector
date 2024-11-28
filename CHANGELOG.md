@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.17.0] - 2024-11-28
+
 ### Added
 
 -   Allow to fetch multiple results from REST API endpoint (`gid.connector.http.source.lookup.result-type`).
@@ -216,7 +218,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.16.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.17.0...HEAD
+
+[0.17.0]: https://github.com/getindata/flink-http-connector/compare/0.16.0...0.17.0
 
 [0.16.0]: https://github.com/getindata/flink-http-connector/compare/0.15.0...0.16.0
 
