@@ -1,0 +1,36 @@
+[
+  {
+    "id": "COUNTER1",
+    "uuid": "UUID",
+    "msg": "Returned HTTP message for parameter PARAM, COUNTER",
+    "age": 30,
+    "eyeColor": "green",
+    "name": "Marva Fischer",
+    "gender": "female",
+    "details": {
+      "isActive": true,
+      "nestedDetails": {
+        "index": 0,
+        "guid": "d81fc542-6b49-4d59-8fb9-d57430d4871d",
+        "balance": "$1,729.34"
+      }
+    }
+  },
+  {
+    "id": "COUNTER2",
+    "uuid": "UUID",
+    "msg": "Returned HTTP message for parameter PARAM, COUNTER",
+    "age": 40,
+    "eyeColor": "brown",
+    "name": "John Doe",
+    "gender": "male",
+    "details": {
+      "isActive": false,
+      "nestedDetails": {
+        "index": 0,
+        "guid": "d81fc542-6b49-4d59-8fb9-d57430d4871d",
+        "balance": "$22,001.99"
+      }
+    }
+  }
+]
