@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   ignore Eclipse files in .gitignore
+
 ## [0.17.0] - 2024-11-28
 
 ### Added
