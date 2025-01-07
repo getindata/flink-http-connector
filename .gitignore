@@ -1,5 +1,10 @@
 /.idea/
 .idea
+.vscode
+.classpath
+.gitignore.swp
+.project
+.settings
 target
 bin
 /flink.http.connector.iml
