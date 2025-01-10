@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
--   ignore Eclipse files in .gitignore
+-   Ignore Eclipse files in .gitignore
+-   Support Flink 1.20
 
 ## [0.17.0] - 2024-11-28
 

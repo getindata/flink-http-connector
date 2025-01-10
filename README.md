@@ -19,7 +19,9 @@ In case of updating http-connector please see [Breaking changes](#breaking-chang
 ## Prerequisites
 * Java 11
 * Maven 3
-* Flink 1.16+
+* Flink 1.18+. Recommended Flink 1.20.* 
+
+
 
 ## Runtime dependencies
 This connector has few Flink's runtime dependencies, that are expected to be provided.
