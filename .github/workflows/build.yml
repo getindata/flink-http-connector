@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flink: [ "1.16.3", "1.17.2", "1.18.1"]
+        flink: ["1.18.1", "1.19.1", "1.20.0"]
     steps:
       - uses: actions/checkout@v3
 
@@ -38,7 +38,7 @@ jobs:
 
       - name: Test JavaDoc
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS javadoc:javadoc
-        if: startsWith(matrix.flink, '1.18')
+        if: startsWith(matrix.flink, '1.20')
 
       - name: Add coverage to PR
         id: jacoco
@@ -48,4 +48,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 40
           min-coverage-changed-files: 60
-        if: startsWith(matrix.flink, '1.18') && github.event.pull_request.head.repo.fork == false
+        if: startsWith(matrix.flink, '1.20') && github.event.pull_request.head.repo.fork == false
