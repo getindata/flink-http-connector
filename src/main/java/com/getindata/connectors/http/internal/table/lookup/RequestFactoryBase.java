@@ -4,8 +4,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +16,6 @@ import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL;
 
 /**
  * Base class for {@link HttpRequest} factories.
@@ -51,21 +48,10 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
         this.baseUrl = options.getUrl();
         this.lookupQueryCreator = lookupQueryCreator;
         this.options = options;
-
-        Properties properties = options.getProperties();
-        /*
-         * For OIDC, the preprocessor will fully specify the Authentication header value,
-         * as a bearer token. But the preprocessors only amend existing headers, so in this case
-         * if there is no existing authorization header then we add a dummy one to the properties,
-         * so the preprocessor will be driven and will provide the value.
-         */
-        Optional<String> oidcAuthURL = options.getReadableConfig()
-                .getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL);
-        if (oidcAuthURL.isPresent()) {
-            properties.put(HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX
-                    + HttpHeaderUtils.AUTHORIZATION, "Dummy");
-        }
-
+        // note that the OIDC header preprocessor is not setup here, because it
+        // issues a network call to the authentication server. This code is driven for
+        // explain select. Explain should not issue network calls.
+        // We setup the OIDC authentication header at lookup query time.
         var headerMap = HttpHeaderUtils
             .prepareHeaderMap(
                 HttpConnectorConfigConstants.LOOKUP_SOURCE_HEADER_PREFIX,

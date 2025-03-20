@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- OIDC token request to not flow during explain
+
 ## [0.18.0] - 2025-01-15
 
 -   Ignore Eclipse files in .gitignore
