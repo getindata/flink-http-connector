@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- OIDC token request to not flow during explain
+## [0.19.0] - 2025-03-20
+
+-   OIDC token request to not flow during explain
 
 ## [0.18.0] - 2025-01-15
 
@@ -225,7 +227,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.18.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.19.0...HEAD
+
+[0.19.0]: https://github.com/getindata/flink-http-connector/compare/0.18.0...0.19.0
 
 [0.18.0]: https://github.com/getindata/flink-http-connector/compare/0.17.0...0.18.0
 
