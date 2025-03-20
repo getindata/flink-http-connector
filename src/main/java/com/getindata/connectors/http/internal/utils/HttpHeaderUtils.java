@@ -105,7 +105,17 @@ public final class HttpHeaderUtils {
     }
 
     public static HeaderPreprocessor createHeaderPreprocessor(ReadableConfig readableConfig) {
-        HeaderPreprocessor headerPreprocessor;
+        boolean useRawAuthHeader =
+                 readableConfig.get(HttpLookupConnectorOptions.USE_RAW_AUTH_HEADER);
+        HeaderPreprocessor headerPreprocessor =
+                    HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor(
+                            useRawAuthHeader);
+        log.info("created HeaderPreprocessor for basic useRawAuthHeader=" + useRawAuthHeader);
+        log.info("returning HeaderPreprocessor " + headerPreprocessor);
+        return headerPreprocessor;
+    }
+    public static HeaderPreprocessor createOIDCHeaderPreprocessor(ReadableConfig readableConfig) {
+        HeaderPreprocessor headerPreprocessor = null;
         Optional<String> oidcAuthURL = readableConfig
                 .getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL);
 
@@ -121,16 +131,7 @@ public final class HttpHeaderUtils {
                     + " for OIDC oidcAuthURL=" + oidcAuthURL
                     + ", oidcTokenRequest=" + oidcTokenRequest
                     + ", oidcExpiryReduction=" + oidcExpiryReduction);
-        } else {
-            boolean useRawAuthHeader =
-                    readableConfig.get(HttpLookupConnectorOptions.USE_RAW_AUTH_HEADER);
-
-            headerPreprocessor =
-                    HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor(
-                            useRawAuthHeader);
-            log.info("created HeaderPreprocessor for basic useRawAuthHeader=" + useRawAuthHeader);
         }
-        log.info("returning HeaderPreprocessor " + headerPreprocessor);
         return headerPreprocessor;
     }
 }
