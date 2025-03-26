@@ -86,21 +86,21 @@ public class HttpLookupConnectorOptions {
             ConfigOptions.key(SOURCE_RETRY_STRATEGY_TYPE)
                     .enumType(RetryStrategyType.class)
                     .defaultValue(RetryStrategyType.FIXED_DELAY)
-                    .withDescription("Auto retry strategy type");
+                    .withDescription("Auto retry strategy type: fixed_delay (default) or exponential_delay.");
 
     public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_SUCCESS_CODES =
             ConfigOptions.key(SOURCE_RETRY_SUCCESS_CODES)
                     .stringType()
                     .defaultValue("2XX")
                     .withDescription("Comma separated http codes considered as success response. " +
-                            "Use [1-5]XX for groups and '!' character for excluding");
+                            "Use [1-5]XX for groups and '!' character for excluding.");
 
     public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_RETRY_CODES =
             ConfigOptions.key(SOURCE_RETRY_RETRY_CODES)
                     .stringType()
                     .defaultValue("500,503,504")
                     .withDescription("Comma separated http codes considered as temporal errors. " +
-                            "Use [1-5]XX for groups and '!' character for excluding");
+                            "Use [1-5]XX for groups and '!' character for excluding.");
 
     public static final ConfigOption<Duration> SOURCE_LOOKUP_RETRY_FIXED_DELAY_DELAY =
             ConfigOptions.key(SOURCE_RETRY_FIXED_DELAY_DELAY)
@@ -132,6 +132,5 @@ public class HttpLookupConnectorOptions {
                     .defaultValue("")
                     .withDescription("Comma separated http codes. Content for these responses will be ignored. " +
                         "Use [1-5]XX for groups and '!' character for excluding. " +
-                            "Ignored response codes has to be a subset of " + SOURCE_RETRY_SUCCESS_CODES +
-                            " if retry enabled.");
+                            "Ignored response codes has to be a subset of " + SOURCE_RETRY_SUCCESS_CODES);
 }

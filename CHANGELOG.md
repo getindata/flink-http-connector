@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 - OIDC token request to not flow during explain
+- Added support for auto-retry for source table. Auto retry on IOException and user-defined http codes - parameter `gid.connector.http.source.lookup.retry-codes`.
+- Parameters `gid.connector.http.source.lookup.error.code.exclude"` and `gid.connector.http.source.lookup.error.code` are replaced by `gid.connector.http.source.lookup.ignored-response-codes`.
+- Added connection timeout for source table - `gid.connector.http.source.lookup.connection.timeout`.
 
 ## [0.18.0] - 2025-01-15
 

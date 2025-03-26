@@ -170,8 +170,22 @@ The second one is set per individual HTTP requests by HTTP client. Its default v
 Flink's current implementation of `AsyncTableFunction` does not allow specifying custom logic for handling Flink AsyncIO timeouts as it is for Java API.
 Because of that, if AsyncIO timer passes, Flink will throw TimeoutException which will cause job restart.
 
-The HTTP request timeouts on the other hand will not cause Job restart. In that case, exception will be logged into application logs.
-To avoid job restart on timeouts caused by Lookup queries, the value of `gid.connector.http.source.lookup.request.timeout` should be smaller than `table.exec.async-lookup.timeout`.
+#### Retries
+Lookup source handles auto-retries for two scenarios:
+1. IOException occurs (e.g. timeout)
+2. HTTP server returns response with code, which is marked as temporal error. These codes are defined in table configuration.
+Retries are executed silently, without job restart. After reaching max retries attempts (per request) function will fail and restart job.
+
+Notice that response codes are splitted into 3 groups:
+- successful responses - response is returned immediately for further processing
+- temporary errors - request will be re-sent
+- error responses - unexpected response, which will fail the job. Any code which is not marked as successful or temporary error is marked as error. 
+
+#### Retry strategy
+User can choose retry strategy type for source table:
+- fixed-delay - http request will be re-sent after specified delay
+- exponential-delay - request will be re-sent with exponential backoff strategy, limited to max-retries attempts.
+
 
 #### Lookup multiple results
 
@@ -391,18 +405,31 @@ is provided.
 
 
 ## HTTP status code handler
-Http Sink and Lookup Source connectors allow defining list of HTTP status codes that should be treated as errors. 
+### Sink table
+Http Sink allows defining list of HTTP status codes that should be treated as errors. 
 By default all 400s and 500s response codes will be interpreted as error code.
 
 This behavior can be changed by using below properties in table definition (DDL) for Sink and Lookup Source or passing it via 
-`setProperty' method from Sink's builder. The property names are:
-- `gid.connector.http.sink.error.code` and `gid.connector.http.source.lookup.error.code` used to defined HTTP status code value that should be treated as error for example 404.
+`setProperty' method from Sink's builder. The property name are:
+- `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
 Many status codes can be defined in one value, where each code should be separated with comma, for example:
 `401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
 An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors.
-- `gid.connector.http.sink.error.code.exclude` and `gid.connector.http.source.lookup.error.code.exclude` used to exclude a HTTP code from error list.
+- `gid.connector.http.sink.error.code.exclude` used to exclude a HTTP code from error list.
    Many status codes can be defined in one value, where each code should be separated with comma, for example:
   `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
+
+### Source table
+Http source requires success codes defined in parameter: `gid.connector.http.source.lookup.success-codes`. That list should contains all http status codes
+which are considered as success response. It may be 200 (ok) as well as 404 (not found). The first one is standard response and its content should be deserialized/parsed.
+Processing of 404 request's content may be skipped by adding it to parameter `gid.connector.http.source.lookup.ignored-response-codes`.
+
+Both parameters supports whitelisting and blacklisting (ops!). Sample configuration may look like:
+`2XX,404,!203` - meaning all codes from group 2XX (200-299), with 404 and without 203 ('!' character). Group blacklisting e.g. !2XX is not supported.
+Notice that ignored-response-codes has to be a subset of success-codes.
+
+The same format is used in parameter `gid.connector.http.source.lookup.retry-codes`.
+
 
 ## TLS (more secure replacement for SSL) and mTLS support
 
@@ -479,6 +506,15 @@ be requested if the current time is later than the cached token expiry time minu
 | gid.connector.http.source.lookup.response.thread-pool.size    | optional | Sets the size of pool thread for HTTP lookup response processing. Increasing this value would mean that more concurrent requests can be processed in the same time. If not specified, the default value of 4 threads will be used.                                                                                                                                |
 | gid.connector.http.source.lookup.use-raw-authorization-header | optional | If set to `'true'`, uses the raw value set for the `Authorization` header, without transformation for Basic Authentication (base64, addition of "Basic " prefix). If not specified, defaults to `'false'`.                                                                                                                                                        |
 | gid.connector.http.source.lookup.request-callback             | optional | Specify which `HttpLookupPostRequestCallback` implementation to use. By default, it is set to `slf4j-lookup-logger` corresponding to `Slf4jHttpLookupPostRequestCallback`.                                                                                                                                                                                        |
+| gid.connector.http.source.lookup.connection.timeout           | optional | Source table connection timeout. |
+| gid.connector.http.source.lookup.success-codes                | optional | Comma separated http codes considered as success response. Use [1-5]XX for groups and '!' character for excluding. |
+| gid.connector.http.source.lookup.retry-codes                  | optional | Comma separated http codes considered as temporal errors. Use [1-5]XX for groups and '!' character for excluding.  |
+| gid.connector.http.source.lookup.ignored-response-codes       | optional | Comma separated http codes. Content for these responses will be ignored. Use [1-5]XX for groups and '!' character for excluding. Ignored response codes has to be a subset of `gid.connector.http.source.lookup.success-codes`.  |
+| gid.connector.http.source.lookup.retry-strategy.type          | optional | Auto retry strategy type: fixed_delay (default) or exponential_delay.  |
+| gid.connector.http.source.lookup.fixed-delay.delay            | optional | Fixed-delay interval between retries. Default 1 second.  |
+| gid.connector.http.source.lookup.exponential-delay.initial-backoff  | optional | Exponential-delay initial delay. Default 1 second. |
+| gid.connector.http.source.lookup.max-backoff                  | optional | Exponential-delay maximum delay. Default 1 minute.       |
+| gid.connector.http.source.lookup.backoff-multiplier           | optional | Exponential-delay multiplier. Default value 1.5          |
 
 ### HTTP Sink
 
