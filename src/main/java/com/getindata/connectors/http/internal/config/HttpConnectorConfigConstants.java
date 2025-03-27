@@ -118,10 +118,10 @@ public final class HttpConnectorConfigConstants {
     public static final String SOURCE_RETRY_STRATEGY_PREFIX = SOURCE_LOOKUP_PREFIX + "retry-strategy.";
     public static final String SOURCE_RETRY_STRATEGY_TYPE = SOURCE_RETRY_STRATEGY_PREFIX + "type";
 
-    private static final String SOURCE_RETRY_FIXED_DELAY_PREFIX = SOURCE_LOOKUP_PREFIX + "fixed-delay.";
+    private static final String SOURCE_RETRY_FIXED_DELAY_PREFIX = SOURCE_RETRY_STRATEGY_PREFIX + "fixed-delay.";
     public static final String SOURCE_RETRY_FIXED_DELAY_DELAY = SOURCE_RETRY_FIXED_DELAY_PREFIX + "delay";
 
-    private static final String SOURCE_RETRY_EXP_DELAY_PREFIX = SOURCE_LOOKUP_PREFIX + "exponential-delay.";
+    private static final String SOURCE_RETRY_EXP_DELAY_PREFIX = SOURCE_RETRY_STRATEGY_PREFIX + "exponential-delay.";
     public static final String SOURCE_RETRY_EXP_DELAY_INITIAL_BACKOFF =
             SOURCE_RETRY_EXP_DELAY_PREFIX + "initial-backoff";
     public static final String SOURCE_RETRY_EXP_DELAY_MAX_BACKOFF =

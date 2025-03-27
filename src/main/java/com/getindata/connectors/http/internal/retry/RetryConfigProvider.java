@@ -43,7 +43,7 @@ public class RetryConfigProvider {
     }
 
     private RetryStrategyType getRetryStrategy() {
-        return config.get(SOURCE_LOOKUP_RETRY_STRATEGY);
+        return RetryStrategyType.fromCode(config.get(SOURCE_LOOKUP_RETRY_STRATEGY));
     }
 
     private RetryConfig.Builder<?> configureFixedDelay() {

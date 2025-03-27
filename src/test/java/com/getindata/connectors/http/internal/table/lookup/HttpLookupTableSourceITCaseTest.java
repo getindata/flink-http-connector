@@ -231,8 +231,8 @@ class HttpLookupTableSourceITCaseTest {
                         + "'url' = 'http://localhost:9090/client',"
                         + "'lookup.max-retries' = '3',"
                         + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
-                        + "'gid.connector.http.source.lookup.retry-strategy.type' = 'fixed_delay',"
-                        + "'gid.connector.http.source.lookup.fixed-delay.delay' = '1ms',"
+                        + "'gid.connector.http.source.lookup.retry-strategy.type' = 'fixed-delay',"
+                        + "'gid.connector.http.source.lookup.retry-strategy.fixed-delay.delay' = '1ms',"
                         + "'gid.connector.http.source.lookup.success-codes' = '2XX',"
                         + "'gid.connector.http.source.lookup.retry-codes' = '501'"
                         + ")";

@@ -82,11 +82,11 @@ public class HttpLookupConnectorOptions {
                     .noDefaultValue()
                     .withDescription("Http client connection timeout.");
 
-    public static final ConfigOption<RetryStrategyType> SOURCE_LOOKUP_RETRY_STRATEGY =
+    public static final ConfigOption<String> SOURCE_LOOKUP_RETRY_STRATEGY =
             ConfigOptions.key(SOURCE_RETRY_STRATEGY_TYPE)
-                    .enumType(RetryStrategyType.class)
-                    .defaultValue(RetryStrategyType.FIXED_DELAY)
-                    .withDescription("Auto retry strategy type: fixed_delay (default) or exponential_delay.");
+                    .stringType()
+                    .defaultValue(RetryStrategyType.FIXED_DELAY.getCode())
+                    .withDescription("Auto retry strategy type: fixed-delay (default) or exponential-delay.");
 
     public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_SUCCESS_CODES =
             ConfigOptions.key(SOURCE_RETRY_SUCCESS_CODES)
@@ -99,7 +99,7 @@ public class HttpLookupConnectorOptions {
             ConfigOptions.key(SOURCE_RETRY_RETRY_CODES)
                     .stringType()
                     .defaultValue("500,503,504")
-                    .withDescription("Comma separated http codes considered as temporal errors. " +
+                    .withDescription("Comma separated http codes considered as transient errors. " +
                             "Use [1-5]XX for groups and '!' character for excluding.");
 
     public static final ConfigOption<Duration> SOURCE_LOOKUP_RETRY_FIXED_DELAY_DELAY =

@@ -24,7 +24,6 @@ class HttpCodesParserTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "6XX",
-            "4xx",
             "1XXX",
             "600",
             "99",
@@ -54,6 +53,9 @@ class HttpCodesParserTest {
                         .build(),
                 InputArgs.builder().codeExpression("!404, 4XX")
                         .expectedCodes(range(400, 500, 404))
+                        .build(),
+                InputArgs.builder().codeExpression("2xX,!401,3Xx,4xx")
+                        .expectedCodes(range(200, 500, 401))
                         .build()
         );
     }

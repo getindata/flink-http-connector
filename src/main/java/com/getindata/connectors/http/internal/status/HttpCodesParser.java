@@ -15,7 +15,7 @@ import static java.lang.String.format;
 @UtilityClass
 public class HttpCodesParser {
 
-    private final Pattern CODE_GROUP_EXPRESSION = Pattern.compile("[1-5]XX");
+    private final Pattern CODE_GROUP_EXPRESSION = Pattern.compile("[1-5][xX]{2}");
     private final String DELIMITER = Pattern.quote(",");
     private final int HTTP_CODE_MIN = 100;
     private final int HTTP_CODE_MAX = 599;
