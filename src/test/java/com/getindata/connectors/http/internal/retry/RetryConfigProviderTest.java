@@ -1,17 +1,19 @@
 package com.getindata.connectors.http.internal.retry;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 class RetryConfigProviderTest {
 
     @Test
-    void verifyFixedDelayRetryConfig() throws ConfigurationException {
+    void verifyFixedDelayRetryConfig() {
         var config = new Configuration();
         config.setString("gid.connector.http.source.lookup.retry-strategy.type", "fixed-delay");
         config.setString("gid.connector.http.source.lookup.retry-strategy.fixed-delay.delay", "10s");
@@ -26,7 +28,7 @@ class RetryConfigProviderTest {
     }
 
     @Test
-    void verifyExponentialDelayConfig() throws ConfigurationException {
+    void verifyExponentialDelayConfig() {
         var config = new Configuration();
         config.setString("gid.connector.http.source.lookup.retry-strategy.type", "exponential-delay");
         config.setString("gid.connector.http.source.lookup.retry-strategy.exponential-delay.initial-backoff", "15ms");
@@ -44,5 +46,19 @@ class RetryConfigProviderTest {
         assertEquals(120, intervalFunction.apply(4));
         assertEquals(120, intervalFunction.apply(5));
         assertEquals(120, intervalFunction.apply(6));
+    }
+
+    @Test
+    void failWhenStrategyIsUnsupported() {
+        var config = new Configuration();
+        config.setString("gid.connector.http.source.lookup.retry-strategy.type", "dummy");
+
+        try (var mockedStatic = mockStatic(RetryStrategyType.class)) {
+            var dummyStrategy = mock(RetryStrategyType.class);
+            mockedStatic.when(() -> RetryStrategyType.fromCode("dummy")).thenReturn(dummyStrategy);
+
+            assertThrows(IllegalArgumentException.class,
+                () -> RetryConfigProvider.create(config));
+        }
     }
 }

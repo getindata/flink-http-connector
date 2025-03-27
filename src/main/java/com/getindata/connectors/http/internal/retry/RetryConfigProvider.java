@@ -31,14 +31,12 @@ public class RetryConfigProvider {
 
     private RetryConfig.Builder<?> createBuilder() {
         var retryStrategy = getRetryStrategy();
-        switch (retryStrategy) {
-            case FIXED_DELAY:
-                return configureFixedDelay();
-            case EXPONENTIAL_DELAY:
-                return configureExponentialDelay();
-            default:
-                throw new IllegalStateException("Unsupported retry strategy: " + retryStrategy);
+        if (retryStrategy == RetryStrategyType.FIXED_DELAY) {
+            return configureFixedDelay();
+        } else if (retryStrategy == RetryStrategyType.EXPONENTIAL_DELAY) {
+            return configureExponentialDelay();
         }
+        throw new IllegalArgumentException("Unsupported retry strategy: " + retryStrategy);
     }
 
     private RetryStrategyType getRetryStrategy() {

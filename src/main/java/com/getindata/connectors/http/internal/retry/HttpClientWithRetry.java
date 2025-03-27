@@ -6,7 +6,6 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,9 +24,9 @@ public class HttpClientWithRetry {
     private final HttpResponseChecker responseChecker;
 
     @Builder
-    HttpClientWithRetry(@NonNull HttpClient httpClient,
-                        @NonNull RetryConfig retryConfig,
-                        @NonNull HttpResponseChecker responseChecker) {
+    HttpClientWithRetry(HttpClient httpClient,
+                        RetryConfig retryConfig,
+                        HttpResponseChecker responseChecker) {
         this.httpClient = httpClient;
         this.responseChecker = responseChecker;
         this.retryConfig = RetryConfig.from(retryConfig)
@@ -65,6 +64,7 @@ public class HttpClientWithRetry {
         var validationFailedException = new HttpStatusCodeValidationFailedException(
                 "Incorrect response code: " + response.statusCode(), response);
         if (responseChecker.isTemporalError(response)) {
+            log.debug("Retrying... Received response with code {} for request {}", response.statusCode(), request);
             throw new RetryHttpRequestException(validationFailedException);
         }
         throw validationFailedException;
