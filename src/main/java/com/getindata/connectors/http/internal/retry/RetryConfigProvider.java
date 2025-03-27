@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.connector.source.lookup.LookupOptions;
-import org.apache.flink.util.ConfigurationException;
 
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_INITIAL_BACKOFF;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_MAX_BACKOFF;
@@ -20,17 +19,17 @@ public class RetryConfigProvider {
 
     private final ReadableConfig config;
 
-    public static RetryConfig create(ReadableConfig config) throws ConfigurationException {
+    public static RetryConfig create(ReadableConfig config) {
         return new RetryConfigProvider(config).create();
     }
 
-    private RetryConfig create() throws ConfigurationException {
+    private RetryConfig create() {
         return createBuilder()
                 .maxAttempts(config.get(LookupOptions.MAX_RETRIES))
                 .build();
     }
 
-    private RetryConfig.Builder<?> createBuilder() throws ConfigurationException {
+    private RetryConfig.Builder<?> createBuilder() {
         var retryStrategy = getRetryStrategy();
         switch (retryStrategy) {
             case FIXED_DELAY:
@@ -38,7 +37,7 @@ public class RetryConfigProvider {
             case EXPONENTIAL_DELAY:
                 return configureExponentialDelay();
             default:
-                throw new ConfigurationException("Unsupported retry strategy: " + retryStrategy);
+                throw new IllegalStateException("Unsupported retry strategy: " + retryStrategy);
         }
     }
 

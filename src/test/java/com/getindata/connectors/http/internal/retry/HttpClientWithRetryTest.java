@@ -103,6 +103,16 @@ class HttpClientWithRetryTest {
     }
 
     @Test
+    void handleUncheckedExceptionFromRetry() throws IOException, InterruptedException {
+        when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
+
+        assertThrows(RuntimeException.class,
+            () -> client.send(mock(Supplier.class), mock(HttpResponse.BodyHandler.class)));
+
+        verify(httpClient, times(1)).send(any(), any());
+    }
+
+    @Test
     void sendRequestAndProcessSuccessfulResponse()
             throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
         var response = mock(HttpResponse.class);

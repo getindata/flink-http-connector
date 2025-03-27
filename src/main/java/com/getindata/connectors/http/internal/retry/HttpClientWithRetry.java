@@ -46,7 +46,7 @@ public class HttpClientWithRetry {
             } catch (RetryHttpRequestException retryException) {
                 throw retryException.getCausedBy();
             }
-        } catch (IOException | InterruptedException | RuntimeException | HttpStatusCodeValidationFailedException e) {
+        } catch (IOException | InterruptedException | HttpStatusCodeValidationFailedException e) {
             throw e;
         } catch (Throwable t) {
             throw new RuntimeException("Unexpected exception", t);
