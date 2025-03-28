@@ -1,8 +1,8 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.getindata.connectors.http.internal.PollingClient;
+import com.getindata.connectors.http.internal.PollingClientFactory;
+import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +12,8 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.table.functions.LookupFunction;
 
-import com.getindata.connectors.http.internal.PollingClient;
-import com.getindata.connectors.http.internal.PollingClientFactory;
-import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
+import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class HttpTableLookupFunction extends LookupFunction {
@@ -59,6 +58,8 @@ public class HttpTableLookupFunction extends LookupFunction {
 
         context.getMetricGroup()
                 .gauge("http-table-lookup-call-counter", () -> localHttpCallCounter.intValue());
+
+        client.open(context);
     }
 
     @Override

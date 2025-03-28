@@ -17,6 +17,7 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.StringUtils;
 
@@ -83,6 +84,11 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         validateIgnoredResponseCodes(this.httpClient.getResponseChecker());
     }
+
+    public void open(FunctionContext context) {
+        httpClient.registerMetrics(context.getMetricGroup());
+    }
+
 
     @Override
     public Collection<RowData> pull(RowData lookupRow) {

@@ -4,10 +4,12 @@ import com.getindata.connectors.http.HttpStatusCodeValidationFailedException;
 import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.RetryRegistry;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.metrics.MetricGroup;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -19,9 +21,9 @@ import java.util.function.Supplier;
 public class HttpClientWithRetry {
 
     private final HttpClient httpClient;
-    private final RetryConfig retryConfig;
     @Getter
     private final HttpResponseChecker responseChecker;
+    private final Retry retry;
 
     @Builder
     HttpClientWithRetry(HttpClient httpClient,
@@ -29,16 +31,28 @@ public class HttpClientWithRetry {
                         HttpResponseChecker responseChecker) {
         this.httpClient = httpClient;
         this.responseChecker = responseChecker;
-        this.retryConfig = RetryConfig.from(retryConfig)
+        retryConfig = RetryConfig.from(retryConfig)
                 .retryExceptions(IOException.class, RetryHttpRequestException.class)
                 .build();
+        this.retry = RetryRegistry.ofDefaults().retry("http-lookup-connector", retryConfig);
+    }
+
+    public void registerMetrics(MetricGroup metrics){
+        var group = metrics.addGroup("http_lookup_connector");
+        group.gauge("failed_calls_with_retry_attempt_count",
+            () -> retry.getMetrics().getNumberOfFailedCallsWithRetryAttempt());
+        group.gauge("failed_calls_without_retry_attempt_count",
+            () -> retry.getMetrics().getNumberOfFailedCallsWithoutRetryAttempt());
+        group.gauge("success_calls_with_retry_attempt",
+            () -> retry.getMetrics().getNumberOfSuccessfulCallsWithRetryAttempt());
+        group.gauge("success_calls_without_retry_attempt",
+            () -> retry.getMetrics().getNumberOfSuccessfulCallsWithoutRetryAttempt());
     }
 
     public <T> HttpResponse<T> send(
             Supplier<HttpRequest> requestSupplier,
             HttpResponse.BodyHandler<T> responseBodyHandler
     ) throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
-        var retry = Retry.of("http-lookup-connector", retryConfig);
         try {
             try {
                 return Retry.decorateCheckedSupplier(retry, () -> task(requestSupplier, responseBodyHandler)).apply();
