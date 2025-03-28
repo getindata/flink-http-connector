@@ -39,10 +39,6 @@ public class HttpClientWithRetry {
 
     public void registerMetrics(MetricGroup metrics){
         var group = metrics.addGroup("http_lookup_connector");
-        group.gauge("failed_calls_with_retry_attempt_count",
-            () -> retry.getMetrics().getNumberOfFailedCallsWithRetryAttempt());
-        group.gauge("failed_calls_without_retry_attempt_count",
-            () -> retry.getMetrics().getNumberOfFailedCallsWithoutRetryAttempt());
         group.gauge("success_calls_with_retry_attempt",
             () -> retry.getMetrics().getNumberOfSuccessfulCallsWithRetryAttempt());
         group.gauge("success_calls_without_retry_attempt",
