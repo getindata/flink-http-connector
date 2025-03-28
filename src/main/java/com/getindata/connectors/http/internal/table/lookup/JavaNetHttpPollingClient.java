@@ -165,8 +165,8 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         var responseBody = response.body();
 
-        log.debug(String.format("Received status code [%s] for RestTableSource request " +
-                        "with Server response body [%s] ", response.statusCode(), responseBody));
+        log.debug("Received status code [{}] for RestTableSource request with Server response body [{}] ",
+                response.statusCode(), responseBody);
 
         if (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response)) {
             return Collections.emptyList();
