@@ -25,7 +25,7 @@ public class RetryConfigProvider {
 
     private RetryConfig create() {
         return createBuilder()
-                .maxAttempts(config.get(LookupOptions.MAX_RETRIES))
+                .maxAttempts(config.get(LookupOptions.MAX_RETRIES) + 1)
                 .build();
     }
 

@@ -21,7 +21,7 @@ class RetryConfigProviderTest {
 
         var retryConfig = RetryConfigProvider.create(config);
 
-        assertEquals(12, retryConfig.getMaxAttempts());
+        assertEquals(13, retryConfig.getMaxAttempts());
         IntStream.range(1, 12).forEach(attempt ->
                 assertEquals(10000, retryConfig.getIntervalFunction().apply(attempt))
         );
@@ -39,7 +39,7 @@ class RetryConfigProviderTest {
         var retryConfig = RetryConfigProvider.create(config);
         var intervalFunction = retryConfig.getIntervalFunction();
 
-        assertEquals(6, retryConfig.getMaxAttempts());
+        assertEquals(7, retryConfig.getMaxAttempts());
         assertEquals(15, intervalFunction.apply(1));
         assertEquals(30, intervalFunction.apply(2));
         assertEquals(60, intervalFunction.apply(3));
