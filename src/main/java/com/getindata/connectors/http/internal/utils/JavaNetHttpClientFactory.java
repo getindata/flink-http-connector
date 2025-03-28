@@ -11,6 +11,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,17 +30,22 @@ public class JavaNetHttpClientFactory {
      * Creates Java's {@link HttpClient} instance that will be using default, JVM shared {@link
      * java.util.concurrent.ForkJoinPool} for async calls.
      *
-     * @param properties properties used to build {@link SSLContext}
+     * @param options table configuration
      * @return new {@link HttpClient} instance.
      */
-    public static HttpClient createClient(Properties properties) {
+    public static HttpClient createClient(HttpLookupConfig options) {
 
-        SSLContext sslContext = getSslContext(properties);
+        SSLContext sslContext = getSslContext(options.getProperties());
 
-        return HttpClient.newBuilder()
+        var clientBuilder = HttpClient.newBuilder()
             .followRedirects(Redirect.NORMAL)
-            .sslContext(sslContext)
-            .build();
+            .sslContext(sslContext);
+
+        options.getReadableConfig()
+                .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_CONNECTION_TIMEOUT)
+                .ifPresent(clientBuilder::connectTimeout);
+
+        return clientBuilder.build();
     }
 
     /**

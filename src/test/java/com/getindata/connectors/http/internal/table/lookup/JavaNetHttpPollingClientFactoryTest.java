@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +19,7 @@ class JavaNetHttpPollingClientFactoryTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void shouldCreateClient() {
+    void shouldCreateClient() throws ConfigurationException {
 
         assertThat(
             factory.createPollClient(

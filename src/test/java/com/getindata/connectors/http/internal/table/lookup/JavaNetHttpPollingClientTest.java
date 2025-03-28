@@ -15,6 +15,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.types.DataType;
+import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,7 +58,7 @@ public class JavaNetHttpPollingClientTest {
     }
 
     @Test
-    public void shouldBuildClientWithoutHeaders() {
+    public void shouldBuildClientWithoutHeaders() throws ConfigurationException {
 
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
@@ -76,7 +77,7 @@ public class JavaNetHttpPollingClientTest {
     }
 
     @Test
-    public void shouldBuildGetClientUri() {
+    public void shouldBuildGetClientUri() throws ConfigurationException {
         // GIVEN
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
                 httpClient,
@@ -175,7 +176,7 @@ public class JavaNetHttpPollingClientTest {
     }
 
     @Test
-    public void shouldBuildClientWithHeaders() {
+    public void shouldBuildClientWithHeaders() throws ConfigurationException {
 
         // GIVEN
         Properties properties = new Properties();
