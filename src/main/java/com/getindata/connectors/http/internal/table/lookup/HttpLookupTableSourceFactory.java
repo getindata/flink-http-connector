@@ -36,7 +36,7 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
     private static DataTypes.Field columnToField(Column column) {
         return FIELD(
-            column.getName(),
+        column.getName(),
             // only a column in a schema should have a time attribute,
             // a field should not propagate the attribute because it might be used in a
             // completely different context
@@ -63,8 +63,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
 
         DecodingFormat<DeserializationSchema<RowData>> decodingFormat =
             helper.discoverDecodingFormat(
-                    DeserializationFormatFactory.class,
-                    FactoryUtil.FORMAT
+                DeserializationFormatFactory.class,
+                FactoryUtil.FORMAT
             );
 
         HttpLookupConfig lookupConfig = getHttpLookupOptions(dynamicTableContext, readable);
