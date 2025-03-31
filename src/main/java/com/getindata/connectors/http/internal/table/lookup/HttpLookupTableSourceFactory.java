@@ -180,8 +180,8 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             .filter(columnPredicate)
             .map(HttpLookupTableSourceFactory::columnToField)
             .collect(
-                    Collectors.collectingAndThen(Collectors.toList(),
-                            HttpLookupTableSourceFactory::row))
+                Collectors.collectingAndThen(Collectors.toList(),
+                    HttpLookupTableSourceFactory::row))
             // the row should never be null
             .notNull();
     }
