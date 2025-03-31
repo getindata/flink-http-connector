@@ -8,7 +8,6 @@ import java.util.function.Supplier;
 
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
-import io.github.resilience4j.retry.RetryRegistry;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +30,11 @@ public class HttpClientWithRetry {
                         HttpResponseChecker responseChecker) {
         this.httpClient = httpClient;
         this.responseChecker = responseChecker;
-        retryConfig = RetryConfig.from(retryConfig)
+        var adjustedRetryConfig = RetryConfig.from(retryConfig)
                 .retryExceptions(IOException.class)
                 .retryOnResult(this::isTemporalError)
                 .build();
-        this.retry = RetryRegistry.ofDefaults().retry("http-lookup-connector", retryConfig);
+        this.retry = Retry.of("http-lookup-connector", adjustedRetryConfig);
     }
 
     public void registerMetrics(MetricGroup metrics){
