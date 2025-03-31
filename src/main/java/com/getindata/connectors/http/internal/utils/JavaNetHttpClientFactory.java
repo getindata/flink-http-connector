@@ -11,8 +11,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
-import com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +19,8 @@ import org.apache.flink.util.StringUtils;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.security.SecurityContext;
 import com.getindata.connectors.http.internal.security.SelfSignedTrustManager;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
+import com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.NONE)

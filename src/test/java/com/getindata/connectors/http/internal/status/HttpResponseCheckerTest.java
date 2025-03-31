@@ -1,5 +1,10 @@
 package com.getindata.connectors.http.internal.status;
 
+import java.net.http.HttpResponse;
+import java.util.Set;
+import java.util.stream.Stream;
+import static java.util.Collections.emptySet;
+
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -7,12 +12,6 @@ import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.net.http.HttpResponse;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;

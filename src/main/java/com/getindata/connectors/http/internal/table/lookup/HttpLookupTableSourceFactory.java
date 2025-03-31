@@ -24,14 +24,12 @@ import org.apache.flink.table.factories.DeserializationFormatFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
-
 import static org.apache.flink.table.api.DataTypes.FIELD;
 import static org.apache.flink.table.types.utils.DataTypeUtils.removeTimeAttribute;
 
 import com.getindata.connectors.http.HttpPostRequestCallbackFactory;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.utils.ConfigUtils;
-
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.*;
 
 public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {

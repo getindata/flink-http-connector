@@ -4,10 +4,10 @@ import java.net.http.HttpClient;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.ConfigurationException;
 
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
-import org.apache.flink.util.ConfigurationException;
 
 public class JavaNetHttpPollingClientFactory implements PollingClientFactory<RowData> {
 

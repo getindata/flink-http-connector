@@ -1,10 +1,9 @@
 package com.getindata.connectors.http.internal.retry;
 
-import org.apache.flink.configuration.Configuration;
-import org.junit.jupiter.api.Test;
-
 import java.util.stream.IntStream;
 
+import org.apache.flink.configuration.Configuration;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;

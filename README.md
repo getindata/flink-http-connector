@@ -170,21 +170,21 @@ The second one is set per individual HTTP requests by HTTP client. Its default v
 Flink's current implementation of `AsyncTableFunction` does not allow specifying custom logic for handling Flink AsyncIO timeouts as it is for Java API.
 Because of that, if AsyncIO timer passes, Flink will throw TimeoutException which will cause job restart.
 
-#### Retries
+#### Retries (Lookup source)
 Lookup source handles auto-retries for two scenarios:
-1. IOException occurs (e.g. timeout)
-2. HTTP server returns response with code, which is marked as temporal error. These codes are defined in table configuration.
-Retries are executed silently, without job restart. After reaching max retries attempts (per request) function will fail and restart job.
+1. IOException occurs (e.g. temporary network outage)
+2. The response contains a HTTP error code that indicates a retriable error. These codes are defined in the table configuration (see `gid.connector.http.source.lookup.retry-codes`).
+Retries are executed silently, without restarting the job. After reaching max retries attempts (per request) operation will fail and restart job.
 
-Notice that response codes are splitted into 3 groups:
+Notice that HTTP codes are categorized into into 3 groups:
 - successful responses - response is returned immediately for further processing
-- temporary errors - request will be re-sent
-- error responses - unexpected response, which will fail the job. Any code which is not marked as successful or temporary error is marked as error. 
+- temporary errors - request will be retried up to the retry limit
+- error responses - unexpected responses are not retried and will fail the job. Any HTTP error code which is not configured as successful or temporary error is treated as an unretriable error.
 
-#### Retry strategy
+##### Retry strategy
 User can choose retry strategy type for source table:
-- fixed-delay - http request will be re-sent after specified delay
-- exponential-delay - request will be re-sent with exponential backoff strategy, limited to max-retries attempts.
+- fixed-delay - http request will be re-sent after specified delay.
+- exponential-delay - request will be re-sent with exponential backoff strategy, limited by `lookup.max-retries` attempts. The delay for each retry is calculated as the previous attempt's delay multiplied by the backoff multiplier (parameter `gid.connector.http.source.lookup.retry-strategy.exponential-delay.backoff-multiplier`) up to `gid.connector.http.source.lookup.retry-strategy.exponential-delay.max-backoff`. The initial delay value is defined in the table configuration as `gid.connector.http.source.lookup.retry-strategy.exponential-delay.initial-backoff`.
 
 
 #### Lookup multiple results
@@ -406,11 +406,10 @@ is provided.
 
 ## HTTP status code handler
 ### Sink table
-Http Sink allows defining list of HTTP status codes that should be treated as errors. 
-By default all 400s and 500s response codes will be interpreted as error code.
+You can configure a list of HTTP status codes that should be treated as errors for HTTP sink table.
+By default all 400 and 500 response codes will be interpreted as error code.
 
-This behavior can be changed by using below properties in table definition (DDL) for Sink and Lookup Source or passing it via 
-`setProperty' method from Sink's builder. The property name are:
+This behavior can be changed by using below properties in table definition (DDL) or passing it via `setProperty' method from Sink's builder. The property name are:
 - `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
 Many status codes can be defined in one value, where each code should be separated with comma, for example:
 `401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
@@ -420,11 +419,16 @@ An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s
   `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
 
 ### Source table
-Http source requires success codes defined in parameter: `gid.connector.http.source.lookup.success-codes`. That list should contains all http status codes
-which are considered as success response. It may be 200 (ok) as well as 404 (not found). The first one is standard response and its content should be deserialized/parsed.
-Processing of 404 request's content may be skipped by adding it to parameter `gid.connector.http.source.lookup.ignored-response-codes`.
+The source table categorizes HTTP responses into three groups based on status codes:
+- Retry codes (`gid.connector.http.source.lookup.retry-codes`):
+Responses in this group indicate a temporary issue (it can be e.g., HTTP 503 Service Unavailable). When such a response is received, the request should be retried.
+- Success codes (`gid.connector.http.source.lookup.success-codes`):
+These are expected responses that should be processed by table function. The response body can be ignored by specifying its status code additionally in the `gid.connector.http.source.lookup.ignored-response-codes` parameter. For example, an HTTP 404 Not Found response is valid and indicates that the requested item does not exist, so its content can be ignored.
+- Error codes: 
+Any response code that is not classified as a retry or success code falls into this category. Receiving such a response will result in a job failure.
 
-Both parameters support whitelisting and blacklisting (oops!). A sample configuration may look like this:
+
+Above parameters support whitelisting and blacklisting. A sample configuration may look like this:
 `2XX,404,!203` - meaning all codes from group 2XX (200-299), with 404 and without 203 ('!' character). Group blacklisting e.g. !2XX is not supported.
 Notice that ignored-response-codes has to be a subset of success-codes.
 

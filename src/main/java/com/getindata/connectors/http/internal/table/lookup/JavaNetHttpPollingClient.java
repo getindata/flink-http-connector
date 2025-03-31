@@ -1,26 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.internal.HeaderPreprocessor;
-import com.getindata.connectors.http.internal.PollingClient;
-import com.getindata.connectors.http.internal.status.HttpCodesParser;
-import com.getindata.connectors.http.internal.status.HttpResponseChecker;
-import com.getindata.connectors.http.internal.retry.HttpClientWithRetry;
-import com.getindata.connectors.http.internal.retry.RetryConfigProvider;
-import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.functions.FunctionContext;
-import org.apache.flink.util.ConfigurationException;
-import org.apache.flink.util.StringUtils;
-
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -35,10 +14,31 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.functions.FunctionContext;
+import org.apache.flink.util.ConfigurationException;
+import org.apache.flink.util.StringUtils;
+
+import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
+import com.getindata.connectors.http.internal.PollingClient;
+import com.getindata.connectors.http.internal.retry.HttpClientWithRetry;
+import com.getindata.connectors.http.internal.retry.RetryConfigProvider;
+import com.getindata.connectors.http.internal.status.HttpCodesParser;
+import com.getindata.connectors.http.internal.status.HttpResponseChecker;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.RESULT_TYPE;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST;
 
 /**

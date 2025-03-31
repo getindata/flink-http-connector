@@ -1,7 +1,11 @@
 package com.getindata.connectors.http.internal.retry;
 
-import com.getindata.connectors.http.HttpStatusCodeValidationFailedException;
-import com.getindata.connectors.http.internal.status.HttpResponseChecker;
+import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.RetryConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,13 +15,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +22,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.getindata.connectors.http.HttpStatusCodeValidationFailedException;
+import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 
 
 @SuppressWarnings("unchecked")
@@ -49,7 +49,7 @@ class HttpClientWithRetryTest {
     }
 
     @Test
-    void retryOnIOException() throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
+    void shouldRetryOnIOException() throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
         var response = mock(HttpResponse.class);
         when(httpClient.send(any(), any())).thenThrow(IOException.class).thenReturn(response);
         when(responseChecker.isSuccessful(response)).thenReturn(true);
@@ -61,12 +61,13 @@ class HttpClientWithRetryTest {
     }
 
     @Test
-    void retryOnTemporalException() throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
+    void shouldRetryOnTemporalException()
+            throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
         var responseA = mock(HttpResponse.class);
         var responseB = mock(HttpResponse.class);
         when(httpClient.send(any(), any())).thenReturn(responseA, responseA, responseB);
-        when(responseChecker.isSuccessful(responseA)).thenReturn(false);
         when(responseChecker.isTemporalError(responseA)).thenReturn(true);
+        when(responseChecker.isTemporalError(responseB)).thenReturn(false);
         when(responseChecker.isSuccessful(responseB)).thenReturn(true);
 
         var result = client.send(mock(Supplier.class), mock(HttpResponse.BodyHandler.class));
@@ -76,7 +77,7 @@ class HttpClientWithRetryTest {
     }
 
     @Test
-    void failAfterExceedingMaxRetryAttempts() throws IOException, InterruptedException {
+    void shouldFailAfterExceedingMaxRetryAttempts() throws IOException, InterruptedException {
         var response = mock(HttpResponse.class);
         when(httpClient.send(any(), any())).thenReturn(response);
         when(responseChecker.isSuccessful(response)).thenReturn(false);
@@ -90,7 +91,7 @@ class HttpClientWithRetryTest {
     }
 
     @Test
-    void failOnError() throws IOException, InterruptedException {
+    void shouldFailOnError() throws IOException, InterruptedException {
         var response = mock(HttpResponse.class);
         when(httpClient.send(any(), any())).thenReturn(response);
         when(responseChecker.isSuccessful(response)).thenReturn(false);
@@ -103,7 +104,7 @@ class HttpClientWithRetryTest {
     }
 
     @Test
-    void handleUncheckedExceptionFromRetry() throws IOException, InterruptedException {
+    void shouldHandleUncheckedExceptionFromRetry() throws IOException, InterruptedException {
         when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
 
         assertThrows(RuntimeException.class,
@@ -113,7 +114,7 @@ class HttpClientWithRetryTest {
     }
 
     @Test
-    void sendRequestAndProcessSuccessfulResponse()
+    void shouldSendRequestAndProcessSuccessfulResponse()
             throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
         var response = mock(HttpResponse.class);
         when(httpClient.send(any(), any())).thenReturn(response);
@@ -131,7 +132,7 @@ class HttpClientWithRetryTest {
 
     @ParameterizedTest
     @MethodSource("failures")
-    void failOnException(Class<? extends Throwable> exceptionClass) throws IOException, InterruptedException {
+    void shouldFailOnException(Class<? extends Throwable> exceptionClass) throws IOException, InterruptedException {
         when(httpClient.send(any(), any())).thenThrow(exceptionClass);
 
         assertThrows(exceptionClass,

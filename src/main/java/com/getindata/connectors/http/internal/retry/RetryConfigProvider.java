@@ -6,13 +6,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.connector.source.lookup.LookupOptions;
+import static io.github.resilience4j.core.IntervalFunction.ofExponentialBackoff;
 
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_INITIAL_BACKOFF;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_MAX_BACKOFF;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_MULTIPLIER;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_FIXED_DELAY_DELAY;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_RETRY_STRATEGY;
-import static io.github.resilience4j.core.IntervalFunction.ofExponentialBackoff;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class RetryConfigProvider {

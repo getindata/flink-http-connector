@@ -1,16 +1,15 @@
 package com.getindata.connectors.http.internal.status;
 
-import lombok.experimental.UtilityClass;
-import org.apache.flink.util.ConfigurationException;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import static java.lang.String.format;
+
+import lombok.experimental.UtilityClass;
+import org.apache.flink.util.ConfigurationException;
 
 @UtilityClass
 public class HttpCodesParser {

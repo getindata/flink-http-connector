@@ -2,9 +2,10 @@
 
 ## [Unreleased]
 
-- Added support for auto-retry for source table. Auto retry on IOException and user-defined http codes - parameter `gid.connector.http.source.lookup.retry-codes`.
-- Parameters `gid.connector.http.source.lookup.error.code.exclude"` and `gid.connector.http.source.lookup.error.code` are replaced by `gid.connector.http.source.lookup.ignored-response-codes`.
-- Added connection timeout for source table - `gid.connector.http.source.lookup.connection.timeout`.
+-   Retries support for source table:
+    -   Auto retry on IOException and user-defined http codes - parameter `gid.connector.http.source.lookup.retry-codes`.
+    -   Parameters `gid.connector.http.source.lookup.error.code.exclude"` and `gid.connector.http.source.lookup.error.code` were replaced by `gid.connector.http.source.lookup.ignored-response-codes`.
+    -   Added connection timeout for source table - `gid.connector.http.source.lookup.connection.timeout`.
 
 ## [0.19.0] - 2025-03-20
 

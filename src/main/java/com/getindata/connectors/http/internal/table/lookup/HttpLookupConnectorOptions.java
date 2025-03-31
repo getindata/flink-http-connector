@@ -2,10 +2,10 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.time.Duration;
 
-import com.getindata.connectors.http.internal.retry.RetryStrategyType;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
+import com.getindata.connectors.http.internal.retry.RetryStrategyType;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.*;
 
 public class HttpLookupConnectorOptions {

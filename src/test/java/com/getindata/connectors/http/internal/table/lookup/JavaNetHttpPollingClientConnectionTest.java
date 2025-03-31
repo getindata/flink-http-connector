@@ -1,10 +1,11 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
-import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
-import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreator;
-import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
-import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.stream.Stream;
+
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -35,18 +36,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.stream.Stream;
-
-import static com.getindata.connectors.http.TestHelper.readTestFile;
-import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.RESULT_TYPE;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
@@ -58,6 +47,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
+
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericGetQueryCreator;
+import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreator;
+import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
+import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
+import static com.getindata.connectors.http.TestHelper.readTestFile;
+import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.RESULT_TYPE;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 @ExtendWith(MockitoExtension.class)
 class JavaNetHttpPollingClientConnectionTest {

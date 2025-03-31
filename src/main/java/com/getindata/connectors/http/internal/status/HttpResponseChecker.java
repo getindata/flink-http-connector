@@ -1,12 +1,12 @@
 package com.getindata.connectors.http.internal.status;
 
-import lombok.Getter;
-import lombok.NonNull;
-import org.apache.flink.util.ConfigurationException;
-
 import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.Set;
+
+import lombok.Getter;
+import lombok.NonNull;
+import org.apache.flink.util.ConfigurationException;
 
 @Getter
 public class HttpResponseChecker {

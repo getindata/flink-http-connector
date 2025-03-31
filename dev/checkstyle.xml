@@ -163,11 +163,11 @@
         import com.getindata.connectors.*
         import com.getindata.connectors.internal.*
         -->
-<!--        <module name="ImportOrder">-->
-<!--            <property name="separated" value="true"/>-->
-<!--            <property name="ordered" value="true"/>-->
-<!--            <property name="groups" value="java.,javax.,scala,*,com.getindata.connectors,com.getindata.connectors.internal"/>-->
-<!--        </module>-->
+        <module name="ImportOrder">
+            <property name="separated" value="true"/>
+            <property name="ordered" value="true"/>
+            <property name="groups" value="java.,javax.,scala,*,com.getindata.connectors,com.getindata.connectors.internal"/>
+        </module>
 
         <!--
         As per https://checkstyle.sourceforge.io/config_imports.html, "There is no flexibility to
