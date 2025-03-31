@@ -675,6 +675,7 @@ The mapping from Http Json Response to SQL table schema is done via Flink's Json
     instead `HttpSinkRequestEntry`.
 - Version 0.20
   - Http source table parameters: `gid.connector.http.source.lookup.error.code` and `gid.connector.http.source.lookup.error.code.exclude` were removed. These parameters described http status codes which was silently ignored by source lookup table (logged only). it's not recommended to ignore all error response but it's still possible. To do this set all codes as success: `'gid.connector.http.source.lookup.success-codes' = '1XX,2XX,3XX,4XX,5XX'` and ignore body from the others responses than 200s: `'gid.connector.http.source.lookup.ignored-response-codes' = '1XX,3XX,4XX,5XX'`. You can still exclude some error codes marking it as transition errors - `gid.connector.http.source.lookup.retry-codes`. Retry-codes have to be excluded from both `success-codes` and `ignored-response-codes`.
+  - Added dependency io.github.resilience4j:resilience4j-retry
 
 ## TODO
 
