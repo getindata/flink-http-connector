@@ -75,10 +75,8 @@ under the License.
     <scala.binary.version>2.12</scala.binary.version>
     <maven.compiler.source>${target.java.version}</maven.compiler.source>
     <maven.compiler.target>${target.java.version}</maven.compiler.target>
-    <log4j.version>2.17.2</log4j.version>
     <lombok.version>1.18.22</lombok.version>
     <jackson.version>2.18.1</jackson.version>
-    <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.10.1</junit5.version>
     <junit.jupiter.version>${junit5.version}</junit.jupiter.version>
     <assertj.core.version>3.21.0</assertj.core.version>
@@ -87,6 +85,8 @@ under the License.
     <jacoco.plugin.version>0.8.12</jacoco.plugin.version>
     <maven.shade.plugin.version>3.1.1</maven.shade.plugin.version>
     <mockito-inline.version>4.6.1</mockito-inline.version>
+    <resilence4j.version>1.7.1</resilence4j.version>
+    <slf4j.version>2.0.17</slf4j.version>
   </properties>
 
   <repositories>
@@ -119,25 +119,17 @@ under the License.
       <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
     <!-- Add logging framework, to produce console output when running in the IDE. -->
-    <!-- These dependencies are excluded from the application JAR by default. -->
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${log4j.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${log4j.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${log4j.version}</version>
-      <scope>provided</scope>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -165,6 +157,12 @@ under the License.
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
       <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-retry</artifactId>
+      <version>${resilence4j.version}</version>
     </dependency>
 
     <!--TEST-->

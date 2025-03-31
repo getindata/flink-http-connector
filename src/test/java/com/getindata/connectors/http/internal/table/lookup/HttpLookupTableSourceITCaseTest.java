@@ -15,6 +15,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.RuntimeExecutionMode;
@@ -40,20 +41,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.put;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
-public class HttpLookupTableSourceITCaseTest {
+class HttpLookupTableSourceITCaseTest {
 
     private static final int SERVER_PORT = 9090;
 
@@ -85,7 +80,7 @@ public class HttpLookupTableSourceITCaseTest {
 
     @SuppressWarnings("unchecked")
     @BeforeEach
-    public void setup() {
+    void setup() {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
         File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
@@ -110,18 +105,19 @@ public class HttpLookupTableSourceITCaseTest {
         config.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.STREAMING);
         env.configure(config, getClass().getClassLoader());
         env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
+        env.setParallelism(1);  // wire mock server has problem with scenario state during parallel execution
 
         tEnv = StreamTableEnvironment.create(env);
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         wireMockServer.stop();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"", "GET", "POST", "PUT"})
-    public void testHttpLookupJoin(String methodName) throws Exception {
+    void testHttpLookupJoin(String methodName) throws Exception {
 
         // GIVEN
         if (StringUtils.isNullOrWhitespaceOnly(methodName) || methodName.equalsIgnoreCase("GET")) {
@@ -160,14 +156,14 @@ public class HttpLookupTableSourceITCaseTest {
                 + ")";
 
         // WHEN
-        SortedSet<Row> rows = testLookupJoin(lookupTable);
+        SortedSet<Row> rows = testLookupJoin(lookupTable, 4);
 
         // THEN
         assertEnrichedRows(rows);
     }
 
     @Test
-    public void testHttpLookupJoinNoDataFromEndpoint() throws Exception {
+    void testHttpLookupJoinNoDataFromEndpoint() {
 
         // GIVEN
         setupServerStubEmptyResponse(wireMockServer);
@@ -193,20 +189,108 @@ public class HttpLookupTableSourceITCaseTest {
                 + ")";
 
         // WHEN/THEN
-
-        boolean timeoutException = false;
-        try {
-            testLookupJoin(lookupTable);
-        } catch (TimeoutException e) {
-            // we expect no data produced by query so framework should time out.
-            timeoutException = true;
-        }
-
-        assertThat(timeoutException).isTrue();
+        assertThrows(TimeoutException.class, () -> testLookupJoin(lookupTable, 4));
     }
 
     @Test
-    public void testHttpsMTlsLookupJoin() throws Exception {
+    void testLookupWithRetry() throws Exception {
+        wireMockServer.stubFor(get(urlPathEqualTo(ENDPOINT))
+                .inScenario("retry")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withQueryParam("id", matching("[0-9]+"))
+                .withQueryParam("id2", matching("[0-9]+"))
+                .willReturn(aResponse().withBody(new byte[0]).withStatus(501))
+                .willSetStateTo("temporal_issue_gone")
+        );
+        wireMockServer.stubFor(get(urlPathEqualTo(ENDPOINT))
+                .inScenario("retry")
+                .whenScenarioStateIs("temporal_issue_gone")
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withQueryParam("id", matching("[0-9]+"))
+                .withQueryParam("id2", matching("[0-9]+"))
+                .willReturn(aResponse().withTransformers(JsonTransform.NAME).withStatus(200))
+        );
+
+        var lookupTable =
+                "CREATE TABLE Customers ("
+                        + "id STRING,"
+                        + "id2 STRING,"
+                        + "msg STRING,"
+                        + "uuid STRING,"
+                        + "details ROW<"
+                        + "isActive BOOLEAN,"
+                        + "nestedDetails ROW<"
+                        + "balance STRING"
+                        + ">"
+                        + ">"
+                        + ") WITH ("
+                        + "'format' = 'json',"
+                        + "'connector' = 'rest-lookup',"
+                        + "'url' = 'http://localhost:9090/client',"
+                        + "'lookup.max-retries' = '3',"
+                        + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                        + "'gid.connector.http.source.lookup.retry-strategy.type' = 'fixed-delay',"
+                        + "'gid.connector.http.source.lookup.retry-strategy.fixed-delay.delay' = '1ms',"
+                        + "'gid.connector.http.source.lookup.success-codes' = '2XX',"
+                        + "'gid.connector.http.source.lookup.retry-codes' = '501'"
+                        + ")";
+
+        var result = testLookupJoin(lookupTable, 1);
+
+        assertEquals(1, result.size());
+        wireMockServer.verify(2, getRequestedFor(urlPathEqualTo(ENDPOINT)));
+    }
+
+    @Test
+    void testLookupIgnoreResponse() throws Exception {
+        wireMockServer.stubFor(get(urlPathEqualTo(ENDPOINT))
+                .inScenario("404_on_first")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withQueryParam("id", matching("[0-9]+"))
+                .withQueryParam("id2", matching("[0-9]+"))
+                .willReturn(aResponse().withBody(JsonTransform.NAME).withStatus(404))
+                .willSetStateTo("second_request")
+        );
+        wireMockServer.stubFor(get(urlPathEqualTo(ENDPOINT))
+                .inScenario("404_on_first")
+                .whenScenarioStateIs("second_request")
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withQueryParam("id", matching("[0-9]+"))
+                .withQueryParam("id2", matching("[0-9]+"))
+                .willReturn(aResponse().withTransformers(JsonTransform.NAME).withStatus(200))
+        );
+
+        var lookupTable =
+                "CREATE TABLE Customers ("
+                        + "id STRING,"
+                        + "id2 STRING,"
+                        + "msg STRING,"
+                        + "uuid STRING,"
+                        + "details ROW<"
+                        + "isActive BOOLEAN,"
+                        + "nestedDetails ROW<"
+                        + "balance STRING"
+                        + ">"
+                        + ">"
+                        + ") WITH ("
+                        + "'format' = 'json',"
+                        + "'connector' = 'rest-lookup',"
+                        + "'url' = 'http://localhost:9090/client',"
+                        + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                        + "'gid.connector.http.source.lookup.success-codes' = '2XX,404',"
+                        + "'gid.connector.http.source.lookup.ignored-response-codes' = '404'"
+                        + ")";
+
+        var result = testLookupJoin(lookupTable, 3);
+
+        assertEquals(2, result.size());
+        wireMockServer.verify(3, getRequestedFor(urlPathEqualTo(ENDPOINT)));
+    }
+
+    @Test
+    void testHttpsMTlsLookupJoin() throws Exception {
 
         // GIVEN
         File serverTrustedCert = new File(CERTS_PATH + "ca.crt");
@@ -243,14 +327,14 @@ public class HttpLookupTableSourceITCaseTest {
             );
 
         // WHEN
-        SortedSet<Row> rows = testLookupJoin(lookupTable);
+        SortedSet<Row> rows = testLookupJoin(lookupTable, 4);
 
         // THEN
         assertEnrichedRows(rows);
     }
 
     @Test
-    public void testLookupJoinProjectionPushDown() throws Exception {
+    void testLookupJoinProjectionPushDown() throws Exception {
 
         // GIVEN
         setUpServerBodyStub(
@@ -327,7 +411,7 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
-    public void testLookupJoinProjectionPushDownNested() throws Exception {
+    void testLookupJoinProjectionPushDownNested() throws Exception {
 
         // GIVEN
         setUpServerBodyStub(
@@ -404,7 +488,7 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
-    public void testLookupJoinOnRowType() throws Exception {
+    void testLookupJoinOnRowType() throws Exception {
 
         // GIVEN
         setUpServerBodyStub(
@@ -473,7 +557,7 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
-    public void testLookupJoinOnRowTypeAndRootColumn() throws Exception {
+    void testLookupJoinOnRowTypeAndRootColumn() throws Exception {
 
         // GIVEN
         setUpServerBodyStub(
@@ -544,8 +628,7 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
-    public void testLookupJoinOnRowWithRowType() throws Exception {
-
+    void testLookupJoinOnRowWithRowType() throws Exception {
         testLookupJoinOnRowWithRowTypeImpl();
     }
 
@@ -557,7 +640,7 @@ public class HttpLookupTableSourceITCaseTest {
         "Basic dXNlcjpwYXNzd29yZA==, Basic dXNlcjpwYXNzd29yZA==, true",
         "Bearer dXNlcjpwYXNzd29yZA==, Bearer dXNlcjpwYXNzd29yZA==, true"
     })
-    public void testLookupWithUseRawAuthHeader(
+    void testLookupWithUseRawAuthHeader(
             String authHeaderRawValue,
             String expectedAuthHeaderValue,
             boolean useRawAuthHeader) throws Exception {
@@ -659,7 +742,7 @@ public class HttpLookupTableSourceITCaseTest {
     }
 
     @Test
-    public void testNestedLookupJoinWithoutCast() throws Exception {
+    void testNestedLookupJoinWithoutCast() throws Exception {
 
         // TODO ADD MORE ASSERTS
         // GIVEN
@@ -780,7 +863,7 @@ public class HttpLookupTableSourceITCaseTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    public void testHttpLookupJoinWithCache(boolean isAsync) throws Exception {
+    void testHttpLookupJoinWithCache(boolean isAsync) throws Exception {
         // GIVEN
         LookupCacheManager.keepCacheOnRelease(true);
 
@@ -810,7 +893,7 @@ public class HttpLookupTableSourceITCaseTest {
                 + ")";
 
         // WHEN
-        SortedSet<Row> rows = testLookupJoin(lookupTable);
+        SortedSet<Row> rows = testLookupJoin(lookupTable, 4);
 
         // THEN
         try {
@@ -839,7 +922,7 @@ public class HttpLookupTableSourceITCaseTest {
         return managedCaches.get(managedCaches.keySet().iterator().next()).getCache();
     }
 
-    private @NotNull SortedSet<Row> testLookupJoin(String lookupTable) throws Exception {
+    private @NotNull SortedSet<Row> testLookupJoin(String lookupTable, int maxRows) throws Exception {
 
         String sourceTable =
             "CREATE TABLE Orders ("
@@ -851,10 +934,10 @@ public class HttpLookupTableSourceITCaseTest {
                 + "'rows-per-second' = '1',"
                 + "'fields.id.kind' = 'sequence',"
                 + "'fields.id.start' = '1',"
-                + "'fields.id.end' = '5',"
+                + "'fields.id.end' = '" + maxRows + "',"
                 + "'fields.id2.kind' = 'sequence',"
                 + "'fields.id2.start' = '2',"
-                + "'fields.id2.end' = '5'"
+                + "'fields.id2.end' = '" + (maxRows + 1) + "'"
                 + ")";
 
         tEnv.executeSql(sourceTable);

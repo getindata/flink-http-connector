@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,17 +23,22 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.functions.FunctionContext;
+import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClient;
-import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
-import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
-import com.getindata.connectors.http.internal.status.HttpStatusCodeChecker;
+import com.getindata.connectors.http.internal.retry.HttpClientWithRetry;
+import com.getindata.connectors.http.internal.retry.RetryConfigProvider;
+import com.getindata.connectors.http.internal.status.HttpCodesParser;
+import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.RESULT_TYPE;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST;
 
 /**
@@ -45,47 +51,44 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private static final String RESULT_TYPE_SINGLE_VALUE = "single-value";
     private static final String RESULT_TYPE_ARRAY = "array";
 
-    private final HttpClient httpClient;
-
-    private final HttpStatusCodeChecker statusCodeChecker;
-
+    private final HttpClientWithRetry httpClient;
     private final DeserializationSchema<RowData> responseBodyDecoder;
-
     private final HttpRequestFactory requestFactory;
-
     private final ObjectMapper objectMapper;
-
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
-
     private final HttpLookupConfig options;
+    private final Set<Integer> ignoredErrorCodes;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
             DeserializationSchema<RowData> responseBodyDecoder,
             HttpLookupConfig options,
-            HttpRequestFactory requestFactory) {
+            HttpRequestFactory requestFactory) throws ConfigurationException {
 
-        this.httpClient = httpClient;
         this.responseBodyDecoder = responseBodyDecoder;
         this.requestFactory = requestFactory;
-
         this.objectMapper = new ObjectMapper();
         this.httpPostRequestCallback = options.getHttpPostRequestCallback();
+        this.options = options;
 
-        // TODO Inject this via constructor when implementing a response processor.
-        //  Processor will be injected and it will wrap statusChecker implementation.
-        ComposeHttpStatusCodeCheckerConfig checkerConfig =
-            ComposeHttpStatusCodeCheckerConfig.builder()
-                .properties(options.getProperties())
-                .whiteListPrefix(
-                    HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODE_WHITE_LIST
-                )
-                .errorCodePrefix(HttpConnectorConfigConstants.HTTP_ERROR_SOURCE_LOOKUP_CODES_LIST)
+        var config = options.getReadableConfig();
+        this.httpClient = HttpClientWithRetry.builder()
+                .httpClient(httpClient)
+                .retryConfig(RetryConfigProvider.create(config))
+                .responseChecker(new HttpResponseChecker(
+                        config.get(SOURCE_LOOKUP_HTTP_SUCCESS_CODES),
+                        config.get(SOURCE_LOOKUP_HTTP_RETRY_CODES)))
                 .build();
 
-        this.statusCodeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
-        this.options = options;
+        this.ignoredErrorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES));
+
+        validateIgnoredResponseCodes(this.httpClient.getResponseChecker());
     }
+
+    public void open(FunctionContext context) {
+        httpClient.registerMetrics(context.getMetricGroup());
+    }
+
 
     @Override
     public Collection<RowData> pull(RowData lookupRow) {
@@ -98,14 +101,12 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         }
     }
 
-    // TODO Add Retry Policy And configure TimeOut from properties
     private Collection<RowData> queryAndProcess(RowData lookupData) throws Exception {
+        var request = requestFactory.buildLookupRequest(lookupData);
 
-        HttpLookupSourceRequestEntry request = requestFactory.buildLookupRequest(lookupData);
-        HttpResponse<String> response = httpClient.send(
-            updateHttpRequestIfRequired(request,
-                    HttpHeaderUtils.createOIDCHeaderPreprocessor(options.getReadableConfig())),
-            BodyHandlers.ofString());
+        var oidcProcessor = HttpHeaderUtils.createOIDCHeaderPreprocessor(options.getReadableConfig());
+        var response = httpClient.send(
+            () -> updateHttpRequestIfRequired(request, oidcProcessor), BodyHandlers.ofString());
         return processHttpResponse(response, request);
     }
 
@@ -162,31 +163,15 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
 
-        if (response == null) {
+        var responseBody = response.body();
+
+        log.debug("Received status code [{}] for RestTableSource request with Server response body [{}] ",
+                response.statusCode(), responseBody);
+
+        if (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response)) {
             return Collections.emptyList();
         }
-
-        String responseBody = response.body();
-        int statusCode = response.statusCode();
-
-        log.debug(String.format("Received status code [%s] for RestTableSource request " +
-                        "with Server response body [%s] ", statusCode, responseBody));
-
-        if (notErrorCodeAndNotEmptyBody(responseBody, statusCode)) {
-            return deserialize(responseBody);
-        } else {
-            log.warn(
-                String.format("Returned Http status code was invalid or returned body was empty. "
-                + "Status Code [%s]", statusCode)
-            );
-
-            return Collections.emptyList();
-        }
-    }
-
-    private boolean notErrorCodeAndNotEmptyBody(String body, int statusCode) {
-        return !(StringUtils.isNullOrWhitespaceOnly(body) || statusCodeChecker.isErrorCode(
-            statusCode));
+        return deserialize(responseBody);
     }
 
     @VisibleForTesting
@@ -230,5 +215,18 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
             }
         }
         return result;
+    }
+
+    private boolean ignoreResponse(HttpResponse<?> response) {
+        return ignoredErrorCodes.contains(response.statusCode());
+    }
+
+    private void validateIgnoredResponseCodes(HttpResponseChecker responseChecker) throws ConfigurationException {
+        for (var code : ignoredErrorCodes) {
+            if (!responseChecker.isSuccessful(code)) {
+                throw new ConfigurationException(
+                        "Ignored http status code " + code + " has to be specified as success code in retry mechanism");
+            }
+        }
     }
 }

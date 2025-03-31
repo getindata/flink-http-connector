@@ -19,6 +19,7 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory.Context;
 import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
 import org.apache.flink.table.types.DataType;
+import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
     }
 
     @Test
-    public void testHttpsConnectionWithSelfSignedCert() {
+    public void testHttpsConnectionWithSelfSignedCert() throws ConfigurationException {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
 
@@ -107,7 +108,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
     @ParameterizedTest
     @ValueSource(strings = {"ca.crt", "server.crt"})
-    public void testHttpsConnectionWithAddedCerts(String certName) {
+    public void testHttpsConnectionWithAddedCerts(String certName) throws ConfigurationException {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
         File trustedCert = new File(CERTS_PATH + certName);
@@ -131,7 +132,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
     @ParameterizedTest
     @ValueSource(strings = {"clientPrivateKey.pem", "clientPrivateKey.der"})
-    public void testMTlsConnection(String clientPrivateKeyName) {
+    public void testMTlsConnection(String clientPrivateKeyName) throws ConfigurationException {
 
         File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
         File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
@@ -169,7 +170,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
     }
 
     @Test
-    public void testMTlsConnectionUsingKeyStore() {
+    public void testMTlsConnectionUsingKeyStore() throws ConfigurationException {
         String password = "password";
 
         String clientKeyStoreName = "client_keyStore.p12";
@@ -209,7 +210,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         setupAndTestConnection();
     }
 
-    private void setupAndTestConnection() {
+    private void setupAndTestConnection() throws ConfigurationException {
         // test with basic auth
         setupAndTestConnectionWithAuth(
                 HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor());
@@ -223,7 +224,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         );
     }
 
-    private void setupAndTestConnectionWithAuth(HeaderPreprocessor headerPreprocessor) {
+    private void setupAndTestConnectionWithAuth(HeaderPreprocessor headerPreprocessor) throws ConfigurationException {
         setUpPollingClientFactory(wireMockServer.baseUrl(),
                 headerPreprocessor);
         testPollingClientConnection();
@@ -260,14 +261,14 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
         assertThrows(RuntimeException.class, () -> setUpPollingClient(properties));
     }
 
-    private void testPollingClientConnection() {
+    private void testPollingClientConnection() throws ConfigurationException {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(properties);
         Collection<RowData> result = pollingClient.pull(lookupRowData);
 
         assertResult(result);
     }
 
-    private JavaNetHttpPollingClient setUpPollingClient(Properties properties) {
+    private JavaNetHttpPollingClient setUpPollingClient(Properties properties) throws ConfigurationException {
 
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url("https://localhost:" + HTTPS_SERVER_PORT + ENDPOINT)
