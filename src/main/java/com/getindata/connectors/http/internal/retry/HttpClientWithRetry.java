@@ -65,9 +65,7 @@ public class HttpClientWithRetry {
     }
 
     private boolean isTemporalError(Object response) {
-        var doRetry = responseChecker.isTemporalError((HttpResponse<?>) response);
-        System.out.println("DO RETRY " + doRetry);
-        return doRetry;
+        return responseChecker.isTemporalError((HttpResponse<?>) response);
     }
 }
 
