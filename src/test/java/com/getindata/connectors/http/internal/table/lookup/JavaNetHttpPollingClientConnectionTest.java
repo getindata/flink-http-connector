@@ -46,6 +46,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -283,19 +284,13 @@ class JavaNetHttpPollingClientConnectionTest {
     }
 
     @Test
-    void shouldHandleServerError() throws ConfigurationException {
+    void shouldFailOnServerError() throws ConfigurationException {
 
         // GIVEN
         this.stubMapping = setUpServerStub(500);
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
-        // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
-
-        // THEN
-        wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
-
-        assertThat(results.isEmpty()).isTrue();
+        assertThrows(RuntimeException.class, () -> pollingClient.pull(lookupRowData));
     }
 
     @Test

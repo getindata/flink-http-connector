@@ -92,12 +92,14 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     @Override
     public Collection<RowData> pull(RowData lookupRow) {
+        if (lookupRow == null) {
+            return Collections.emptyList();
+        }
         try {
             log.debug("Collection<RowData> pull with Rowdata={}.", lookupRow);
             return queryAndProcess(lookupRow);
         } catch (Exception e) {
-            log.error("Exception during HTTP request.", e);
-            return Collections.emptyList();
+            throw new RuntimeException("Exception during HTTP request", e);
         }
     }
 
