@@ -20,7 +20,11 @@ public class CustomFormatFactory implements SerializationFormatFactory {
     public static final String REQUIRED_OPTION = "required-option-one";
 
     /**
+<<<<<<< HEAD
      * Used for testing custom format.
+=======
+     * Consider removing this static only used for testing only
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
      */
     static boolean requiredOptionsWereUsed = false;
 

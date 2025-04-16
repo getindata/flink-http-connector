@@ -3,18 +3,27 @@
  */
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
+<<<<<<< HEAD
 import java.util.Collections;
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 import java.util.List;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
+<<<<<<< HEAD
 import org.apache.flink.table.api.Schema;
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 import org.apache.flink.table.catalog.*;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory;
+<<<<<<< HEAD
 import org.apache.flink.table.factories.FactoryUtil;
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +36,10 @@ import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.table.lookup.RowDataSingleValueLookupSchemaEntry;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 import static com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonAndUrlQueryCreatorFactory.*;
+<<<<<<< HEAD
+=======
+import static com.getindata.connectors.http.internal.table.lookup.querycreators.QueryCreatorUtils.getTableContext;
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 
 class GenericJsonAndUrlQueryCreatorFactoryTest
 {
@@ -50,13 +63,20 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
                                 + "= false` "
                                 + "was called before this test execution.")
                 .isFalse();
+<<<<<<< HEAD
         // GIVEN
+=======
+
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         this.config.setString("lookup-request.format", CustomJsonFormatFactory.IDENTIFIER);
         this.config.setString(
                 String.format("lookup-request.format.%s.%s", CustomJsonFormatFactory.IDENTIFIER,
                         CustomJsonFormatFactory.REQUIRED_OPTION), "optionValue");
         this.config.set(REQUEST_QUERY_PARAM_FIELDS, List.of("key1"));
+<<<<<<< HEAD
         // WHEN/THEN
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         // with sync
         createUsingFactory(false);
         // with async
@@ -65,10 +85,21 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
 
     @Test
     public void lookupQueryInfoTestRequiredConfig() {
+<<<<<<< HEAD
         //GIVEN
         GenericJsonAndUrlQueryCreatorFactory genericJsonAndUrlQueryCreatorFactory =
                 new GenericJsonAndUrlQueryCreatorFactory();
         // WHEN/THEN
+=======
+        GenericJsonAndUrlQueryCreatorFactory genericJsonAndUrlQueryCreatorFactory =
+                new GenericJsonAndUrlQueryCreatorFactory();
+        assertThrows(RuntimeException.class, () -> {
+            genericJsonAndUrlQueryCreatorFactory.createLookupQueryCreator(config,
+                    null,
+                    null);
+        });
+        // do not specify REQUEST_ARG_PATHS_CONFIG
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         assertThrows(RuntimeException.class, () -> {
             genericJsonAndUrlQueryCreatorFactory.createLookupQueryCreator(config,
                     null,
@@ -77,7 +108,10 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
     }
 
     private void createUsingFactory(boolean async) {
+<<<<<<< HEAD
         // GIVEN
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         this.config.setBoolean(HttpLookupConnectorOptions.ASYNC_POLLING, async);
         LookupRow lookupRow= new LookupRow()
                 .addLookupEntry(
@@ -99,7 +133,11 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
         GenericRowData lookupRowData = GenericRowData.of(
                 StringData.fromString("val1")
         );
+<<<<<<< HEAD
         // WHEN/THEN
+=======
+
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         LookupQueryInfo lookupQueryInfo = lookupQueryCreator.createLookupQuery(lookupRowData);
         assertThat(CustomJsonFormatFactory.requiredOptionsWereUsed).isTrue();
         assertThat(lookupQueryInfo.hasLookupQuery()).isTrue();
@@ -108,14 +146,19 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
     }
     @Test
     void optionsTests() {
+<<<<<<< HEAD
         // GIVEN
         GenericJsonAndUrlQueryCreatorFactory factory = new GenericJsonAndUrlQueryCreatorFactory();
         // WHEN/THEN
+=======
+        GenericJsonAndUrlQueryCreatorFactory factory = new GenericJsonAndUrlQueryCreatorFactory();
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         assertThat(factory.requiredOptions()).isEmpty();
         assertThat(factory.optionalOptions()).contains(REQUEST_QUERY_PARAM_FIELDS);
         assertThat(factory.optionalOptions()).contains(REQUEST_BODY_FIELDS);
         assertThat(factory.optionalOptions()).contains(REQUEST_URL_MAP);
     }
+<<<<<<< HEAD
 
     public static DynamicTableFactory.Context getTableContext(Configuration config,
                                                               ResolvedSchema resolvedSchema) {
@@ -134,4 +177,6 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
                 false
         );
     }
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 }

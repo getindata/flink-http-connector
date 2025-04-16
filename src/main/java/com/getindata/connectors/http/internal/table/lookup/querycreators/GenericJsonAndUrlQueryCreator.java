@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+=======
+/*
+ * © Copyright IBM Corp. 2025
+ */
+
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
 import java.io.IOException;
@@ -6,16 +13,32 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+<<<<<<< HEAD
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+=======
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+<<<<<<< HEAD
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
+=======
+import org.apache.flink.table.api.DataTypes.Field;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.FieldsDataType;
+import org.apache.flink.types.Row;
+import org.apache.flink.util.FlinkRuntimeException;
+import org.apache.flink.util.Preconditions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 
 import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.LookupQueryCreator;
@@ -24,6 +47,7 @@ import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 
 /**
+<<<<<<< HEAD
  * <p>Generic JSON and URL query creator; in addition to be able to map columns to json requests,
  * it allows url inserts to be mapped to column names using templating.</p>
  * <p>For GETs, column names are mapped to query parameters. e.g. for
@@ -34,10 +58,26 @@ import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
  * REQUEST_PARAM_FIELDS = "id1;id2" and url of http://base. At lookup time with values of id1=1 and
  * id2=2 as call of http/base will be issued with a json payload of {"id1":1,"id2":2}</p>
  * <p>For all http methods, url segments can be used to include lookup up values. Using the map from
+=======
+ * Generic JSON and URL query creator; in addition to be able to map columns to json requests,
+ * it allows url inserts to be mapped to column names using templating.
+ * <br>
+ * For GETs, column names are mapped to query parameters. e.g. for
+ * <code>GenericJsonAndUrlQueryCreator.REQUEST_PARAM_FIELDS</code> = "id1;id2"
+ * and url of http://base. At lookup time with values of id1=1 and id2=2 a call of
+ * http/base?id1=1&amp;id2=2 will be issued.
+ * <br>
+ * For PUT and POST, parameters are mapped to the json body  e.g. for
+ * REQUEST_PARAM_FIELDS = "id1;id2" and url of http://base. At lookup time with values of id1=1 and
+ * id2=2 as call of http/base will be issued with a json payload of {"id1":1,"id2":2}
+ * <br>
+ * For all http methods, url segments can be used to include lookup up values. Using the map from
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
  * <code>GenericJsonAndUrlQueryCreator.REQUEST_URL_MAP</code> which has a key of the insert and the
  * value of the associated column.
  * e.g. for <code>GenericJsonAndUrlQueryCreator.REQUEST_URL_MAP</code> = "key1":"col1"
  * and url of http://base/{key1}. At lookup time with values of col1="aaaa" a call of
+<<<<<<< HEAD
  * http/base/aaaa will be issued.</p>
  */
 @Slf4j
@@ -52,6 +92,48 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     private final List<String> requestBodyFields;
     private final Map<String, String> requestUrlMap;
     private final LookupRow lookupRow;
+=======
+ * http/base/aaaa will be issued.
+ *
+ */
+public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
+    private static final long serialVersionUID = 1L;
+    private static final Logger log = LogManager.getLogger(GenericJsonAndUrlQueryCreator.class);
+
+    // not final so we can mutate for unit test
+    private SerializationSchema<RowData> serializationSchema;
+    private boolean schemaOpened = false;
+    private LookupRow lookupRow;
+    private final String httpMethod;
+    private final List<String>  requestQueryParamsFields;
+    private final List<String> requestBodyFields;
+    private final Map<String, String> requestUrlMap;
+
+    /**
+     * Construct a Generic JSON and URL query creator.
+     *
+     * @param httpMethod the requested http method
+     * @param serializationSchema    serialization schema for RowData
+     * @param requestQueryParamsFields query param fields
+     * @param requestBodyFields body fields used for PUT and POSTs
+     * @param requestUrlMap url map
+     * @param lookupRow     lookup row itself.
+     */
+    public GenericJsonAndUrlQueryCreator(final String httpMethod,
+                                         final SerializationSchema<RowData>
+                                             serializationSchema,
+                                         final List<String>  requestQueryParamsFields,
+                                         final List<String> requestBodyFields,
+                                         final Map<String, String> requestUrlMap,
+                                         final LookupRow lookupRow) {
+        this.httpMethod = httpMethod;
+        this.serializationSchema = serializationSchema;
+        this.lookupRow = lookupRow;
+        this.requestQueryParamsFields = requestQueryParamsFields;
+        this.requestBodyFields = requestBodyFields;
+        this.requestUrlMap = requestUrlMap;
+    }
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
     @VisibleForTesting
     void setSerializationSchema(SerializationSchema<RowData>
                                         serializationSchema) {
@@ -71,7 +153,13 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
             jsonObject = (ObjectNode) ObjectMapperAdapter.instance().readTree(
                     serializationSchema.serialize(lookupDataRow));
         } catch (IOException e) {
+<<<<<<< HEAD
             throw new RuntimeException("Unable to parse the lookup arguments to json.", e);
+=======
+            String message = "Unable to parse the lookup arguments to json.";
+            log.error(message, e);
+            throw new RuntimeException(message, e);
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         }
         // Parameters are encoded as query params for GET and none GET.
         // Later code will turn these query params into the body for PUTs and POSTs
@@ -92,7 +180,13 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                 lookupQuery = ObjectMapperAdapter.instance()
                         .writeValueAsString(jsonObject.retain(requestBodyFields));
             } catch (JsonProcessingException e) {
+<<<<<<< HEAD
                 throw new RuntimeException("Unable to convert Json Object to a string", e);
+=======
+                final String message = "Unable to convert Json Object to a string";
+                log.error(message, e);
+                throw new RuntimeException(message,e);
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
             }
             // body parameters
             // use the request json object to scope the required fields and the lookupArgs as values
@@ -100,7 +194,11 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                     jsonObjectForQueryParams);
         }
         // add the path map
+<<<<<<< HEAD
         final Map<String, String> pathBasedUrlParams = createURLPathBasedParams(lookupArgs,
+=======
+        final Map<String, String> pathBasedUrlParams = createPathBasedParams(lookupArgs,
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
                 requestUrlMap);
 
         return new LookupQueryInfo(lookupQuery, bodyBasedUrlQueryParams, pathBasedUrlParams);
@@ -108,6 +206,31 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     }
 
     /**
+<<<<<<< HEAD
+=======
+     * Create a Row from a RowData and DataType
+     * @param lookupRowData the lookup RowData
+     * @param rowType the datatype
+     * @return row return row
+     */
+    @VisibleForTesting
+    static Row rowDataToRow(final RowData lookupRowData, final DataType rowType) {
+        Preconditions.checkNotNull(lookupRowData);
+        Preconditions.checkNotNull(rowType);
+
+        final Row row = Row.withNames();
+        final List<Field> rowFields = FieldsDataType.getFields(rowType);
+
+        for (int idx = 0; idx < rowFields.size(); idx++) {
+            final String fieldName = rowFields.get(idx).getName();
+            final Object fieldValue = ((GenericRowData) lookupRowData).getField(idx);
+            row.setField(fieldName, fieldValue);
+        }
+        return row;
+    }
+
+    /**
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
      * Create map of the json key to the lookup argument
      * value. This is used for body based content.
      * @param args lookup arguments
@@ -115,7 +238,11 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
      * @return map of field content to the lookup argument value.
      */
     private Map<String, String> createBodyBasedParams(final Collection<LookupArg> args,
+<<<<<<< HEAD
                                                       ObjectNode objectNode ) {
+=======
+                                                              ObjectNode objectNode ) {
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         Map<String, String> mapOfJsonKeyToLookupArg = new LinkedHashMap<>();
         Iterator<Map.Entry<String, JsonNode>> iterator = objectNode.fields();
         iterator.forEachRemaining(field -> {
@@ -131,26 +258,45 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
         return mapOfJsonKeyToLookupArg;
     }
     /**
+<<<<<<< HEAD
      * Create map of insert name to column name for path inserts
+=======
+     * Create map of the json key to the lookup argument
+     * value. This is used for body based content.
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
      * @param args lookup arguments
      * @param urlMap map of insert name to column name
      * @return map of field content to the lookup argument value.
      */
+<<<<<<< HEAD
     private Map<String, String> createURLPathBasedParams(final Collection<LookupArg> args,
                                                          Map<String,
                                                          String> urlMap ) {
         Map<String, String> mapOfinsertKeyToLookupArg = new LinkedHashMap<>();
+=======
+    private Map<String, String> createPathBasedParams(final Collection<LookupArg> args,
+                                                     Map<String, String> urlMap ) {
+        Map<String, String> mapOfJsonKeyToLookupArg = new LinkedHashMap<>();
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
         if (urlMap != null) {
             for (String key: urlMap.keySet()) {
                 for (final LookupArg arg : args) {
                     if (arg.getArgName().equals(key)) {
+<<<<<<< HEAD
                         mapOfinsertKeyToLookupArg.put(
+=======
+                        mapOfJsonKeyToLookupArg.put(
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
                                 urlMap.get(key), arg.getArgValue());
                     }
                 }
             }
         }
+<<<<<<< HEAD
         return mapOfinsertKeyToLookupArg;
+=======
+        return mapOfJsonKeyToLookupArg;
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
     }
     /**
      * Convert json object to query params string
@@ -171,6 +317,7 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                 result.add(fieldName + "="
                         + URLEncoder.encode(fieldValue, enc));
             } catch (UnsupportedEncodingException e) {
+<<<<<<< HEAD
                 throw new RuntimeException("Failed to encode the value of the query parameter name "
                         + fieldName
                         + ": "
@@ -178,6 +325,15 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                         + " using encoding "
                         + enc,
                         e);
+=======
+                final String message =
+                        "Failed to encode the value of the query parameter name "
+                                + fieldName
+                                + ": "
+                                + fieldValue;
+                log.error(message, e);
+                throw new RuntimeException(message, e);
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
             }
         });
 
@@ -193,8 +349,16 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                                         GenericJsonAndUrlQueryCreator.class));
                 this.schemaOpened = true;
             } catch (final Exception e) {
+<<<<<<< HEAD
                 throw new FlinkRuntimeException("Failed to initialize serialization schema for "
                         + GenericJsonAndUrlQueryCreator.class, e);
+=======
+                final String message =
+                        "Failed to initialize serialization schema for "
+                                + GenericJsonAndUrlQueryCreator.class;
+                log.error(message, e);
+                throw new FlinkRuntimeException(message, e);
+>>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
             }
         }
     }
