@@ -57,16 +57,14 @@ import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 @Builder
 public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     private static final long serialVersionUID = 1L;
-
+    private final String httpMethod;
     // not final so we can mutate for unit test
     private SerializationSchema<RowData> serializationSchema;
-    private boolean schemaOpened = false;
-    private LookupRow lookupRow;
-    private final String httpMethod;
     private final List<String>  requestQueryParamsFields;
+    private boolean schemaOpened = false;
     private final List<String> requestBodyFields;
     private final Map<String, String> requestUrlMap;
-
+    private final LookupRow lookupRow;
     @VisibleForTesting
     void setSerializationSchema(SerializationSchema<RowData>
                                         serializationSchema) {

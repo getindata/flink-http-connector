@@ -118,14 +118,14 @@ public class GenericJsonAndUrlQueryCreatorFactory implements LookupQueryCreatorF
                     encoder.createRuntimeEncoder(null,
                             lookupRow.getLookupPhysicalRowDataType());
         }
-        // create using config parameter values and specify serialization
-        // schema from json format.
-        return new GenericJsonAndUrlQueryCreator(httpMethod,
-                jsonSerializationSchema,
-                requestQueryParamsFields,
-                requestBodyFields,
-                requestUrlMap,
-                lookupRow);
+        return GenericJsonAndUrlQueryCreator.builder()
+                .httpMethod(httpMethod)
+                .serializationSchema(jsonSerializationSchema)
+                .requestQueryParamsFields(requestQueryParamsFields)
+                .requestBodyFields(requestBodyFields)
+                .requestUrlMap(requestUrlMap)
+                .lookupRow(lookupRow)
+                .build();
     }
 
     @Override

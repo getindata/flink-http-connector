@@ -98,9 +98,9 @@ class GenericJsonAndUrlQueryCreatorTest {
     public void createLookupQueryTest() {
         List<String> query_params = List.of("key1", "key2");
         String operation = "GET";
-        String key1 = "key1";
-        String key2 = "key2";
-        String value = "val1";
+        final String key1 = "key1";
+        final String key2 = "key2";
+        final String value = "val1";
         Map<String, String> url_params = Map.of(key1, "AAA");
 
         LookupRow lookupRow = new LookupRow()
@@ -150,8 +150,8 @@ class GenericJsonAndUrlQueryCreatorTest {
     @Test
     public void failserializationOpenTest() {
         List<String> paths_config =List.of("key1");
-        String operation = "GET";
-        String key = "key1";
+        final String operation = "GET";
+        final String key = "key1";
 
         LookupRow lookupRow = new LookupRow()
                 .addLookupEntry(
@@ -210,26 +210,26 @@ class GenericJsonAndUrlQueryCreatorTest {
     @Test void rowDataToRowTest() {
         // GIVEN
         // String
-        String KEY1 = "key1";
-        String KEY2 = "key2";
-        String KEY3 = "key3";
-        String VALUE = "value";
+        final String key1 = "key1";
+        final String key2 = "key2";
+        final String key3 = "key3";
+        final String value = "value";
         int intValue = 10;
         GenericRowData rowData = GenericRowData.of(
-                StringData.fromString(VALUE),
+                StringData.fromString(value),
                 intValue,
                 intValue
         );
         DataType dataType = row(List.of(
-                DataTypes.FIELD(KEY1, DataTypes.STRING()),
-                DataTypes.FIELD(KEY2, DataTypes.DATE()),
-                DataTypes.FIELD(KEY3, DataTypes.TIMESTAMP_LTZ())
+                DataTypes.FIELD(key1, DataTypes.STRING()),
+                DataTypes.FIELD(key2, DataTypes.DATE()),
+                DataTypes.FIELD(key3, DataTypes.TIMESTAMP_LTZ())
         ));
         // WHEN
         Row row =  GenericJsonAndUrlQueryCreator.rowDataToRow(rowData, dataType);
         // THEN
-        assertThat(row.getField(KEY1).equals(VALUE));
-        assertThat(row.getField(KEY2).equals("1970-01-01T00:00:00.010"));
-        assertThat(row.getField(KEY3).equals("1970-01-01T00:00:00.010Z"));
+        assertThat(row.getField(key1).equals(value));
+        assertThat(row.getField(key2).equals("1970-01-01T00:00:00.010"));
+        assertThat(row.getField(key3).equals("1970-01-01T00:00:00.010Z"));
     }
 }
