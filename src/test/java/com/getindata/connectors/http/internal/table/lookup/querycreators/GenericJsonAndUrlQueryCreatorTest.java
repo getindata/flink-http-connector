@@ -29,7 +29,7 @@ import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.table.lookup.RowDataSingleValueLookupSchemaEntry;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_METHOD;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
-import static com.getindata.connectors.http.internal.table.lookup.querycreators.QueryCreatorUtils.getTableContext;
+import static com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonAndUrlQueryCreatorFactoryTest.getTableContext;
 
 class GenericJsonAndUrlQueryCreatorTest {
 

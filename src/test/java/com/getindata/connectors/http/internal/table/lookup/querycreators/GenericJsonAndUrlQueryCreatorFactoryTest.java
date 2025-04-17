@@ -3,15 +3,18 @@
  */
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.catalog.*;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory;
+import org.apache.flink.table.factories.FactoryUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +27,6 @@ import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.table.lookup.RowDataSingleValueLookupSchemaEntry;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 import static com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonAndUrlQueryCreatorFactory.*;
-import static com.getindata.connectors.http.internal.table.lookup.querycreators.QueryCreatorUtils.getTableContext;
 
 class GenericJsonAndUrlQueryCreatorFactoryTest
 {
@@ -113,5 +115,22 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
         assertThat(factory.optionalOptions()).contains(REQUEST_QUERY_PARAM_FIELDS);
         assertThat(factory.optionalOptions()).contains(REQUEST_BODY_FIELDS);
         assertThat(factory.optionalOptions()).contains(REQUEST_URL_MAP);
+    }
+    public static DynamicTableFactory.Context getTableContext(Configuration config,
+                                                              ResolvedSchema resolvedSchema) {
+        return new FactoryUtil.DefaultDynamicTableContext(
+                ObjectIdentifier.of("default", "default", "test"),
+                new ResolvedCatalogTable(
+                        CatalogTable.of(
+                                Schema.newBuilder().fromResolvedSchema(resolvedSchema).build(),
+                                null,
+                                Collections.emptyList(),
+                                Collections.emptyMap()),
+                        resolvedSchema),
+                Collections.emptyMap(),
+                config,
+                Thread.currentThread().getContextClassLoader(),
+                false
+        );
     }
 }
