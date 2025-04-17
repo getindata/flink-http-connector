@@ -20,7 +20,7 @@ public class CustomFormatFactory implements SerializationFormatFactory {
     public static final String REQUIRED_OPTION = "required-option-one";
 
     /**
-     * Consider removing this static only used for testing only
+     * Used for testing custom format.
      */
     static boolean requiredOptionsWereUsed = false;
 

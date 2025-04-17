@@ -10,6 +10,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,8 +25,6 @@ import org.apache.flink.table.types.FieldsDataType;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.getindata.connectors.http.LookupArg;
 import com.getindata.connectors.http.LookupQueryCreator;
@@ -53,9 +53,10 @@ import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
  * http/base/aaaa will be issued.
  *
  */
+@Slf4j
+@Builder
 public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     private static final long serialVersionUID = 1L;
-    private static final Logger log = LogManager.getLogger(GenericJsonAndUrlQueryCreator.class);
 
     // not final so we can mutate for unit test
     private SerializationSchema<RowData> serializationSchema;
@@ -66,30 +67,6 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     private final List<String> requestBodyFields;
     private final Map<String, String> requestUrlMap;
 
-    /**
-     * Construct a Generic JSON and URL query creator.
-     *
-     * @param httpMethod the requested http method
-     * @param serializationSchema    serialization schema for RowData
-     * @param requestQueryParamsFields query param fields
-     * @param requestBodyFields body fields used for PUT and POSTs
-     * @param requestUrlMap url map
-     * @param lookupRow     lookup row itself.
-     */
-    public GenericJsonAndUrlQueryCreator(final String httpMethod,
-                                         final SerializationSchema<RowData>
-                                             serializationSchema,
-                                         final List<String>  requestQueryParamsFields,
-                                         final List<String> requestBodyFields,
-                                         final Map<String, String> requestUrlMap,
-                                         final LookupRow lookupRow) {
-        this.httpMethod = httpMethod;
-        this.serializationSchema = serializationSchema;
-        this.lookupRow = lookupRow;
-        this.requestQueryParamsFields = requestQueryParamsFields;
-        this.requestBodyFields = requestBodyFields;
-        this.requestUrlMap = requestUrlMap;
-    }
     @VisibleForTesting
     void setSerializationSchema(SerializationSchema<RowData>
                                         serializationSchema) {
@@ -109,9 +86,7 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
             jsonObject = (ObjectNode) ObjectMapperAdapter.instance().readTree(
                     serializationSchema.serialize(lookupDataRow));
         } catch (IOException e) {
-            String message = "Unable to parse the lookup arguments to json.";
-            log.error(message, e);
-            throw new RuntimeException(message, e);
+            throw new RuntimeException("Unable to parse the lookup arguments to json.", e);
         }
         // Parameters are encoded as query params for GET and none GET.
         // Later code will turn these query params into the body for PUTs and POSTs
@@ -132,9 +107,7 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                 lookupQuery = ObjectMapperAdapter.instance()
                         .writeValueAsString(jsonObject.retain(requestBodyFields));
             } catch (JsonProcessingException e) {
-                final String message = "Unable to convert Json Object to a string";
-                log.error(message, e);
-                throw new RuntimeException(message,e);
+                throw new RuntimeException("Unable to convert Json Object to a string", e);
             }
             // body parameters
             // use the request json object to scope the required fields and the lookupArgs as values
@@ -142,7 +115,7 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                     jsonObjectForQueryParams);
         }
         // add the path map
-        final Map<String, String> pathBasedUrlParams = createPathBasedParams(lookupArgs,
+        final Map<String, String> pathBasedUrlParams = createURLPathBasedParams(lookupArgs,
                 requestUrlMap);
 
         return new LookupQueryInfo(lookupQuery, bodyBasedUrlQueryParams, pathBasedUrlParams);
@@ -195,26 +168,25 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
         return mapOfJsonKeyToLookupArg;
     }
     /**
-     * Create map of the json key to the lookup argument
-     * value. This is used for body based content.
+     * Create map of insert name to column name for path inserts
      * @param args lookup arguments
      * @param urlMap map of insert name to column name
      * @return map of field content to the lookup argument value.
      */
-    private Map<String, String> createPathBasedParams(final Collection<LookupArg> args,
-                                                     Map<String, String> urlMap ) {
-        Map<String, String> mapOfJsonKeyToLookupArg = new LinkedHashMap<>();
+    private Map<String, String> createURLPathBasedParams(final Collection<LookupArg> args,
+                                                         Map<String, String> urlMap ) {
+        Map<String, String> mapOfinsertKeyToLookupArg = new LinkedHashMap<>();
         if (urlMap != null) {
             for (String key: urlMap.keySet()) {
                 for (final LookupArg arg : args) {
                     if (arg.getArgName().equals(key)) {
-                        mapOfJsonKeyToLookupArg.put(
+                        mapOfinsertKeyToLookupArg.put(
                                 urlMap.get(key), arg.getArgValue());
                     }
                 }
             }
         }
-        return mapOfJsonKeyToLookupArg;
+        return mapOfinsertKeyToLookupArg;
     }
     /**
      * Convert json object to query params string
@@ -235,13 +207,13 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                 result.add(fieldName + "="
                         + URLEncoder.encode(fieldValue, enc));
             } catch (UnsupportedEncodingException e) {
-                final String message =
-                        "Failed to encode the value of the query parameter name "
-                                + fieldName
-                                + ": "
-                                + fieldValue;
-                log.error(message, e);
-                throw new RuntimeException(message, e);
+                throw new RuntimeException("Failed to encode the value of the query parameter name "
+                        + fieldName
+                        + ": "
+                        + fieldValue
+                        + " using encoding "
+                        + enc,
+                        e);
             }
         });
 
@@ -257,11 +229,8 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                                         GenericJsonAndUrlQueryCreator.class));
                 this.schemaOpened = true;
             } catch (final Exception e) {
-                final String message =
-                        "Failed to initialize serialization schema for "
-                                + GenericJsonAndUrlQueryCreator.class;
-                log.error(message, e);
-                throw new FlinkRuntimeException(message, e);
+                throw new FlinkRuntimeException("Failed to initialize serialization schema for "
+                        + GenericJsonAndUrlQueryCreator.class, e);
             }
         }
     }
