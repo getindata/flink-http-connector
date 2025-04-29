@@ -64,7 +64,7 @@ class GenericJsonAndUrlQueryCreatorTest {
                                         resolvedSchema)
                         );
         var createdQuery = universalJsonQueryCreator.createLookupQuery(ROWDATA);
-        // THEN
+        // WHEN/THEN
         if (operation.equals("GET")) {
             validateCreatedQueryForGet(createdQuery);
         } else {
@@ -126,6 +126,7 @@ class GenericJsonAndUrlQueryCreatorTest {
 
     @Test
     public void createLookupQueryTest() {
+        // GIVEN
         List<String> query_params = List.of("key1", "key2");
         String operation = "GET";
         final String key1 = "key1";
@@ -147,7 +148,7 @@ class GenericJsonAndUrlQueryCreatorTest {
         DataType dataType = row(List.of(
                 DataTypes.FIELD(key1, DataTypes.STRING()),
                 DataTypes.FIELD(key2, DataTypes.STRING())
-        ));;
+        ));
         ResolvedSchema resolvedSchema = ResolvedSchema.of(
                 Column.physical(key1, DataTypes.STRING()),
                 Column.physical(key2, DataTypes.STRING()));
@@ -155,10 +156,8 @@ class GenericJsonAndUrlQueryCreatorTest {
         config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_QUERY_PARAM_FIELDS, query_params);
         config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_URL_MAP, url_params);
         config.setString(LOOKUP_METHOD, operation);
-        // GIVEN
-
         lookupRow.setLookupPhysicalRowDataType(dataType);
-
+        // WHEN
         GenericJsonAndUrlQueryCreator genericJsonAndUrlQueryCreator =
                 (GenericJsonAndUrlQueryCreator) new GenericJsonAndUrlQueryCreatorFactory()
                         .createLookupQueryCreator(

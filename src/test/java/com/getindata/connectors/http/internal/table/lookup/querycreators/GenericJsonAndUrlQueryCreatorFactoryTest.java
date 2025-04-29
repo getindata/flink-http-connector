@@ -50,12 +50,13 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
                                 + "= false` "
                                 + "was called before this test execution.")
                 .isFalse();
-
+        // GIVEN
         this.config.setString("lookup-request.format", CustomJsonFormatFactory.IDENTIFIER);
         this.config.setString(
                 String.format("lookup-request.format.%s.%s", CustomJsonFormatFactory.IDENTIFIER,
                         CustomJsonFormatFactory.REQUIRED_OPTION), "optionValue");
         this.config.set(REQUEST_QUERY_PARAM_FIELDS, List.of("key1"));
+        // WHEN/THEN
         // with sync
         createUsingFactory(false);
         // with async
@@ -64,8 +65,10 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
 
     @Test
     public void lookupQueryInfoTestRequiredConfig() {
+        //GIVEN
         GenericJsonAndUrlQueryCreatorFactory genericJsonAndUrlQueryCreatorFactory =
                 new GenericJsonAndUrlQueryCreatorFactory();
+        // WHEN/THEN
         assertThrows(RuntimeException.class, () -> {
             genericJsonAndUrlQueryCreatorFactory.createLookupQueryCreator(config,
                     null,
@@ -74,6 +77,7 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
     }
 
     private void createUsingFactory(boolean async) {
+        // GIVEN
         this.config.setBoolean(HttpLookupConnectorOptions.ASYNC_POLLING, async);
         LookupRow lookupRow= new LookupRow()
                 .addLookupEntry(
@@ -95,7 +99,7 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
         GenericRowData lookupRowData = GenericRowData.of(
                 StringData.fromString("val1")
         );
-
+        // WHEN/THEN
         LookupQueryInfo lookupQueryInfo = lookupQueryCreator.createLookupQuery(lookupRowData);
         assertThat(CustomJsonFormatFactory.requiredOptionsWereUsed).isTrue();
         assertThat(lookupQueryInfo.hasLookupQuery()).isTrue();
@@ -104,7 +108,9 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
     }
     @Test
     void optionsTests() {
+        // GIVEN
         GenericJsonAndUrlQueryCreatorFactory factory = new GenericJsonAndUrlQueryCreatorFactory();
+        // WHEN/THEN
         assertThat(factory.requiredOptions()).isEmpty();
         assertThat(factory.optionalOptions()).contains(REQUEST_QUERY_PARAM_FIELDS);
         assertThat(factory.optionalOptions()).contains(REQUEST_BODY_FIELDS);
