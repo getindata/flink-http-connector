@@ -18,13 +18,17 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.FieldsDataType;
 import org.apache.flink.types.Row;
+import org.apache.flink.util.Preconditions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.getindata.connectors.http.internal.table.lookup.LookupQueryInfo;
 import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.table.lookup.RowDataSingleValueLookupSchemaEntry;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_METHOD;
@@ -32,40 +36,25 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTabl
 import static com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonAndUrlQueryCreatorFactoryTest.getTableContext;
 
 class GenericJsonAndUrlQueryCreatorTest {
-
+    private static final String KEY = "key1";
+    private static final String VALUE = "val1";
+    // for GET this is the minimum config
+    private static final List<String> QUERY_PARAMS = List.of(KEY);
+    // Path param ArgPath required a stringified json object. As we have PersonBean
+    // we can use that.
+    private static final Map<String, String> URL_PARAMS = Map.of(KEY, KEY);
+    private static final DataType dataType = row(List.of(
+            DataTypes.FIELD(KEY, DataTypes.STRING())
+    ));
+    private static final ResolvedSchema resolvedSchema = ResolvedSchema.of(Column.physical(KEY,
+            DataTypes.STRING()));
+    private static final RowData ROWDATA = getRowData(1, VALUE);
     @ParameterizedTest
     @ValueSource(strings = {"GET", "PUT", "POST" })
     public void createLookupQueryTestStrAllOps(String operation) {
-        String key = "key1";
-        String value = "val1";
-        // for GET this is the minimum config
-        List<String> query_params = List.of(key);
-        // Path param ArgPath required a stringified json object. As we have PersonBean
-        // we can use that.
-        Map<String, String> url_params = Map.of(key, key);
-        LookupRow lookupRow = new LookupRow()
-                .addLookupEntry(
-                        new RowDataSingleValueLookupSchemaEntry(
-                                key,
-                                RowData.createFieldGetter(
-                                        DataTypes.STRING().getLogicalType(), 0)
-                        ));
-        DataType dataType = row(List.of(
-                DataTypes.FIELD(key, DataTypes.STRING())
-        ));
-        lookupRow.setLookupPhysicalRowDataType(dataType);
-        ResolvedSchema resolvedSchema = ResolvedSchema.of(Column.physical(key,
-                DataTypes.STRING()));
-        Configuration config = new Configuration();
-        config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_QUERY_PARAM_FIELDS,
-                query_params);
-        if (!operation.equals("GET")) {
-            // add the body content for PUT and POST
-            config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_BODY_FIELDS,
-                    query_params);
-        }
-        config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_URL_MAP, url_params);
-        config.setString(LOOKUP_METHOD, operation);
+        // WHEN
+        LookupRow lookupRow = getLookupRow();
+        Configuration config = getConfiguration(operation);
         GenericJsonAndUrlQueryCreator universalJsonQueryCreator =
                 (GenericJsonAndUrlQueryCreator) new GenericJsonAndUrlQueryCreatorFactory()
                         .createLookupQueryCreator(
@@ -74,26 +63,67 @@ class GenericJsonAndUrlQueryCreatorTest {
                                 getTableContext(config,
                                         resolvedSchema)
                         );
-        var row = new GenericRowData(1);
-        row.setField(0, StringData.fromString(value));
-        var createdQuery = universalJsonQueryCreator.createLookupQuery(row);
+        var createdQuery = universalJsonQueryCreator.createLookupQuery(ROWDATA);
         // THEN
         if (operation.equals("GET")) {
-            assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
-            assertThat(createdQuery.getLookupQuery()).isEqualTo(key + "=" + value);
+            validateCreatedQueryForGet(createdQuery);
         } else {
-            assertThat(createdQuery
-                    .getBodyBasedUrlQueryParameters())
-                    .isEqualTo(key + "=" + value);
-            assertThat(createdQuery.getLookupQuery()).isEqualTo(
-                    "{\""
-                            + key
-                            + "\":\"" + value
-                            + "\"}");
+            validateCreatedQueryForPutAndPost(createdQuery);
         }
+        // validate url based parameters
         assertThat(createdQuery.getPathBasedUrlParameters().size() == 1).isTrue();
-        assertThat(createdQuery.getPathBasedUrlParameters().get(key)).isEqualTo(value);
+        assertThat(createdQuery.getPathBasedUrlParameters().get(KEY)).isEqualTo(VALUE);
     }
+
+    private static void validateCreatedQueryForGet( LookupQueryInfo createdQuery) {
+        // check there is no body params and we have the expected lookup query
+        assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
+        assertThat(createdQuery.getLookupQuery()).isEqualTo(KEY + "=" + VALUE);
+    }
+    private static void validateCreatedQueryForPutAndPost(LookupQueryInfo createdQuery) {
+        // check we have the expected body params and lookup query
+        assertThat(createdQuery
+                .getBodyBasedUrlQueryParameters())
+                .isEqualTo(KEY + "=" + VALUE);
+        assertThat(createdQuery.getLookupQuery()).isEqualTo(
+                "{\""
+                         + KEY
+                         + "\":\"" + VALUE
+                         + "\"}");
+    }
+
+    private static @NotNull GenericRowData getRowData(int arity, String value) {
+        var row = new GenericRowData(arity);
+        row.setField(0, StringData.fromString(value));
+        return row;
+    }
+
+    private static @NotNull Configuration getConfiguration(String operation) {
+        Configuration config = new Configuration();
+        config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_QUERY_PARAM_FIELDS,
+                QUERY_PARAMS);
+        if (!operation.equals("GET")) {
+            // add the body content for PUT and POST
+            config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_BODY_FIELDS,
+                    QUERY_PARAMS);
+        }
+        config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_URL_MAP, URL_PARAMS);
+        config.setString(LOOKUP_METHOD, operation);
+        return config;
+    }
+
+    private static @NotNull LookupRow getLookupRow() {
+        LookupRow lookupRow = new LookupRow()
+                .addLookupEntry(
+                        new RowDataSingleValueLookupSchemaEntry(
+                                KEY,
+                                RowData.createFieldGetter(
+                                        DataTypes.STRING().getLogicalType(), 0)
+                        ));
+        lookupRow.setLookupPhysicalRowDataType(dataType);
+        return lookupRow;
+    }
+
     @Test
     public void createLookupQueryTest() {
         List<String> query_params = List.of("key1", "key2");
@@ -137,8 +167,7 @@ class GenericJsonAndUrlQueryCreatorTest {
                                 getTableContext(config,
                                         resolvedSchema)
                         );
-        var row = new GenericRowData(2);
-        row.setField(0, StringData.fromString(value));
+        var row = getRowData(2, value);
         row.setField(1, StringData.fromString(value));
         var createdQuery = genericJsonAndUrlQueryCreator.createLookupQuery(row);
         // THEN
@@ -148,7 +177,7 @@ class GenericJsonAndUrlQueryCreatorTest {
                    + "&" + key2 + "=" + value);
     }
     @Test
-    public void failserializationOpenTest() {
+    public void failSerializationOpenTest() {
         List<String> paths_config =List.of("key1");
         final String operation = "GET";
         final String key = "key1";
@@ -226,10 +255,30 @@ class GenericJsonAndUrlQueryCreatorTest {
                 DataTypes.FIELD(key3, DataTypes.TIMESTAMP_LTZ())
         ));
         // WHEN
-        Row row =  GenericJsonAndUrlQueryCreator.rowDataToRow(rowData, dataType);
+        Row row = rowDataToRow(rowData, dataType);
         // THEN
         assertThat(row.getField(key1).equals(value));
         assertThat(row.getField(key2).equals("1970-01-01T00:00:00.010"));
         assertThat(row.getField(key3).equals("1970-01-01T00:00:00.010Z"));
+    }
+    /**
+     * Create a Row from a RowData and DataType
+     * @param lookupRowData the lookup RowData
+     * @param rowType the datatype
+     * @return row return row
+     */
+    private static Row rowDataToRow(final RowData lookupRowData, final DataType rowType) {
+        Preconditions.checkNotNull(lookupRowData);
+        Preconditions.checkNotNull(rowType);
+
+        final Row row = Row.withNames();
+        final List<DataTypes.Field> rowFields = FieldsDataType.getFields(rowType);
+
+        for (int idx = 0; idx < rowFields.size(); idx++) {
+            final String fieldName = rowFields.get(idx).getName();
+            final Object fieldValue = ((GenericRowData) lookupRowData).getField(idx);
+            row.setField(fieldName, fieldValue);
+        }
+        return row;
     }
 }

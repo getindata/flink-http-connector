@@ -1,7 +1,3 @@
-/*
- * © Copyright IBM Corp. 2025
- */
-
 package com.getindata.connectors.http.internal.table.lookup.querycreators;
 
 import java.io.IOException;
@@ -17,12 +13,7 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.flink.table.api.DataTypes.Field;
-import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.types.DataType;
-import org.apache.flink.table.types.FieldsDataType;
-import org.apache.flink.types.Row;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
@@ -33,25 +24,21 @@ import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 import com.getindata.connectors.http.internal.utils.SerializationSchemaUtils;
 
 /**
- * Generic JSON and URL query creator; in addition to be able to map columns to json requests,
- * it allows url inserts to be mapped to column names using templating.
- * <br>
- * For GETs, column names are mapped to query parameters. e.g. for
+ * <p>Generic JSON and URL query creator; in addition to be able to map columns to json requests,
+ * it allows url inserts to be mapped to column names using templating.</p>
+ * <p>For GETs, column names are mapped to query parameters. e.g. for
  * <code>GenericJsonAndUrlQueryCreator.REQUEST_PARAM_FIELDS</code> = "id1;id2"
  * and url of http://base. At lookup time with values of id1=1 and id2=2 a call of
- * http/base?id1=1&amp;id2=2 will be issued.
- * <br>
- * For PUT and POST, parameters are mapped to the json body  e.g. for
+ * http/base?id1=1&amp;id2=2 will be issued.</p>
+ * <p>For PUT and POST, parameters are mapped to the json body  e.g. for
  * REQUEST_PARAM_FIELDS = "id1;id2" and url of http://base. At lookup time with values of id1=1 and
- * id2=2 as call of http/base will be issued with a json payload of {"id1":1,"id2":2}
- * <br>
- * For all http methods, url segments can be used to include lookup up values. Using the map from
+ * id2=2 as call of http/base will be issued with a json payload of {"id1":1,"id2":2}</p>
+ * <p>For all http methods, url segments can be used to include lookup up values. Using the map from
  * <code>GenericJsonAndUrlQueryCreator.REQUEST_URL_MAP</code> which has a key of the insert and the
  * value of the associated column.
  * e.g. for <code>GenericJsonAndUrlQueryCreator.REQUEST_URL_MAP</code> = "key1":"col1"
  * and url of http://base/{key1}. At lookup time with values of col1="aaaa" a call of
- * http/base/aaaa will be issued.
- *
+ * http/base/aaaa will be issued.</p>
  */
 @Slf4j
 @Builder
@@ -121,28 +108,6 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     }
 
     /**
-     * Create a Row from a RowData and DataType
-     * @param lookupRowData the lookup RowData
-     * @param rowType the datatype
-     * @return row return row
-     */
-    @VisibleForTesting
-    static Row rowDataToRow(final RowData lookupRowData, final DataType rowType) {
-        Preconditions.checkNotNull(lookupRowData);
-        Preconditions.checkNotNull(rowType);
-
-        final Row row = Row.withNames();
-        final List<Field> rowFields = FieldsDataType.getFields(rowType);
-
-        for (int idx = 0; idx < rowFields.size(); idx++) {
-            final String fieldName = rowFields.get(idx).getName();
-            final Object fieldValue = ((GenericRowData) lookupRowData).getField(idx);
-            row.setField(fieldName, fieldValue);
-        }
-        return row;
-    }
-
-    /**
      * Create map of the json key to the lookup argument
      * value. This is used for body based content.
      * @param args lookup arguments
@@ -150,7 +115,7 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
      * @return map of field content to the lookup argument value.
      */
     private Map<String, String> createBodyBasedParams(final Collection<LookupArg> args,
-                                                              ObjectNode objectNode ) {
+                                                      ObjectNode objectNode ) {
         Map<String, String> mapOfJsonKeyToLookupArg = new LinkedHashMap<>();
         Iterator<Map.Entry<String, JsonNode>> iterator = objectNode.fields();
         iterator.forEachRemaining(field -> {
@@ -172,7 +137,8 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
      * @return map of field content to the lookup argument value.
      */
     private Map<String, String> createURLPathBasedParams(final Collection<LookupArg> args,
-                                                         Map<String, String> urlMap ) {
+                                                         Map<String,
+                                                         String> urlMap ) {
         Map<String, String> mapOfinsertKeyToLookupArg = new LinkedHashMap<>();
         if (urlMap != null) {
             for (String key: urlMap.keySet()) {

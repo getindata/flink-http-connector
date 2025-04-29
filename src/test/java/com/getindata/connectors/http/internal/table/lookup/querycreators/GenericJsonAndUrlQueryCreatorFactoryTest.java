@@ -71,12 +71,6 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
                     null,
                     null);
         });
-        // do not specify REQUEST_ARG_PATHS_CONFIG
-        assertThrows(RuntimeException.class, () -> {
-            genericJsonAndUrlQueryCreatorFactory.createLookupQueryCreator(config,
-                    null,
-                    null);
-        });
     }
 
     private void createUsingFactory(boolean async) {
@@ -116,6 +110,7 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
         assertThat(factory.optionalOptions()).contains(REQUEST_BODY_FIELDS);
         assertThat(factory.optionalOptions()).contains(REQUEST_URL_MAP);
     }
+
     public static DynamicTableFactory.Context getTableContext(Configuration config,
                                                               ResolvedSchema resolvedSchema) {
         return new FactoryUtil.DefaultDynamicTableContext(

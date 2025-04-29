@@ -70,7 +70,7 @@ public class GenericJsonAndUrlQueryCreatorFactory implements LookupQueryCreatorF
                                  + "as url segments. Parses a string as a map of strings. "
                                  + "<br>"
                                  + "For example if there are table columns called customerId"
-                                 + " and orderId, then specifying value customerId:cid1,orderID:oid"
+                                 + " and orderId, then specifying value customerId:cid,orderID:oid"
                                  + " and a url of https://myendpoint/customers/{cid}/orders/{oid}"
                                  + " will mean that the url used for the lookup query will"
                                  + " dynamically pickup the values for customerId, orderId"
