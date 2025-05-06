@@ -2,12 +2,8 @@
 
 ## [Unreleased]
 
-<<<<<<< HEAD
 -   Added support for generic json and URL query creator 
 
-=======
--   Added support for generic json and URL query creator
->>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 -   Retries support for source table:
     -   Auto retry on IOException and user-defined http codes - parameter `gid.connector.http.source.lookup.retry-codes`.
     -   Parameters `gid.connector.http.source.lookup.error.code.exclude"` and `gid.connector.http.source.lookup.error.code` were replaced by `gid.connector.http.source.lookup.ignored-response-codes`.

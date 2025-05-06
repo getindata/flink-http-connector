@@ -16,8 +16,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.factories.SerializationFormatFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import static org.apache.flink.configuration.ConfigOptions.key;
 
 import com.getindata.connectors.http.LookupQueryCreator;
@@ -39,11 +37,6 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConn
 @SuppressWarnings({"checkstyle:RegexpSingleline", "checkstyle:LineLength"})
 public class GenericJsonAndUrlQueryCreatorFactory implements LookupQueryCreatorFactory {
     private static final long serialVersionUID = 1L;
-<<<<<<< HEAD
-    private static final Logger log =
-            LogManager.getLogger(GenericJsonAndUrlQueryCreatorFactory.class);
-=======
->>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
 
     public static final String ID = "generic-json-url";
 
@@ -73,11 +66,7 @@ public class GenericJsonAndUrlQueryCreatorFactory implements LookupQueryCreatorF
                                  + "as url segments. Parses a string as a map of strings. "
                                  + "<br>"
                                  + "For example if there are table columns called customerId"
-<<<<<<< HEAD
-                                 + " and orderId, then specifying value customerId:cid,orderID:oid"
-=======
                                  + " and orderId, then specifying value customerId:cid1,orderID:oid"
->>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
                                  + " and a url of https://myendpoint/customers/{cid}/orders/{oid}"
                                  + " will mean that the url used for the lookup query will"
                                  + " dynamically pickup the values for customerId, orderId"
@@ -125,16 +114,6 @@ public class GenericJsonAndUrlQueryCreatorFactory implements LookupQueryCreatorF
                     encoder.createRuntimeEncoder(null,
                             lookupRow.getLookupPhysicalRowDataType());
         }
-<<<<<<< HEAD
-        return GenericJsonAndUrlQueryCreator.builder()
-                .httpMethod(httpMethod)
-                .serializationSchema(jsonSerializationSchema)
-                .requestQueryParamsFields(requestQueryParamsFields)
-                .requestBodyFields(requestBodyFields)
-                .requestUrlMap(requestUrlMap)
-                .lookupRow(lookupRow)
-                .build();
-=======
         // create using config parameter values and specify serialization
         // schema from json format.
         return new GenericJsonAndUrlQueryCreator(httpMethod,
@@ -143,7 +122,6 @@ public class GenericJsonAndUrlQueryCreatorFactory implements LookupQueryCreatorF
                 requestBodyFields,
                 requestUrlMap,
                 lookupRow);
->>>>>>> 6c68722 (HTTP-99 Generic Json url query creator)
     }
 
     @Override
