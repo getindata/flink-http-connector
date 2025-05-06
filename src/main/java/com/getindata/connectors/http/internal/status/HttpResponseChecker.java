@@ -14,7 +14,7 @@ public class HttpResponseChecker {
     private final Set<Integer> successCodes;
     private final Set<Integer> temporalErrorCodes;
 
-    public HttpResponseChecker(@NonNull String successCodeExpr, @NonNull String temporalErrorCodeExpr)
+    HttpResponseChecker(@NonNull String successCodeExpr, @NonNull String temporalErrorCodeExpr)
             throws ConfigurationException {
         this(HttpCodesParser.parse(successCodeExpr), HttpCodesParser.parse(temporalErrorCodeExpr));
     }
