@@ -132,5 +132,6 @@ public class HttpLookupConnectorOptions {
                     .defaultValue("")
                     .withDescription("Comma separated http codes. Content for these responses will be ignored. " +
                         "Use [1-5]XX for groups and '!' character for excluding. " +
-                            "Ignored response codes has to be a subset of " + SOURCE_RETRY_SUCCESS_CODES);
+                            "Ignored responses togater with `" + SOURCE_RETRY_SUCCESS_CODES
+                            + "` are considered as successful.");
 }
