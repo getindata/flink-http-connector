@@ -2,28 +2,35 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.io.File;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.time.Duration;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ExecutionOptions;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.readTestFile;
-import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.*;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_EXPIRY_REDUCTION;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST;
 
 public class JavaNetHttpPollingClientWithWireTest {
     private static final String BASE_URL = "http://localhost.com";
@@ -43,6 +50,7 @@ public class JavaNetHttpPollingClientWithWireTest {
     private static final String BEARER_REQUEST = "Bearer Dummy";
 
     private WireMockServer wireMockServer;
+
     @SuppressWarnings("unchecked")
     @BeforeEach
     public void setup() {
@@ -79,32 +87,34 @@ public class JavaNetHttpPollingClientWithWireTest {
 
 
     @Test
-    public void shouldUpdateHttpRequestIfRequiredGet() {
+    public void shouldUpdateHttpRequestIfRequiredGet() throws ConfigurationException {
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create(BASE_URL))
                 .timeout(Duration.ofSeconds(1))
-                .setHeader("Origin","*")
-                .setHeader("X-Content-Type-Options","nosniff")
-                .setHeader("Content-Type","application/json")
+                .setHeader("Origin", "*")
+                .setHeader("X-Content-Type-Options", "nosniff")
+                .setHeader("Content-Type", "application/json")
                 .build();
         shouldUpdateHttpRequestIfRequired(httpRequest);
     }
+
     @Test
-    public void shouldUpdateHttpRequestIfRequiredPut() {
+    public void shouldUpdateHttpRequestIfRequiredPut() throws ConfigurationException {
         HttpRequest httpRequest = HttpRequest.newBuilder()
-                .PUT( HttpRequest.BodyPublishers.ofString("foo"))
+                .PUT(HttpRequest.BodyPublishers.ofString("foo"))
                 .uri(URI.create(BASE_URL))
                 .timeout(Duration.ofSeconds(1))
-                .setHeader("Origin","*")
-                .setHeader("X-Content-Type-Options","nosniff")
-                .setHeader("Content-Type","application/json")
+                .setHeader("Origin", "*")
+                .setHeader("X-Content-Type-Options", "nosniff")
+                .setHeader("Content-Type", "application/json")
                 .build();
         shouldUpdateHttpRequestIfRequired(httpRequest);
     }
-    private void shouldUpdateHttpRequestIfRequired(HttpRequest httpRequest) {
+
+    private void shouldUpdateHttpRequestIfRequired(HttpRequest httpRequest) throws ConfigurationException {
         setUpServerBodyStub();
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(null,
+        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(mock(HttpClient.class),
                 null,
                 HttpLookupConfig.builder().url(BASE_URL).build(),
                 null);
@@ -118,11 +128,11 @@ public class JavaNetHttpPollingClientWithWireTest {
         HttpRequest newHttpRequest = client.updateHttpRequestIfRequired(request,
                 oidcHeaderPreProcessor);
         assertThat(httpRequest).isEqualTo(newHttpRequest);
-        configuration.setString(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key(),"http://localhost:9090/auth");
+        configuration.setString(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key(), "http://localhost:9090/auth");
         configuration.setString(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST, BEARER_REQUEST);
         configuration.set(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_EXPIRY_REDUCTION,
                 Duration.ofSeconds(1L));
-        client = new JavaNetHttpPollingClient(null,
+        client = new JavaNetHttpPollingClient(mock(HttpClient.class),
                 null,
                 HttpLookupConfig.builder().url(BASE_URL).readableConfig(configuration).build(),
                 null);
@@ -138,8 +148,8 @@ public class JavaNetHttpPollingClientWithWireTest {
                 .isEqualTo(newHttpRequest.headers().map().get("Content-Type"));
     }
 
-    private StubMapping setUpServerBodyStub() {
-        return wireMockServer.stubFor(
+    private void setUpServerBodyStub() {
+        wireMockServer.stubFor(
                 post(urlEqualTo(ENDPOINT))
                         .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
                         .withRequestBody(equalTo(BEARER_REQUEST))

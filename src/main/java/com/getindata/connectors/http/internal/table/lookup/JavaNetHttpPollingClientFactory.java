@@ -4,6 +4,7 @@ import java.net.http.HttpClient;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.util.ConfigurationException;
 
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
@@ -19,9 +20,9 @@ public class JavaNetHttpPollingClientFactory implements PollingClientFactory<Row
     @Override
     public JavaNetHttpPollingClient createPollClient(
             HttpLookupConfig options,
-            DeserializationSchema<RowData> schemaDecoder) {
+            DeserializationSchema<RowData> schemaDecoder) throws ConfigurationException {
 
-        HttpClient httpClient = JavaNetHttpClientFactory.createClient(options.getProperties());
+        HttpClient httpClient = JavaNetHttpClientFactory.createClient(options);
 
         return new JavaNetHttpPollingClient(
             httpClient,

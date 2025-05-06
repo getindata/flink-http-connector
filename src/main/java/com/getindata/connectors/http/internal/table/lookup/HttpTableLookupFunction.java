@@ -59,6 +59,8 @@ public class HttpTableLookupFunction extends LookupFunction {
 
         context.getMetricGroup()
                 .gauge("http-table-lookup-call-counter", () -> localHttpCallCounter.intValue());
+
+        client.open(context);
     }
 
     @Override

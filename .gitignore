@@ -13,3 +13,4 @@ bin
 /src/test/test.iml
 /flink-http-connector.iml
 /dependency-reduced-pom.xml
+/.java-version

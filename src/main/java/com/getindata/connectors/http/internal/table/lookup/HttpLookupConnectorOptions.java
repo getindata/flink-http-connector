@@ -5,6 +5,7 @@ import java.time.Duration;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
+import com.getindata.connectors.http.internal.retry.RetryStrategyType;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.*;
 
 public class HttpLookupConnectorOptions {
@@ -74,4 +75,63 @@ public class HttpLookupConnectorOptions {
                             " reduction as a Duration." +
                             " A new access token is obtained if the token" +
                             " is older than it's expiry time minus this value.");
+
+    public static final ConfigOption<Duration> SOURCE_LOOKUP_CONNECTION_TIMEOUT =
+            ConfigOptions.key(SOURCE_CONNECTION_TIMEOUT)
+                    .durationType()
+                    .noDefaultValue()
+                    .withDescription("Http client connection timeout.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_RETRY_STRATEGY =
+            ConfigOptions.key(SOURCE_RETRY_STRATEGY_TYPE)
+                    .stringType()
+                    .defaultValue(RetryStrategyType.FIXED_DELAY.getCode())
+                    .withDescription("Auto retry strategy type: fixed-delay (default) or exponential-delay.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_SUCCESS_CODES =
+            ConfigOptions.key(SOURCE_RETRY_SUCCESS_CODES)
+                    .stringType()
+                    .defaultValue("2XX")
+                    .withDescription("Comma separated http codes considered as success response. " +
+                            "Use [1-5]XX for groups and '!' character for excluding.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_RETRY_CODES =
+            ConfigOptions.key(SOURCE_RETRY_RETRY_CODES)
+                    .stringType()
+                    .defaultValue("500,503,504")
+                    .withDescription("Comma separated http codes considered as transient errors. " +
+                            "Use [1-5]XX for groups and '!' character for excluding.");
+
+    public static final ConfigOption<Duration> SOURCE_LOOKUP_RETRY_FIXED_DELAY_DELAY =
+            ConfigOptions.key(SOURCE_RETRY_FIXED_DELAY_DELAY)
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(1))
+                    .withDescription("Fixed-delay interval between retries.");
+
+    public static final ConfigOption<Duration> SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_INITIAL_BACKOFF =
+            ConfigOptions.key(SOURCE_RETRY_EXP_DELAY_INITIAL_BACKOFF)
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(1))
+                    .withDescription("Exponential-delay initial delay.");
+
+    public static final ConfigOption<Duration> SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_MAX_BACKOFF =
+            ConfigOptions.key(SOURCE_RETRY_EXP_DELAY_MAX_BACKOFF)
+                    .durationType()
+                    .defaultValue(Duration.ofMinutes(1))
+                    .withDescription("Exponential-delay maximum delay.");
+
+    public static final ConfigOption<Double> SOURCE_LOOKUP_RETRY_EXPONENTIAL_DELAY_MULTIPLIER =
+            ConfigOptions.key(SOURCE_RETRY_EXP_DELAY_MULTIPLIER)
+                    .doubleType()
+                    .defaultValue(1.5)
+                    .withDescription("Exponential-delay multiplier.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES =
+            ConfigOptions.key(SOURCE_IGNORE_RESPONSE_CODES)
+                    .stringType()
+                    .defaultValue("")
+                    .withDescription("Comma separated http codes. Content for these responses will be ignored. " +
+                        "Use [1-5]XX for groups and '!' character for excluding. " +
+                            "Ignored responses togater with `" + SOURCE_RETRY_SUCCESS_CODES
+                            + "` are considered as successful.");
 }
