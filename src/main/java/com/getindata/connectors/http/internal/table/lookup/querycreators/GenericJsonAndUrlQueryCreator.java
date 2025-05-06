@@ -132,7 +132,6 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                         .writeValueAsString(jsonObject.retain(requestBodyFields));
             } catch (JsonProcessingException e) {
                 final String message = "Unable to convert Json Object to a string";
-                log.error(message, e);
                 throw new RuntimeException(message,e);
             }
             // body parameters
