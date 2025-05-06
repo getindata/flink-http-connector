@@ -11,9 +11,9 @@ import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 
 public abstract class HttpsConnectionTestBase {
 
-    protected static final int SERVER_PORT = 9090;
+    public static final int SERVER_PORT = 9090;
 
-    protected static final int HTTPS_SERVER_PORT = 8443;
+    public static final int HTTPS_SERVER_PORT = 8443;
 
     protected static final String ENDPOINT = "/myendpoint";
 

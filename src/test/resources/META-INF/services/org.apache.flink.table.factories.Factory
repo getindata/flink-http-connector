@@ -1,3 +1,4 @@
 com.getindata.connectors.http.TestPostRequestCallbackFactory
 com.getindata.connectors.http.TestLookupPostRequestCallbackFactory
 com.getindata.connectors.http.internal.table.lookup.querycreators.CustomFormatFactory
+com.getindata.connectors.http.internal.table.lookup.querycreators.CustomJsonFormatFactory
