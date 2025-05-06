@@ -194,7 +194,7 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
     }
     /**
      * Create map of the json key to the lookup argument
-     * value. This is used for body based content.
+     * value. This is used for path based content.
      * @param args lookup arguments
      * @param urlMap map of insert name to column name
      * @return map of field content to the lookup argument value.
