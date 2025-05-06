@@ -197,7 +197,8 @@ class JavaNetHttpPollingClientConnectionTest {
         return Stream.of(
                 Arguments.of("2XX", "", false),
                 Arguments.of("2XX", "201", true),
-                Arguments.of("200,201,202,", "202", false)
+                Arguments.of("200,201,202", "202", false),
+                Arguments.of("200,201", "202", false)
         );
     }
 

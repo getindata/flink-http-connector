@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,17 +73,18 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.options = options;
 
         var config = options.getReadableConfig();
+
+        this.ignoredErrorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES));
+        var errorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_RETRY_CODES));
+        var successCodes = new HashSet<Integer>();
+        successCodes.addAll(HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_SUCCESS_CODES)));
+        successCodes.addAll(ignoredErrorCodes);
+
         this.httpClient = HttpClientWithRetry.builder()
                 .httpClient(httpClient)
                 .retryConfig(RetryConfigProvider.create(config))
-                .responseChecker(new HttpResponseChecker(
-                        config.get(SOURCE_LOOKUP_HTTP_SUCCESS_CODES),
-                        config.get(SOURCE_LOOKUP_HTTP_RETRY_CODES)))
+                .responseChecker(new HttpResponseChecker(successCodes, errorCodes))
                 .build();
-
-        this.ignoredErrorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES));
-
-        validateIgnoredResponseCodes(this.httpClient.getResponseChecker());
     }
 
     public void open(FunctionContext context) {
@@ -221,14 +223,5 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
     private boolean ignoreResponse(HttpResponse<?> response) {
         return ignoredErrorCodes.contains(response.statusCode());
-    }
-
-    private void validateIgnoredResponseCodes(HttpResponseChecker responseChecker) throws ConfigurationException {
-        for (var code : ignoredErrorCodes) {
-            if (!responseChecker.isSuccessful(code)) {
-                throw new ConfigurationException(
-                        "Ignored http status code " + code + " has to be specified as success code in retry mechanism");
-            }
-        }
     }
 }
