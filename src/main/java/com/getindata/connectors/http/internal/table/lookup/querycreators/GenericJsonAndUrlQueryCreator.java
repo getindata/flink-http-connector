@@ -238,7 +238,6 @@ public class GenericJsonAndUrlQueryCreator implements LookupQueryCreator {
                                 + fieldName
                                 + ": "
                                 + fieldValue;
-                log.error(message, e);
                 throw new RuntimeException(message, e);
             }
         });
