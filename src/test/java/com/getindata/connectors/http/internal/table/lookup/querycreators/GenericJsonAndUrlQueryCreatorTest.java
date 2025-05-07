@@ -192,6 +192,7 @@ class GenericJsonAndUrlQueryCreatorTest {
         assertThat(createdQuery.getBodyBasedUrlQueryParameters()).isEmpty();
         assertThat(createdQuery.getLookupQuery()).isEqualTo(KEY_1 + "=" + VALUE);
     }
+
     private static void validateCreatedQueryForPutAndPost(LookupQueryInfo createdQuery) {
         // check we have the expected body params and lookup query
         assertThat(createdQuery
@@ -238,12 +239,7 @@ class GenericJsonAndUrlQueryCreatorTest {
         }
         return lookupRow;
     }
-    /**
-     * Create a Row from a RowData and DataType
-     * @param lookupRowData the lookup RowData
-     * @param rowType the datatype
-     * @return row return row
-     */
+
     private static Row rowDataToRow(final RowData lookupRowData, final DataType rowType) {
         Preconditions.checkNotNull(lookupRowData);
         Preconditions.checkNotNull(rowType);
