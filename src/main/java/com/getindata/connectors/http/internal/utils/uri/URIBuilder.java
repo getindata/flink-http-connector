@@ -80,7 +80,8 @@ public class URIBuilder {
     /**
      * Construct an instance from the provided URI.
      *
-     * @param uri
+     * @param uri supplied uri
+     * @param charset character set
      */
     public URIBuilder(final URI uri, final Charset charset) {
         super();
@@ -95,6 +96,9 @@ public class URIBuilder {
      * Please note query parameters and custom query component are mutually exclusive. This method
      * will remove custom query if present.
      * </p>
+     * @param param parameter to add
+     * @param value value to add
+     * @return the URI builder
      */
     public URIBuilder addParameter(final String param, final String value) {
         if (this.queryParams == null) {
@@ -108,6 +112,8 @@ public class URIBuilder {
 
     /**
      * Builds a {@link URI} instance.
+     * @return URI
+     * @throws URISyntaxException URI syntax Exception
      */
     public URI build() throws URISyntaxException {
         return new URI(buildString());

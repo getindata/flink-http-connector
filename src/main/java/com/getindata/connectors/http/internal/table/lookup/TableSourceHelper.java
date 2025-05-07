@@ -22,6 +22,8 @@ public final class TableSourceHelper {
      * <p>Note: This method returns an empty list for every {@link DataType} that is not a
      * composite
      * type.
+     * @param type logical type
+     * @return List of field names
      */
     public static List<String> getFieldNames(LogicalType type) {
 

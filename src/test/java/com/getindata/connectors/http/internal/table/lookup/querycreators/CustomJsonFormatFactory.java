@@ -7,20 +7,21 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.formats.json.JsonFormatFactory;
 import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DynamicTableFactory.Context;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.factories.SerializationFormatFactory;
-import org.apache.flink.table.factories.TestFormatFactory.EncodingFormatMock;
 
-public class CustomFormatFactory implements SerializationFormatFactory {
+public class CustomJsonFormatFactory extends JsonFormatFactory
+        implements SerializationFormatFactory {
 
-    public static final String IDENTIFIER = "query-creator-test-format";
+    public static final String IDENTIFIER = "json-query-creator-test-format";
     public static final String REQUIRED_OPTION = "required-option-one";
 
     /**
-     * TODO remove static - used for testing only
+     * Consider removing this static only used for testing only
      */
     static boolean requiredOptionsWereUsed = false;
 
@@ -29,7 +30,7 @@ public class CustomFormatFactory implements SerializationFormatFactory {
         Context context,
         ReadableConfig readableConfig) {
         FactoryUtil.validateFactoryOptions(this, readableConfig);
-        return new EncodingFormatMock(",");
+        return super.createEncodingFormat(context, readableConfig);
     }
 
     @Override

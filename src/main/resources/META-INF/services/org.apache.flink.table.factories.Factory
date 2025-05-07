@@ -5,3 +5,4 @@ com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQue
 com.getindata.connectors.http.internal.table.lookup.Slf4jHttpLookupPostRequestCallbackFactory
 com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory
 com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallbackFactory
+com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonAndUrlQueryCreatorFactory

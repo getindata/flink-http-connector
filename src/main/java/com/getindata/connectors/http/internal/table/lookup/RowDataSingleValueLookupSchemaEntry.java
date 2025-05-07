@@ -47,7 +47,7 @@ public class RowDataSingleValueLookupSchemaEntry extends RowDataLookupSchemaEntr
         }
 
         if (!(value instanceof BinaryStringData)) {
-            log.debug("Unsupported Key Type {}. Trying simple toString(), wish me luck...",
+            log.debug("Unsupported Key Type {}. Trying simple toString().",
                 value.getClass());
         }
 

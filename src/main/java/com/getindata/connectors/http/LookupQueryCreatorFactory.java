@@ -37,6 +37,9 @@ import com.getindata.connectors.http.internal.table.lookup.LookupRow;
 public interface LookupQueryCreatorFactory extends Factory, Serializable {
 
     /**
+     * @param readableConfig readable config
+     * @param lookupRow lookup row
+     * @param dynamicTableFactoryContext context
      * @return {@link LookupQueryCreator} custom lookup query creator instance
      */
     LookupQueryCreator createLookupQueryCreator(
