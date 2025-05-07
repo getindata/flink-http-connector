@@ -55,6 +55,7 @@ class GenericJsonAndUrlQueryCreatorTest {
     private static final ResolvedSchema RESOLVED_SCHEMA = ResolvedSchema.of(Column.physical(KEY_1,
             DataTypes.STRING()));
     private static final RowData ROWDATA = getRowData(1, VALUE);
+
     @ParameterizedTest
     @ValueSource(strings = {"GET", "PUT", "POST" })
     public void createLookupQueryTestStrAllOps(String operation) {
@@ -69,8 +70,9 @@ class GenericJsonAndUrlQueryCreatorTest {
                                 getTableContext(config,
                                         RESOLVED_SCHEMA)
                         );
+        // WHEN
         var createdQuery = universalJsonQueryCreator.createLookupQuery(ROWDATA);
-        // WHEN/THEN
+        // THEN
         if (operation.equals("GET")) {
             validateCreatedQueryForGet(createdQuery);
         } else {
@@ -95,7 +97,6 @@ class GenericJsonAndUrlQueryCreatorTest {
         config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_QUERY_PARAM_FIELDS, query_params);
         config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_URL_MAP, url_params);
         lookupRow.setLookupPhysicalRowDataType(DATATYPE_1_2);
-        // WHEN
         GenericJsonAndUrlQueryCreator genericJsonAndUrlQueryCreator =
                 (GenericJsonAndUrlQueryCreator) new GenericJsonAndUrlQueryCreatorFactory()
                         .createLookupQueryCreator(
@@ -106,6 +107,7 @@ class GenericJsonAndUrlQueryCreatorTest {
                         );
         var row = getRowData(2, VALUE);
         row.setField(1, StringData.fromString(VALUE));
+        // WHEN
         var createdQuery = genericJsonAndUrlQueryCreator.createLookupQuery(row);
         // THEN
         assertThat(createdQuery.getPathBasedUrlParameters().get(URL_INSERT)).isEqualTo(VALUE);
@@ -113,20 +115,15 @@ class GenericJsonAndUrlQueryCreatorTest {
         assertThat(createdQuery.getLookupQuery()).isEqualTo(KEY_1 + "=" + VALUE
                 + "&" + KEY_2 + "=" + VALUE);
     }
+
     @Test
     public void failSerializationOpenTest() {
-        List<String> paths_config =List.of("KEY_1");
-        final String operation = "GET";
-
+        // GIVEN
         LookupRow lookupRow = getLookupRow(KEY_1);
         ResolvedSchema resolvedSchema = ResolvedSchema.of(Column.physical(KEY_1,
                 DataTypes.STRING()));
-        Configuration config = new Configuration();
-        config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_QUERY_PARAM_FIELDS, paths_config);
-        config.setString(LOOKUP_METHOD, operation);
-
+        Configuration config = getConfiguration("GET");
         lookupRow.setLookupPhysicalRowDataType(DATATYPE_1);
-
         GenericJsonAndUrlQueryCreator genericJsonAndUrlQueryCreator =
                 (GenericJsonAndUrlQueryCreator) new GenericJsonAndUrlQueryCreatorFactory()
                         .createLookupQueryCreator(
@@ -146,13 +143,16 @@ class GenericJsonAndUrlQueryCreatorTest {
                 return new byte[0];
             }
         };
+        // WHEN
         genericJsonAndUrlQueryCreator.setSerializationSchema(mockSerialiationSchema);
         var row = new GenericRowData(1);
+        // THEN
         assertThrows(RuntimeException.class, () -> {
             genericJsonAndUrlQueryCreator.createLookupQuery(row);
         });
     }
-    @Test void convertToQueryParametersUnsupportedEncodingTest() {
+    @Test
+    void convertToQueryParametersUnsupportedEncodingTest() {
         // GIVEN
         ObjectMapper mapper = ObjectMapperAdapter.instance();
         PersonBean person = new PersonBean("aaa", "bbb");
@@ -164,7 +164,8 @@ class GenericJsonAndUrlQueryCreatorTest {
                     (ObjectNode) personNode, "bad encoding");
         });
     }
-    @Test void rowDataToRowTest() {
+    @Test
+    void rowDataToRowTest() {
         // GIVEN
         // String
         final String value = VALUE;
