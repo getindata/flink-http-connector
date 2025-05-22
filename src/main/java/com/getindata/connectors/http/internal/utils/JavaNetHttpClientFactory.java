@@ -7,6 +7,7 @@ import java.net.http.HttpClient.Redirect;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
@@ -16,6 +17,7 @@ import javax.net.ssl.X509TrustManager;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -43,16 +45,24 @@ public class JavaNetHttpClientFactory {
             .followRedirects(Redirect.NORMAL)
             .sslContext(sslContext);
 
-        options.getReadableConfig()
-                .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_CONNECTION_TIMEOUT)
-                .ifPresent(clientBuilder::connectTimeout);
+        ReadableConfig readableConfig = options.getReadableConfig();
 
-        options.getReadableConfig()
-                .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY)
-                .ifPresent(proxy -> {
-                    ProxyConfig proxyConfig = new ProxyConfig(proxy);
-                    clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));
-                });
+        readableConfig
+            .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_CONNECTION_TIMEOUT)
+            .ifPresent(clientBuilder::connectTimeout);
+
+        Optional<String> proxyHost = readableConfig.getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_HOST);
+        Optional<Integer> proxyPort = readableConfig.getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_PORT);
+
+        if(proxyHost.isPresent() && proxyPort.isPresent()){
+
+            Optional<String> proxyUsername = readableConfig.getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_USERNAME);
+            Optional<String> proxyPassword = readableConfig.getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_PASSWORD);
+
+            ProxyConfig proxyConfig = new ProxyConfig(proxyHost.get(), proxyPort.get(), proxyUsername, proxyPassword);
+            clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));
+            proxyConfig.getAuthenticator().ifPresent(clientBuilder::authenticator);
+        }
 
         return clientBuilder.build();
     }

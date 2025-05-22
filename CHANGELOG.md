@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
--   Added option to define a proxy for the lookup source
+-   Added option to define a proxy for the lookup source (including authentication)
 
 -   Added support for generic json and URL query creator 
 

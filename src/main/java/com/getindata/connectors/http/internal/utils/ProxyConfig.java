@@ -2,6 +2,10 @@ package com.getindata.connectors.http.internal.utils;
 
 import lombok.Getter;
 
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.util.Optional;
+
 @Getter
 public class ProxyConfig {
 
@@ -9,11 +13,23 @@ public class ProxyConfig {
 
     private final int port;
 
-    public ProxyConfig(String proxyString) {
-        String host = proxyString.substring(0, proxyString.lastIndexOf(':'));
-        int port = Integer.parseInt(proxyString.substring(proxyString.lastIndexOf(':') + 1));
+    private final Optional<Authenticator> authenticator;
+
+    public ProxyConfig(String host, int port, Optional<String> proxyUsername, Optional<String> proxyPassword) {
         this.host = host;
         this.port = port;
+
+        if(proxyUsername.isPresent() && proxyPassword.isPresent()){
+            this.authenticator = Optional.of(new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(proxyUsername.get(), proxyPassword.get().toCharArray());
+                }
+            });
+        }else{
+            this.authenticator = Optional.empty();
+        }
+
     }
 
 }

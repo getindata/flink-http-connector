@@ -1,6 +1,7 @@
 package com.getindata.connectors.http.internal.utils;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
@@ -50,21 +51,29 @@ class ConfigUtilsTest {
     }
 
     @Test
-    public void shouldSeparateProxyWithoutProtocol() {
-        String proxy = "proxy:8080";
+    public void shouldGetProxyConfigWithAuthenticator() {
+        String proxyHost = "proxy";
+        Integer proxyPort = 8080;
+        Optional<String> proxyUsername = Optional.of("username");
+        Optional<String> proxyPassword = Optional.of("password");
 
-        ProxyConfig proxyConfig = new ProxyConfig(proxy);
+        ProxyConfig proxyConfig = new ProxyConfig(proxyHost, proxyPort, proxyUsername, proxyPassword );
         assertThat(proxyConfig.getHost().equals("proxy"));
         assertThat(proxyConfig.getPort() == 8080);
+        assertThat(proxyConfig.getAuthenticator().isPresent());
     }
 
     @Test
-    public void shouldSeparateProxyWithProtocol() {
-        String proxy = "https://proxy:80";
+    public void shouldGetProxyConfigWithoutAuthenticator() {
+        String proxyHost = "proxy";
+        Integer proxyPort = 8080;
+        Optional<String> proxyUsername = Optional.of("username");
+        Optional<String> proxyPassword = Optional.empty();
 
-        ProxyConfig proxyConfig = new ProxyConfig(proxy);
-        assertThat(proxyConfig.getHost().equals("https://proxy"));
-        assertThat(proxyConfig.getPort() == 80);
+        ProxyConfig proxyConfig = new ProxyConfig(proxyHost, proxyPort, proxyUsername, proxyPassword );
+        assertThat(proxyConfig.getHost().equals("proxy"));
+        assertThat(proxyConfig.getPort() == 8080);
+        assertThat(proxyConfig.getAuthenticator().isEmpty());
     }
 
     @Test
