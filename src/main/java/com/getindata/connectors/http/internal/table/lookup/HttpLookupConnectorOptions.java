@@ -82,6 +82,12 @@ public class HttpLookupConnectorOptions {
                     .noDefaultValue()
                     .withDescription("Http client connection timeout.");
 
+    public static final ConfigOption<String> SOURCE_LOOKUP_PROXY =
+            ConfigOptions.key(SOURCE_PROXY)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Http client proxy, separated by ':'.");
+
     public static final ConfigOption<String> SOURCE_LOOKUP_RETRY_STRATEGY =
             ConfigOptions.key(SOURCE_RETRY_STRATEGY_TYPE)
                     .stringType()

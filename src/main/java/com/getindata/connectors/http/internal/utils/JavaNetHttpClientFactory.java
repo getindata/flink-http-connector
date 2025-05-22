@@ -1,5 +1,7 @@
 package com.getindata.connectors.http.internal.utils;
 
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.security.NoSuchAlgorithmException;
@@ -44,6 +46,13 @@ public class JavaNetHttpClientFactory {
         options.getReadableConfig()
                 .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_CONNECTION_TIMEOUT)
                 .ifPresent(clientBuilder::connectTimeout);
+
+        options.getReadableConfig()
+                .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY)
+                .ifPresent(proxy -> {
+                    ProxyConfig proxyConfig = new ProxyConfig(proxy);
+                    clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));
+                });
 
         return clientBuilder.build();
     }

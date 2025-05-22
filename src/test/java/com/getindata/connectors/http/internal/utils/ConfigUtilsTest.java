@@ -50,6 +50,24 @@ class ConfigUtilsTest {
     }
 
     @Test
+    public void shouldSeparateProxyWithoutProtocol() {
+        String proxy = "proxy:8080";
+
+        ProxyConfig proxyConfig = new ProxyConfig(proxy);
+        assertThat(proxyConfig.getHost().equals("proxy"));
+        assertThat(proxyConfig.getPort() == 8080);
+    }
+
+    @Test
+    public void shouldSeparateProxyWithProtocol() {
+        String proxy = "https://proxy:80";
+
+        ProxyConfig proxyConfig = new ProxyConfig(proxy);
+        assertThat(proxyConfig.getHost().equals("https://proxy"));
+        assertThat(proxyConfig.getPort() == 80);
+    }
+
+    @Test
     public void shouldHandleInvalidPropertyType() {
 
         Properties properties = new Properties();

@@ -88,6 +88,9 @@ public final class HttpConnectorConfigConstants {
     public static final String SOURCE_CONNECTION_TIMEOUT =
         SOURCE_LOOKUP_PREFIX + "connection.timeout";
 
+    public static final String SOURCE_PROXY =
+            SOURCE_LOOKUP_PREFIX + "proxy";
+
     public static final String SINK_HTTP_TIMEOUT_SECONDS =
         GID_CONNECTOR_HTTP + "sink.request.timeout";
 
