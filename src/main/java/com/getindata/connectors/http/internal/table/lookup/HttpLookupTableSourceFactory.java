@@ -134,6 +134,10 @@ public class HttpLookupTableSourceFactory implements DynamicTableSourceFactory {
             SOURCE_LOOKUP_HTTP_RETRY_CODES,
             SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES,
 
+            SOURCE_LOOKUP_PROXY_HOST,
+            SOURCE_LOOKUP_PROXY_PORT,
+            SOURCE_LOOKUP_PROXY_USERNAME,
+            SOURCE_LOOKUP_PROXY_PASSWORD,
             SOURCE_LOOKUP_CONNECTION_TIMEOUT        // TODO: add request timeout from properties
         );
     }

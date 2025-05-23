@@ -1,6 +1,9 @@
 package com.getindata.connectors.http.internal.utils;
 
+import java.net.*;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,136 @@ class ConfigUtilsTest {
         Map<String, String> mappedProperties =
             ConfigUtils.propertiesToMap(properties, "my.custom", String.class);
         assertThat(mappedProperties).isEmpty();
+    }
+
+    @Test
+    public void shouldGetProxyConfigWithAuthenticator() throws UnknownHostException {
+        String proxyHost = "proxy";
+        Integer proxyPort = 9090;
+        Optional<String> proxyUsername = Optional.of("username");
+        Optional<String> proxyPassword = Optional.of("password");
+
+        ProxyConfig proxyConfig = new ProxyConfig(proxyHost, proxyPort, proxyUsername, proxyPassword );
+        assertThat(proxyConfig.getHost().equals("proxy"));
+        assertThat(proxyConfig.getAuthenticator().isPresent());
+
+        PasswordAuthentication auth = proxyConfig.getAuthenticator().orElseGet(null)
+                .requestPasswordAuthenticationInstance(
+                "proxy",                      // host
+                InetAddress.getByName("127.0.0.1"), // address
+                9090,                                 // port
+                "http",                             // protocol
+                "Please authenticate",              // prompt
+                "basic",                            // scheme
+                null,                               // URL
+                Authenticator.RequestorType.SERVER  // Requestor type
+        );
+
+        PasswordAuthentication auth2 = proxyConfig.getAuthenticator().orElseGet(null)
+                .requestPasswordAuthenticationInstance(
+                        "proxy",                      // host
+                        InetAddress.getByName("127.0.0.1"), // address
+                        9090,                                 // port
+                        "http",                             // protocol
+                        "Please authenticate",              // prompt
+                        "basic",                            // scheme
+                        null,                               // URL
+                        Authenticator.RequestorType.PROXY  // Requestor type
+                );
+
+        assertThat(auth).isNull();
+        assertThat(auth2).isNotNull();
+        assertThat(auth2.getUserName().equals("username")).isTrue();
+        assertThat(Arrays.equals(auth2.getPassword(), "password".toCharArray())).isTrue();
+    }
+
+    @Test
+    public void shouldGetProxyConfigWithAuthenticatorServer() throws UnknownHostException {
+        String proxyHost = "proxy";
+        Integer proxyPort = 8080;
+        Optional<String> proxyUsername = Optional.of("username");
+        Optional<String> proxyPassword = Optional.of("password");
+
+        ProxyConfig proxyConfig = new ProxyConfig(proxyHost, proxyPort, proxyUsername, proxyPassword );
+        assertThat(proxyConfig.getHost().equals("proxy")).isTrue();
+        assertThat(proxyConfig.getAuthenticator().isPresent()).isTrue();
+
+        PasswordAuthentication auth = proxyConfig.getAuthenticator().orElseGet(null)
+                .requestPasswordAuthenticationInstance(
+                        "proxy",                      // host
+                        InetAddress.getByName("127.0.0.1"), // address
+                        8080,                                 // port
+                        "http",                             // protocol
+                        "Please authenticate",              // prompt
+                        "basic",                            // scheme
+                        null,                               // URL
+                        Authenticator.RequestorType.SERVER  // Requestor type
+                );
+
+        PasswordAuthentication auth2 = proxyConfig.getAuthenticator().orElseGet(null)
+                .requestPasswordAuthenticationInstance(
+                        "proxy",                      // host
+                        InetAddress.getByName("127.0.0.1"), // address
+                        8080,                                 // port
+                        "http",                             // protocol
+                        "Please authenticate",              // prompt
+                        "basic",                            // scheme
+                        null,                               // URL
+                        Authenticator.RequestorType.PROXY  // Requestor type
+                );
+
+        assertThat(auth).isNull();
+        assertThat(auth2).isNotNull();
+    }
+
+    @Test
+    public void shouldGetProxyConfigWithAuthenticatorWrongHost() throws UnknownHostException {
+        String proxyHost = "proxy";
+        Integer proxyPort = 8080;
+        Optional<String> proxyUsername = Optional.of("username");
+        Optional<String> proxyPassword = Optional.of("password");
+
+        ProxyConfig proxyConfig = new ProxyConfig(proxyHost, proxyPort, proxyUsername, proxyPassword );
+        assertThat(proxyConfig.getHost().equals("proxy")).isTrue();
+        assertThat(proxyConfig.getAuthenticator().isPresent()).isTrue();
+
+        PasswordAuthentication auth = proxyConfig.getAuthenticator().get()
+                .requestPasswordAuthenticationInstance(
+                        "wrong",                      // host
+                        InetAddress.getByName("127.0.0.1"), // address
+                        8080,                                 // port
+                        "http",                             // protocol
+                        "Please authenticate",              // prompt
+                        "basic",                            // scheme
+                        null,                               // URL
+                        Authenticator.RequestorType.PROXY  // Requestor type
+                );
+
+        PasswordAuthentication auth2 = proxyConfig.getAuthenticator().orElseGet(null)
+                .requestPasswordAuthenticationInstance(
+                        "proxy",                      // host
+                        InetAddress.getByName("127.0.0.1"), // address
+                        8080,                                 // port
+                        "http",                             // protocol
+                        "Please authenticate",              // prompt
+                        "basic",                            // scheme
+                        null,                               // URL
+                        Authenticator.RequestorType.PROXY  // Requestor type
+                );
+
+        assertThat(auth).isNull();
+        assertThat(auth2).isNotNull();
+    }
+
+    @Test
+    public void shouldGetProxyConfigWithoutAuthenticator() throws MalformedURLException, UnknownHostException {
+        String proxyHost = "proxy";
+        Optional<String> proxyUsername = Optional.of("username");
+        Optional<String> proxyPassword = Optional.empty();
+
+        ProxyConfig proxyConfig = new ProxyConfig(proxyHost, 80, proxyUsername, proxyPassword );
+        assertThat(proxyConfig.getHost().equals("proxy")).isTrue();
+        assertThat(proxyConfig.getAuthenticator().isEmpty()).isTrue();
     }
 
     @Test

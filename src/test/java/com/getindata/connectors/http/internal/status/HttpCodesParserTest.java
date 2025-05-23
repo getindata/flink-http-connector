@@ -22,15 +22,15 @@ class HttpCodesParserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "6XX",
-            "1XXX",
-            "600",
-            "99",
-            "1XX,11",
-            "abc",
-            "!1XX",
-            "1 2 3",
-            "1X X"
+        "6XX",
+        "1XXX",
+        "600",
+        "99",
+        "1XX,11",
+        "abc",
+        "!1XX",
+        "1 2 3",
+        "1X X"
     })
     void failWhenCodeExpressionIsInvalid(String codeExpression) {
         assertThrows(ConfigurationException.class,

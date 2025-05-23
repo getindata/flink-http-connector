@@ -82,6 +82,30 @@ public class HttpLookupConnectorOptions {
                     .noDefaultValue()
                     .withDescription("Http client connection timeout.");
 
+    public static final ConfigOption<String> SOURCE_LOOKUP_PROXY_HOST =
+            ConfigOptions.key(SOURCE_PROXY_HOST)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Http client proxy host.");
+
+    public static final ConfigOption<Integer> SOURCE_LOOKUP_PROXY_PORT =
+            ConfigOptions.key(SOURCE_PROXY_PORT)
+                    .intType()
+                    .noDefaultValue()
+                    .withDescription("Http client proxy port.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_PROXY_USERNAME =
+            ConfigOptions.key(SOURCE_PROXY_USERNAME)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Http client proxy username for authentication.");
+
+    public static final ConfigOption<String> SOURCE_LOOKUP_PROXY_PASSWORD =
+            ConfigOptions.key(SOURCE_PROXY_PASSWORD)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Http client proxy password for authentication.");
+
     public static final ConfigOption<String> SOURCE_LOOKUP_RETRY_STRATEGY =
             ConfigOptions.key(SOURCE_RETRY_STRATEGY_TYPE)
                     .stringType()
