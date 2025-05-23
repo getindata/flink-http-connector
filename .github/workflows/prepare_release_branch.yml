@@ -16,6 +16,11 @@ on:
 jobs:
   prepare-branch:
     runs-on: ubuntu-latest
+
+    permissions: # Permissions to create a new branch and a new PR.
+      contents: write
+      pull-requests: write
+
     steps:
       - uses: actions/checkout@v3
 
