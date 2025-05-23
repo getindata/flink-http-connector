@@ -2,8 +2,11 @@ package com.getindata.connectors.http.internal.utils;
 
 import java.net.http.HttpClient;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import org.junit.jupiter.api.Test;
 
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
@@ -69,6 +72,21 @@ class JavaNetHttpClientFactoryTest {
         HttpClient client = JavaNetHttpClientFactory.createClient(lookupConfig);
         assert(client.authenticator().isEmpty());
         assert(client.proxy().isEmpty());
+    }
+
+    @Test
+    public void shouldGetClientWithExecutor() {
+        Properties properties = new Properties();
+        ExecutorService httpClientExecutor =
+                Executors.newFixedThreadPool(
+                        1,
+                        new ExecutorThreadFactory(
+                                "http-sink-client-batch-request-worker",
+                                ThreadUtils.LOGGING_EXCEPTION_HANDLER)
+                );
+
+        HttpClient client = JavaNetHttpClientFactory.createClient(properties, httpClientExecutor);
+        assert(client.followRedirects().equals(HttpClient.Redirect.NORMAL));
     }
 
 }
