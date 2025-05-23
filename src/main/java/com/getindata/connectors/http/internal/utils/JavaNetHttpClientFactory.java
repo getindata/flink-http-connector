@@ -56,8 +56,10 @@ public class JavaNetHttpClientFactory {
 
         if(proxyHost.isPresent() && proxyPort.isPresent()){
 
-            Optional<String> proxyUsername = readableConfig.getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_USERNAME);
-            Optional<String> proxyPassword = readableConfig.getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_PASSWORD);
+            Optional<String> proxyUsername = readableConfig
+                    .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_USERNAME);
+            Optional<String> proxyPassword = readableConfig
+                    .getOptional(HttpLookupConnectorOptions.SOURCE_LOOKUP_PROXY_PASSWORD);
 
             ProxyConfig proxyConfig = new ProxyConfig(proxyHost.get(), proxyPort.get(), proxyUsername, proxyPassword);
             clientBuilder.proxy(ProxySelector.of(new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));

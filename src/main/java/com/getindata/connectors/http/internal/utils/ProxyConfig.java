@@ -1,10 +1,10 @@
 package com.getindata.connectors.http.internal.utils;
 
-import lombok.Getter;
-
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.Optional;
+
+import lombok.Getter;
 
 @Getter
 public class ProxyConfig {

@@ -310,9 +310,9 @@ class JavaNetHttpPollingClientConnectionTest {
 
     @ParameterizedTest
     @CsvSource({
-            "user:password, false",
-            "Basic dXNlcjpwYXNzd29yZA==, false",
-            "Basic dXNlcjpwYXNzd29yZA==, true"
+        "user:password, false",
+        "Basic dXNlcjpwYXNzd29yZA==, false",
+        "Basic dXNlcjpwYXNzd29yZA==, true"
     })
     public void shouldConnectWithBasicAuth(String authorizationHeaderValue,
                                            boolean useRawAuthHeader) throws ConfigurationException {
