@@ -23,10 +23,15 @@ public class ProxyConfig {
             this.authenticator = Optional.of(new Authenticator() {
                 @Override
                 protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(proxyUsername.get(), proxyPassword.get().toCharArray());
+                    if (getRequestorType().equals(RequestorType.PROXY) && getRequestingHost().equalsIgnoreCase(host)) {
+                        return new PasswordAuthentication(proxyUsername.get(),
+                                proxyPassword.get().toCharArray());
+                    } else {
+                        return null;
+                    }
                 }
             });
-        }else{
+        } else {
             this.authenticator = Optional.empty();
         }
 
