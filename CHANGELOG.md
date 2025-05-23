@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.20.0] - 2025-05-23
+
 -   Added option to define a proxy for the lookup source (including authentication)
 
 -   Added support for generic json and URL query creator 
@@ -238,7 +240,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.19.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.20.0...HEAD
+
+[0.20.0]: https://github.com/getindata/flink-http-connector/compare/0.19.0...0.20.0
 
 [0.19.0]: https://github.com/getindata/flink-http-connector/compare/0.18.0...0.19.0
 
