@@ -1,6 +1,11 @@
 package com.getindata.connectors.http.internal.utils;
 
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,6 +13,7 @@ import java.util.concurrent.Executors;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
 import com.getindata.connectors.http.internal.table.lookup.Slf4JHttpLookupPostRequestCallback;
@@ -16,7 +22,7 @@ import static com.getindata.connectors.http.internal.config.HttpConnectorConfigC
 class JavaNetHttpClientFactoryTest {
 
     @Test
-    public void shouldGetClientWithAuthenticator() {
+    public void shouldGetClientWithAuthenticator() throws UnknownHostException {
         Properties properties = new Properties();
         Configuration configuration = new Configuration();
         configuration.setString(SOURCE_PROXY_HOST, "google");
@@ -33,12 +39,26 @@ class JavaNetHttpClientFactoryTest {
 
         HttpClient client = JavaNetHttpClientFactory.createClient(lookupConfig);
 
-        assert(client.authenticator().isPresent());
-        assert(client.proxy().isPresent());
+        assertThat(client.authenticator().isPresent()).isTrue();
+        assertThat(client.proxy().isPresent()).isTrue();
+
+        PasswordAuthentication auth = client.authenticator().get().requestPasswordAuthenticationInstance(
+                "google",                      // host
+                InetAddress.getByName("127.0.0.1"), // address
+                8080,                                 // port
+                "http",                             // protocol
+                "Please authenticate",              // prompt
+                "basic",                            // scheme
+                null,                               // URL
+                Authenticator.RequestorType.PROXY  // Requestor type
+        );
+
+        assertThat(auth.getUserName().equals("username")).isTrue();
+        assertThat(Arrays.equals(auth.getPassword(), "password".toCharArray())).isTrue();
     }
 
     @Test
-    public void shouldGetClientWithoutAuthenticator() {
+    public void shouldGetClientWithoutAuthenticator() throws UnknownHostException {
         Properties properties = new Properties();
         Configuration configuration = new Configuration();
         configuration.setString(SOURCE_PROXY_HOST, "google");
@@ -53,8 +73,8 @@ class JavaNetHttpClientFactoryTest {
 
         HttpClient client = JavaNetHttpClientFactory.createClient(lookupConfig);
 
-        assert(client.authenticator().isEmpty());
-        assert(client.proxy().isPresent());
+        assertThat(client.authenticator().isEmpty()).isTrue();
+        assertThat(client.proxy().isPresent()).isTrue();
     }
 
     @Test
@@ -70,8 +90,8 @@ class JavaNetHttpClientFactoryTest {
                 .build();
 
         HttpClient client = JavaNetHttpClientFactory.createClient(lookupConfig);
-        assert(client.authenticator().isEmpty());
-        assert(client.proxy().isEmpty());
+        assertThat(client.authenticator().isEmpty()).isTrue();
+        assertThat(client.proxy().isEmpty()).isTrue();
     }
 
     @Test
@@ -86,7 +106,7 @@ class JavaNetHttpClientFactoryTest {
                 );
 
         HttpClient client = JavaNetHttpClientFactory.createClient(properties, httpClientExecutor);
-        assert(client.followRedirects().equals(HttpClient.Redirect.NORMAL));
+        assertThat(client.followRedirects().equals(HttpClient.Redirect.NORMAL)).isTrue();
     }
 
 }
