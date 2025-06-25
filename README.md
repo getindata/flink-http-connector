@@ -1,5 +1,7 @@
 # flink-http-connector
 
+TEST-PR-8 DO NOT MERGE
+
 [![Maven Central](https://img.shields.io/maven-central/v/com.getindata/flink-http-connector)](https://mvnrepository.com/artifact/com.getindata/flink-http-connector)
 [![javadoc](https://javadoc.io/badge2/com.getindata/flink-http-connector/javadoc.svg)](https://javadoc.io/doc/com.getindata/flink-http-connector) 
 
