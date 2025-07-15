@@ -82,6 +82,12 @@ public class HttpLookupConnectorOptions {
                     .noDefaultValue()
                     .withDescription("Http client connection timeout.");
 
+    public static final ConfigOption<Boolean> SOURCE_LOOKUP_FAIL_JOB_ON_ERROR =
+            ConfigOptions.key(FAIL_JOB_ON_ERROR)
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("Fail job on error.");
+
     public static final ConfigOption<String> SOURCE_LOOKUP_PROXY_HOST =
             ConfigOptions.key(SOURCE_PROXY_HOST)
                     .stringType()

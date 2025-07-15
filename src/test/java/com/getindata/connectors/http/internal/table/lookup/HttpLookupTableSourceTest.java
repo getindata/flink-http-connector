@@ -1,11 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.metrics.groups.CacheMetricGroup;
@@ -21,7 +16,9 @@ import org.apache.flink.table.connector.source.lookup.PartialCachingLookupProvid
 import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
+import org.apache.flink.table.types.AtomicDataType;
 import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.logical.IntType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,6 +70,18 @@ class HttpLookupTableSourceTest {
             )
         );
         expectedLookupRow.setLookupPhysicalRowDataType(PHYSICAL_ROW_DATA_TYPE);
+    }
+    @Test
+    void testlistReadableMetadata() {
+        HttpLookupTableSource tableSource =
+                (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
+        Map<String, DataType> listMetadataMap =tableSource.listReadableMetadata();
+        // {"error_code"=INT, "error_headers"=MAP<STRING, ARRAY<STRING>>, "error_string"=STRING}
+        Map<String, DataType>   expectedMap = new LinkedHashMap<>();
+        expectedMap.put("error_code", new AtomicDataType(new IntType(true)));
+        expectedMap.put("error_headers", DataTypes.MAP(DataTypes.STRING(), DataTypes.ARRAY(DataTypes.STRING())));
+        expectedMap.put("error_string", DataTypes.STRING());
+        assertThat(listMetadataMap).isEqualTo(expectedMap);
     }
 
     @Test

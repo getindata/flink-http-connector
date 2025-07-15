@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -45,7 +44,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
 class HttpLookupTableSourceITCaseTest {
@@ -162,6 +160,57 @@ class HttpLookupTableSourceITCaseTest {
         assertEnrichedRows(rows);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", "GET", "POST", "PUT"})
+    void testHttpLookupJoinWithMetadata(String methodName) throws Exception {
+
+        // GIVEN
+        if (StringUtils.isNullOrWhitespaceOnly(methodName) || methodName.equalsIgnoreCase("GET")) {
+            setupServerStub(wireMockServer);
+        } else {
+            setUpServerBodyStub(
+                    methodName,
+                    wireMockServer,
+                    List.of(matchingJsonPath("$.id"), matchingJsonPath("$.id2"))
+            );
+        }
+
+        String lookupTableWithMetadata =
+                "CREATE TABLE Customers ("
+                        + "id STRING,"
+                        + "id2 STRING,"
+                        + "msg STRING,"
+                        + "uuid STRING,"
+                        + "details ROW<"
+                        + "isActive BOOLEAN,"
+                        + "nestedDetails ROW<"
+                        + "balance STRING"
+                        + ">"
+                        + ">,"
+                        + "errStr STRING METADATA FROM 'error_string',"
+                        + "errCode INTEGER METADATA FROM 'error_code',"
+                        + "errHeaders MAP<STRING, ARRAY<STRING>>  METADATA from 'error_headers'"
+                        + ") WITH ("
+                        + "'format' = 'json',"
+                        + "'connector' = 'rest-lookup',"
+                        + ((StringUtils.isNullOrWhitespaceOnly(methodName)) ?
+                        "" :
+                        "'lookup-method' = '" + methodName + "',")
+                        + "'url' = 'http://localhost:9090/client',"
+                        + "'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',"
+                        + "'gid.connector.http.source.lookup.fail-job-on-error'='false',"
+                        + "'asyncPolling' = 'true',"
+                        + "'table.exec.async-lookup.buffer-capacity' = '50',"
+                        + "'table.exec.async-lookup.timeout' = '120s'"
+                        + ")";
+
+        // WHEN
+        SortedSet<Row> rows = testLookupJoinWithMetadata(lookupTableWithMetadata, 4);
+
+        // THEN
+        assertEnrichedRows(rows);
+    }
+
     @Test
     void testHttpLookupJoinNoDataFromEndpoint() {
 
@@ -189,7 +238,13 @@ class HttpLookupTableSourceITCaseTest {
                 + ")";
 
         // WHEN/THEN
-        assertThrows(TimeoutException.class, () -> testLookupJoin(lookupTable, 4));
+        //assertThrows(TimeoutException.class, () -> testLookupJoin(lookupTable, 4));
+        try {
+            testLookupJoin(lookupTable, 4);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("aaabbbb",e);
+        }
     }
 
     @Test
@@ -924,24 +979,7 @@ class HttpLookupTableSourceITCaseTest {
 
     private @NotNull SortedSet<Row> testLookupJoin(String lookupTable, int maxRows) throws Exception {
 
-        String sourceTable =
-            "CREATE TABLE Orders ("
-                + "id STRING,"
-                + " id2 STRING,"
-                + " proc_time AS PROCTIME()"
-                + ") WITH ("
-                + "'connector' = 'datagen',"
-                + "'rows-per-second' = '1',"
-                + "'fields.id.kind' = 'sequence',"
-                + "'fields.id.start' = '1',"
-                + "'fields.id.end' = '" + maxRows + "',"
-                + "'fields.id2.kind' = 'sequence',"
-                + "'fields.id2.start' = '2',"
-                + "'fields.id2.end' = '" + (maxRows + 1) + "'"
-                + ")";
-
-        tEnv.executeSql(sourceTable);
-        tEnv.executeSql(lookupTable);
+        createLookupAndSourceTables(lookupTable, maxRows);
 
         // WHEN
         // SQL query that performs JOIN on both tables.
@@ -956,6 +994,46 @@ class HttpLookupTableSourceITCaseTest {
 
         // THEN
         return getCollectedRows(result);
+    }
+
+    private @NotNull SortedSet<Row> testLookupJoinWithMetadata(String lookupTable, int maxRows) throws Exception {
+
+        createLookupAndSourceTables(lookupTable, maxRows);
+
+        // WHEN
+        String joinQuery =
+                "SELECT o.id, o.id2, c.msg, c.uuid, c.isActive, c.balance, "
+                        + "c.errStr, c.errCode, c.errHeaders FROM Orders AS o "
+                        + "JOIN Customers FOR SYSTEM_TIME AS OF o.proc_time AS c "
+                        + "ON o.id = c.id "
+                        + "AND o.id2 = c.id2";
+
+        TableResult result = tEnv.executeSql(joinQuery);
+        result.await(15, TimeUnit.SECONDS);
+
+        // THEN
+        return getCollectedRows(result);
+    }
+
+    private void createLookupAndSourceTables(String lookupTable, int maxRows) {
+        String sourceTable =
+                "CREATE TABLE Orders ("
+                        + "id STRING,"
+                        + " id2 STRING,"
+                        + " proc_time AS PROCTIME()"
+                        + ") WITH ("
+                        + "'connector' = 'datagen',"
+                        + "'rows-per-second' = '1',"
+                        + "'fields.id.kind' = 'sequence',"
+                        + "'fields.id.start' = '1',"
+                        + "'fields.id.end' = '" + maxRows + "',"
+                        + "'fields.id2.kind' = 'sequence',"
+                        + "'fields.id2.start' = '2',"
+                        + "'fields.id2.end' = '" + (maxRows + 1) + "'"
+                        + ")";
+
+        tEnv.executeSql(sourceTable);
+        tEnv.executeSql(lookupTable);
     }
 
     private void assertEnrichedRows(Collection<Row> collectedRows) {

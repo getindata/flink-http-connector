@@ -1,7 +1,9 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.net.http.HttpResponse;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +17,13 @@ import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.LookupTableSource;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
+import org.apache.flink.table.connector.source.abilities.SupportsReadingMetadata;
 import org.apache.flink.table.connector.source.lookup.AsyncLookupFunctionProvider ;
 import org.apache.flink.table.connector.source.lookup.LookupFunctionProvider;
 import org.apache.flink.table.connector.source.lookup.PartialCachingAsyncLookupProvider;
 import org.apache.flink.table.connector.source.lookup.PartialCachingLookupProvider;
 import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
-import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.*;
 import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.functions.AsyncLookupFunction;
@@ -42,7 +45,7 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTabl
 
 @Slf4j
 public class HttpLookupTableSource
-    implements LookupTableSource, SupportsProjectionPushDown, SupportsLimitPushDown {
+    implements LookupTableSource, SupportsReadingMetadata, SupportsProjectionPushDown, SupportsLimitPushDown {
 
     private DataType physicalRowDataType;
 
@@ -53,6 +56,16 @@ public class HttpLookupTableSource
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
     @Nullable
     private final LookupCache cache;
+
+    // --------------------------------------------------------------------------------------------
+    // Mutable attributes
+    // --------------------------------------------------------------------------------------------
+
+    /** Data type that describes the final output of the source. */
+    protected DataType producedDataType;
+
+    /** Metadata that is appended at the end of a physical source row. */
+    protected List<String> metadataKeys;
 
     public HttpLookupTableSource(
             DataType physicalRowDataType,
@@ -111,13 +124,26 @@ public class HttpLookupTableSource
                                                                      responseSchemaDecoder,
                                                              PollingClientFactory<RowData>
                                                                      pollingClientFactory) {
-
+        MetadataConverter[] metadataConverters={};
+        if (this.metadataKeys != null) {
+            this.metadataKeys.stream()
+                    .map(
+                        k ->
+                                    Stream.of(HttpLookupTableSource.ReadableMetadata.values())
+                                            .filter(rm -> rm.key.equals(k))
+                                            .findFirst()
+                                            .orElseThrow(IllegalStateException::new))
+                    .map(m -> m.converter)
+                    .toArray(MetadataConverter[]::new);
+        }
         HttpTableLookupFunction dataLookupFunction =
                 new HttpTableLookupFunction(
                         pollingClientFactory,
                         responseSchemaDecoder,
                         lookupRow,
-                        lookupConfig
+                        lookupConfig,
+                        metadataConverters,
+                        this.producedDataType
                 );
         if (lookupConfig.isUseAsync()) {
             AsyncLookupFunction asyncLookupFunction =
@@ -256,4 +282,100 @@ public class HttpLookupTableSource
                 RowData.createFieldGetter(type1, parentIndex));
         }
     }
+
+    @Override
+    public Map<String, DataType> listReadableMetadata() {
+        final Map<String, DataType> metadataMap = new LinkedHashMap<>();
+
+        decodingFormat.listReadableMetadata()
+                .forEach((key, value) -> metadataMap.put(key, value));
+
+        // according to convention, the order of the final row must be
+        // PHYSICAL + FORMAT METADATA + CONNECTOR METADATA
+        // where the format metadata has highest precedence
+        // add connector metadata
+        Stream.of(ReadableMetadata.values()).forEachOrdered(m -> metadataMap.putIfAbsent(m.key, m.dataType));
+        return metadataMap;
+    }
+
+    @Override
+    public void applyReadableMetadata(List<String> metadataKeys, DataType producedDataType) {
+        // separate connector and format metadata
+        final List<String> connectorMetadataKeys = new ArrayList<>(metadataKeys);
+        final Map<String, DataType> formatMetadata = decodingFormat.listReadableMetadata();
+        // store non connector keys and remove them from the connectorMetadataKeys.
+        List<String> formatMetadataKeys = new ArrayList<>();
+        Set<String> metadataKeysSet =  metadataKeys.stream().collect(Collectors.toSet());
+        for (ReadableMetadata rm : ReadableMetadata.values()) {
+            String metadataKeyToCheck = rm.name();
+            if (!metadataKeysSet.contains(metadataKeyToCheck)) {
+                formatMetadataKeys.add(metadataKeyToCheck);
+                connectorMetadataKeys.remove(metadataKeyToCheck);
+            }
+        }
+        // push down format metadata keys
+        if (formatMetadata.size() > 0) {
+            final List<String> requestedFormatMetadataKeys =
+                    formatMetadataKeys.stream().collect(Collectors.toList());
+            decodingFormat.applyReadableMetadata(requestedFormatMetadataKeys);
+        }
+        this.metadataKeys = connectorMetadataKeys;
+        this.producedDataType = producedDataType;
+    }
+    // --------------------------------------------------------------------------------------------
+    // Metadata handling
+    // --------------------------------------------------------------------------------------------
+    enum ReadableMetadata {
+        HTTP_ERROR_STRING(
+            "error_string",
+            DataTypes.STRING(),
+            new MetadataConverter() {
+                private static final long serialVersionUID = 1L;
+                @Override
+                public Object read(String msg, HttpResponse httpResponse) {
+                    return StringData.fromString(msg);
+                }
+        }),
+        HTTP_ERROR_CODE(
+            "error_code",
+            DataTypes.INT(),
+            new MetadataConverter() {
+                private static final long serialVersionUID = 1L;
+                @Override
+                public Object read(String msg, HttpResponse httpResponse) {
+                    return httpResponse != null? httpResponse.statusCode():null;
+                }
+        }),
+        HTTP_HEADERS(
+            "error_headers",
+            DataTypes.MAP(DataTypes.STRING(), DataTypes.ARRAY(DataTypes.STRING())),
+            new MetadataConverter() {
+                private static final long serialVersionUID = 1L;
+                @Override
+                public Object read(String msg, HttpResponse httpResponse) {
+                    if (httpResponse == null) return null;
+                    Map<String, List<String>> httpHeadersMap = httpResponse.headers().map();
+                    Map<StringData, ArrayData> stringDataMap = new HashMap<>();
+                    for (String key: httpHeadersMap.keySet()) {
+                        List<StringData> strDataList = new ArrayList<>();
+                        httpHeadersMap.get(key).stream()
+                               .forEach((c) -> strDataList.add(StringData.fromString(c)));
+                        stringDataMap.put(StringData.fromString(key), new GenericArrayData(strDataList.toArray()));
+                    }
+                    return new GenericMapData(stringDataMap);
+                }
+        });
+        final String key;
+
+        final DataType dataType;
+        final MetadataConverter converter;
+
+        //TODO decide if we need a MetadataConverter
+        ReadableMetadata(String key, DataType dataType, MetadataConverter converter) {
+            this.key = key;
+            this.dataType = dataType;
+            this.converter = converter;
+        }
+    }
 }
+
