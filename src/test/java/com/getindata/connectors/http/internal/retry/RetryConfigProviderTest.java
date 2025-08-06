@@ -3,6 +3,7 @@ package com.getindata.connectors.http.internal.retry;
 import java.util.stream.IntStream;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.table.connector.source.lookup.LookupOptions;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,7 +17,7 @@ class RetryConfigProviderTest {
         var config = new Configuration();
         config.setString("gid.connector.http.source.lookup.retry-strategy.type", "fixed-delay");
         config.setString("gid.connector.http.source.lookup.retry-strategy.fixed-delay.delay", "10s");
-        config.setInteger("lookup.max-retries", 12);
+        config.set(LookupOptions.MAX_RETRIES, 12);
 
         var retryConfig = RetryConfigProvider.create(config);
 
@@ -32,8 +33,8 @@ class RetryConfigProviderTest {
         config.setString("gid.connector.http.source.lookup.retry-strategy.type", "exponential-delay");
         config.setString("gid.connector.http.source.lookup.retry-strategy.exponential-delay.initial-backoff", "15ms");
         config.setString("gid.connector.http.source.lookup.retry-strategy.exponential-delay.max-backoff", "120ms");
-        config.setInteger("gid.connector.http.source.lookup.retry-strategy.exponential-delay.backoff-multiplier", 2);
-        config.setInteger("lookup.max-retries", 6);
+        config.setString("gid.connector.http.source.lookup.retry-strategy.exponential-delay.backoff-multiplier", "2");
+        config.set(LookupOptions.MAX_RETRIES, 6);
 
         var retryConfig = RetryConfigProvider.create(config);
         var intervalFunction = retryConfig.getIntervalFunction();

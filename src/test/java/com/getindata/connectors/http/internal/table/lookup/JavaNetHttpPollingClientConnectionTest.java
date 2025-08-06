@@ -103,7 +103,8 @@ class JavaNetHttpPollingClientConnectionTest {
     @BeforeEach
     void setUp() {
         int[][] lookupKey = {{}};
-        this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+        // TODO: what is preferCustomShuffle?
+        this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey, false);
 
         this.lookupRowData = GenericRowData.of(
                 StringData.fromString("1"),
@@ -273,8 +274,8 @@ class JavaNetHttpPollingClientConnectionTest {
 
         // GIVEN
         this.stubMapping = setUpServerStub(201);
-        configuration.setString(SOURCE_LOOKUP_HTTP_SUCCESS_CODES, successCodesExpression);
-        configuration.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES, ignoredResponseCodesExpression);
+        configuration.set(SOURCE_LOOKUP_HTTP_SUCCESS_CODES, successCodesExpression);
+        configuration.set(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES, ignoredResponseCodesExpression);
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
