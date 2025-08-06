@@ -115,7 +115,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
         var request = requestFactory.buildLookupRequest(lookupData);
 
         var oidcProcessor = HttpHeaderUtils.createOIDCHeaderPreprocessor(options.getReadableConfig());
-        HttpResponse<String> response =null;
+        HttpResponse<String> response = null;
         HttpRowDataWrapper httpRowDataWrapper = null;
         try {
             response = httpClient.send(
@@ -129,7 +129,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
         } catch (Exception e) {
             // Case 2 Exception occurred
             if (!this.continueOnError) throw e;
-            String errMessage =  e.getMessage();
+            String errMessage = e.getMessage();
             // some exceptions do not have messages including the java.net.ConnectException we can get here if
             // the connection is bad.
             if (errMessage == null) {
@@ -141,7 +141,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
                     .httpCompletionState(HttpCompletionState.EXCEPTION)
                     .build();
         }
-        if (httpRowDataWrapper  == null) {
+        if (httpRowDataWrapper == null) {
             // Case 3 Successful path.
             httpRowDataWrapper = processHttpResponse(response, request, false);
         }
@@ -152,7 +152,8 @@ public class JavaNetHttpPollingClient implements PollingClient {
     /**
      * If using OIDC, update the http request using the oidc header pre processor to supply the
      * authentication header, with a short lived bearer token.
-     * @param request http reauest to amend
+     *
+     * @param request                http reauest to amend
      * @param oidcHeaderPreProcessor OIDC header pre processor
      * @return http request, which for OIDC will have the bearer token as the authentication header
      */
@@ -176,8 +177,8 @@ public class JavaNetHttpPollingClient implements PollingClient {
             Map<String, String> headerMap = new HashMap<>();
             if (httpRequest.headers() != null && !httpRequest.headers().map().isEmpty()) {
                 for (Map.Entry<String, List<String>> header
-                        :httpRequest.headers().map().entrySet()) {
-                    List<String> values =  header.getValue();
+                        : httpRequest.headers().map().entrySet()) {
+                    List<String> values = header.getValue();
                     if (values.size() == 1) {
                         headerMap.put(header.getKey(), header.getValue().get(0));
                     }
@@ -187,7 +188,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
             Optional<String> oidcTokenRequest = readableConfig
                     .getOptional(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST);
             String bearerToken = oidcHeaderPreProcessor.preprocessValueForHeader(
-                    HttpHeaderUtils.AUTHORIZATION,  oidcTokenRequest.get());
+                    HttpHeaderUtils.AUTHORIZATION, oidcTokenRequest.get());
             headerMap.put(HttpHeaderUtils.AUTHORIZATION, bearerToken);
             String[] headerAndValueArray = HttpHeaderUtils.toHeaderAndValueArray(headerMap);
             builder.headers(headerAndValueArray);
@@ -198,10 +199,11 @@ public class JavaNetHttpPollingClient implements PollingClient {
 
     /**
      * Process the http response.
+     *
      * @param response http response
-     * @param request http request
-     * @param isError whether the http response is an error (i.e. not successful after the retry
-     *                processing and accounting for the config)
+     * @param request  http request
+     * @param isError  whether the http response is an error (i.e. not successful after the retry
+     *                 processing and accounting for the config)
      * @return HttpRowDataWrapper http row information and http error information
      */
     private HttpRowDataWrapper processHttpResponse(
@@ -229,7 +231,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
                         .build();
             } else {
                 Collection<RowData> rowData = Collections.emptyList();
-                HttpCompletionState httpCompletionState= HttpCompletionState.SUCCESS;
+                HttpCompletionState httpCompletionState = HttpCompletionState.SUCCESS;
                 String errMessage = null;
                 try {
                     rowData = deserialize(responseBody);
@@ -243,7 +245,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
                         .errorMessage(errMessage)
                         .httpHeadersMap(response.headers().map())
                         .httpStatusCode(response.statusCode())
-                        .httpCompletionState( httpCompletionState)
+                        .httpCompletionState(httpCompletionState)
                         .build();
             }
         }
@@ -257,32 +259,32 @@ public class JavaNetHttpPollingClient implements PollingClient {
     private Collection<RowData> deserialize(String responseBody) throws IOException {
         byte[] rawBytes = responseBody.getBytes();
         String resultType =
-            options.getProperties().getProperty(RESULT_TYPE, RESULT_TYPE_SINGLE_VALUE);
+                options.getProperties().getProperty(RESULT_TYPE, RESULT_TYPE_SINGLE_VALUE);
         if (resultType.equals(RESULT_TYPE_SINGLE_VALUE)) {
             return deserializeSingleValue(rawBytes);
         } else if (resultType.equals(RESULT_TYPE_ARRAY)) {
             return deserializeArray(rawBytes);
         } else {
             throw new IllegalStateException(
-                String.format("Unknown lookup source result type '%s'.", resultType));
+                    String.format("Unknown lookup source result type '%s'.", resultType));
         }
     }
 
     private List<RowData> deserializeSingleValue(byte[] rawBytes) throws IOException {
         return Optional.ofNullable(responseBodyDecoder.deserialize(rawBytes))
-            .map(Collections::singletonList)
-            .orElse(Collections.emptyList());
+                .map(Collections::singletonList)
+                .orElse(Collections.emptyList());
     }
 
     private List<RowData> deserializeArray(byte[] rawBytes) throws IOException {
         List<JsonNode> rawObjects =
-            objectMapper.readValue(rawBytes, new TypeReference<>() {
-            });
+                objectMapper.readValue(rawBytes, new TypeReference<>() {
+                });
         List<RowData> result = new ArrayList<>();
         for (JsonNode rawObject : rawObjects) {
             if (!(rawObject instanceof NullNode)) {
                 RowData deserialized =
-                    responseBodyDecoder.deserialize(rawObject.toString().getBytes());
+                        responseBodyDecoder.deserialize(rawObject.toString().getBytes());
                 // deserialize() returns null if deserialization fails
                 if (deserialized != null) {
                     result.add(deserialized);

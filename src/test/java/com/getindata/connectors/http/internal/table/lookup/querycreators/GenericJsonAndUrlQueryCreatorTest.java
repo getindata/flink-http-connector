@@ -222,7 +222,7 @@ class GenericJsonAndUrlQueryCreatorTest {
                     QUERY_PARAMS);
         }
         config.set(GenericJsonAndUrlQueryCreatorFactory.REQUEST_URL_MAP, URL_PARAMS);
-        config.setString(LOOKUP_METHOD, operation);
+        config.set(LOOKUP_METHOD, operation);
         return config;
     }
 

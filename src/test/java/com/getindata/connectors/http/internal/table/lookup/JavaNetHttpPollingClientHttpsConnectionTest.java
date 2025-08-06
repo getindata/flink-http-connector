@@ -67,7 +67,8 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
     public void setUp() {
         super.setUp();
         int[][] lookupKey = {{0, 1}};
-        this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+        // FIXME: What is preferCustomShuffle?
+        this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey, false);
 
         this.lookupRowData = GenericRowData.of(
             StringData.fromString("1"),

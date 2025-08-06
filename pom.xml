@@ -58,15 +58,15 @@ under the License.
     <!-- IMPORTANT: If you update Flink, remember to update link to its docs in maven-javadoc-plugin <links>
          section, omitting the patch part (so for 1.15.0 use 1.15). -->
 
-    <flink.version>1.18.1</flink.version>
+    <flink.version>2.0.0</flink.version>
 
-    <target.java.version>11</target.java.version>
+    <target.java.version>17</target.java.version>
     <scala.binary.version>2.12</scala.binary.version>
     <maven.compiler.source>${target.java.version}</maven.compiler.source>
     <maven.compiler.target>${target.java.version}</maven.compiler.target>
     <lombok.version>1.18.22</lombok.version>
     <jackson.version>2.18.1</jackson.version>
-    <junit5.version>5.10.1</junit5.version>
+    <junit5.version>5.11.4</junit5.version>
     <junit.jupiter.version>${junit5.version}</junit.jupiter.version>
     <assertj.core.version>3.21.0</assertj.core.version>
     <mockito.version>4.0.0</mockito.version>
@@ -95,12 +95,6 @@ under the License.
   <dependencies>
     <!-- Apache Flink dependencies -->
     <!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-java</artifactId>
-      <version>${flink.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-clients</artifactId>
@@ -502,7 +496,7 @@ under the License.
             <version>3.6.3</version>
             <configuration>
               <links>
-                <link>https://nightlies.apache.org/flink/flink-docs-release-1.15/api/java/</link>
+                <link>https://nightlies.apache.org/flink/flink-docs-release-2.0/api/java/</link>
               </links>
             </configuration>
             <executions>

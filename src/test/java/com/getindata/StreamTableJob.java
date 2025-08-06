@@ -1,10 +1,13 @@
 package com.getindata;
 
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.api.java.utils.ParameterTool;
+import java.time.Duration;
+
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.util.ParameterTool;
 
 public class StreamTableJob {
 
@@ -13,9 +16,13 @@ public class StreamTableJob {
         ParameterTool parameters = ParameterTool.fromSystemProperties();
         parameters = parameters.mergeWith(ParameterTool.fromArgs(args));
 
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        Configuration config = new Configuration();
+        config.set(RestartStrategyOptions.RESTART_STRATEGY, "fixed-delay");
+        config.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, 1000);
+        config.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, Duration.ofMillis(1000));
+
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         // env.enableCheckpointing(5000);
-        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1000, 1000));
         env.setParallelism(1);
         env.disableOperatorChaining();
         env.getConfig().setGlobalJobParameters(parameters);
