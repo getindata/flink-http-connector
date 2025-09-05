@@ -1,0 +1,363 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.flink.connector.http.table.lookup;
+
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.http.HttpsConnectionTestBase;
+import org.apache.flink.connector.http.WireMockServerPortAllocator;
+import org.apache.flink.connector.http.config.HttpConnectorConfigConstants;
+import org.apache.flink.connector.http.preprocessor.HeaderPreprocessor;
+import org.apache.flink.connector.http.table.lookup.querycreators.GenericGetQueryCreator;
+import org.apache.flink.connector.http.utils.HttpHeaderUtils;
+import org.apache.flink.connector.http.utils.SerializationSchemaUtils;
+import org.apache.flink.formats.json.JsonFormatFactory;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.connector.source.DynamicTableSource;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
+import org.apache.flink.table.factories.DynamicTableFactory.Context;
+import org.apache.flink.table.runtime.connector.source.LookupRuntimeProviderContext;
+import org.apache.flink.table.types.DataType;
+import org.apache.flink.util.ConfigurationException;
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.File;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.apache.flink.connector.http.TestHelper.readTestFile;
+import static org.apache.flink.connector.http.table.lookup.HttpLookupTableSourceFactory.row;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/** Test for {@link JavaNetHttpPollingClient} with https. */
+@ExtendWith(MockitoExtension.class)
+public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnectionTestBase {
+
+    private static final String SAMPLES_FOLDER = "/http/";
+
+    private static final String ENDPOINT = "/service";
+
+    @Mock private Context dynamicTableFactoryContext;
+
+    private DynamicTableSource.Context dynamicTableSourceContext;
+
+    private JavaNetHttpPollingClientFactory pollingClientFactory;
+
+    private RowData lookupRowData;
+
+    private DataType lookupPhysicalDataType;
+
+    public static int httpServerPort;
+
+    @BeforeEach
+    public void setUp() {
+        super.setUp();
+        httpServerPort = WireMockServerPortAllocator.getSecureServerPort();
+        int[][] lookupKey = {{0, 1}};
+        this.dynamicTableSourceContext = new LookupRuntimeProviderContext(lookupKey);
+
+        this.lookupRowData =
+                GenericRowData.of(StringData.fromString("1"), StringData.fromString("2"));
+
+        this.lookupPhysicalDataType =
+                row(
+                        List.of(
+                                DataTypes.FIELD("id", DataTypes.STRING()),
+                                DataTypes.FIELD("uuid", DataTypes.STRING())));
+    }
+
+    @AfterEach
+    public void tearDown() {
+        super.tearDown();
+    }
+
+    @Test
+    public void testHttpsConnectionWithSelfSignedCert() throws ConfigurationException {
+
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+
+        wireMockServer =
+                new WireMockServer(
+                        options()
+                                .httpsPort(httpServerPort)
+                                .httpDisabled(true)
+                                .keystorePath(keyStoreFile.getAbsolutePath())
+                                .keystorePassword("password")
+                                .keyManagerPassword("password"));
+
+        wireMockServer.start();
+        setupServerStub();
+        properties.setProperty(HttpConnectorConfigConstants.ALLOW_SELF_SIGNED, "true");
+
+        setupAndTestConnection();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ca.crt", "server.crt"})
+    public void testHttpsConnectionWithAddedCerts(String certName) throws ConfigurationException {
+
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+        File trustedCert = new File(CERTS_PATH + certName);
+
+        wireMockServer =
+                new WireMockServer(
+                        options()
+                                .httpsPort(httpServerPort)
+                                .httpDisabled(true)
+                                .keystorePath(keyStoreFile.getAbsolutePath())
+                                .keystorePassword("password")
+                                .keyManagerPassword("password"));
+
+        wireMockServer.start();
+        setupServerStub();
+        properties.setProperty(
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT, trustedCert.getAbsolutePath());
+        setupAndTestConnection();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"clientPrivateKey.pem", "clientPrivateKey.der"})
+    public void testMTlsConnection(String clientPrivateKeyName) throws ConfigurationException {
+
+        File keyStoreFile = new File(SERVER_KEYSTORE_PATH);
+        File trustStoreFile = new File(SERVER_TRUSTSTORE_PATH);
+        File serverTrustedCert = new File(CERTS_PATH + "ca.crt");
+
+        File clientCert = new File(CERTS_PATH + "client.crt");
+        File clientPrivateKey = new File(CERTS_PATH + clientPrivateKeyName);
+
+        this.wireMockServer =
+                new WireMockServer(
+                        options()
+                                .httpDisabled(true)
+                                .httpsPort(httpServerPort)
+                                .keystorePath(keyStoreFile.getAbsolutePath())
+                                .keystorePassword("password")
+                                .keyManagerPassword("password")
+                                .needClientAuth(true)
+                                .trustStorePath(trustStoreFile.getAbsolutePath())
+                                .trustStorePassword("password"));
+
+        wireMockServer.start();
+        setupServerStub();
+        properties.setProperty(
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+                serverTrustedCert.getAbsolutePath());
+        properties.setProperty(
+                HttpConnectorConfigConstants.CLIENT_CERT, clientCert.getAbsolutePath());
+        properties.setProperty(
+                HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
+                clientPrivateKey.getAbsolutePath());
+        setupAndTestConnection();
+    }
+
+    @Test
+    public void testMTlsConnectionUsingKeyStore() throws ConfigurationException {
+        String password = "password";
+
+        String clientKeyStoreName = "client_keyStore.p12";
+        String serverKeyStoreName = "serverKeyStore.jks";
+        String serverTrustStoreName = "serverTrustStore.jks";
+
+        File clientKeyStoreFile = new File(CERTS_PATH + clientKeyStoreName);
+        File serverKeyStoreFile = new File(CERTS_PATH + serverKeyStoreName);
+        File serverTrustStoreFile = new File(CERTS_PATH + serverTrustStoreName);
+        File serverTrustedCert = new File(CERTS_PATH + "ca_server_bundle.cert.pem");
+
+        this.wireMockServer =
+                new WireMockServer(
+                        options()
+                                .httpDisabled(true)
+                                .httpsPort(httpServerPort)
+                                .keystorePath(serverKeyStoreFile.getAbsolutePath())
+                                .keystorePassword("password")
+                                .keyManagerPassword("password")
+                                .needClientAuth(true)
+                                .trustStorePath(serverTrustStoreFile.getAbsolutePath())
+                                .trustStorePassword("password"));
+
+        wireMockServer.start();
+        setupServerStub();
+        properties.setProperty(HttpConnectorConfigConstants.KEY_STORE_PASSWORD, password);
+        properties.setProperty(
+                HttpConnectorConfigConstants.KEY_STORE_PATH, clientKeyStoreFile.getAbsolutePath());
+        properties.setProperty(
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+                serverTrustedCert.getAbsolutePath());
+        setupAndTestConnection();
+    }
+
+    private void setupAndTestConnection() throws ConfigurationException {
+        // test with basic auth
+        setupAndTestConnectionWithAuth(
+                HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor());
+        // test with OIDC auth
+        setupAndTestConnectionWithAuth(
+                HttpHeaderUtils.createOIDCAuthorizationHeaderPreprocessor(
+                        "http://abc", "aaa", Optional.of(Duration.ofSeconds(5))));
+    }
+
+    private void setupAndTestConnectionWithAuth(HeaderPreprocessor headerPreprocessor)
+            throws ConfigurationException {
+        setUpPollingClientFactory(wireMockServer.baseUrl(), headerPreprocessor);
+        testPollingClientConnection();
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+            value = {
+                "invalid.crt, client.crt, clientPrivateKey.pem",
+                "ca.crt, invalid.crt, clientPrivateKey.pem",
+                "ca.crt, client.crt, invalid.pem"
+            })
+    public void shouldThrowOnInvalidPath(
+            String serverCertName, String clientCertName, String clientKeyName) {
+
+        File serverTrustedCert = new File(CERTS_PATH + serverCertName);
+        File clientCert = new File(CERTS_PATH + clientCertName);
+        File clientPrivateKey = new File(CERTS_PATH + clientKeyName);
+
+        properties.setProperty(
+                HttpConnectorConfigConstants.SERVER_TRUSTED_CERT,
+                serverTrustedCert.getAbsolutePath());
+        properties.setProperty(
+                HttpConnectorConfigConstants.CLIENT_CERT, clientCert.getAbsolutePath());
+        properties.setProperty(
+                HttpConnectorConfigConstants.CLIENT_PRIVATE_KEY,
+                clientPrivateKey.getAbsolutePath());
+
+        assertThrows(RuntimeException.class, () -> setUpPollingClient(properties));
+    }
+
+    private void testPollingClientConnection() throws ConfigurationException {
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient(properties);
+        Collection<RowData> result = pollingClient.pull(lookupRowData);
+
+        assertResult(result);
+    }
+
+    private JavaNetHttpPollingClient setUpPollingClient(Properties properties)
+            throws ConfigurationException {
+
+        HttpLookupConfig lookupConfig =
+                HttpLookupConfig.builder()
+                        .url("https://localhost:" + httpServerPort + ENDPOINT)
+                        .properties(properties)
+                        .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
+                        .build();
+
+        DataType physicalDataType =
+                DataTypes.ROW(
+                        DataTypes.FIELD("id", DataTypes.STRING()),
+                        DataTypes.FIELD("msg", DataTypes.STRING()),
+                        DataTypes.FIELD("uuid", DataTypes.STRING()),
+                        DataTypes.FIELD(
+                                "details",
+                                DataTypes.ROW(
+                                        DataTypes.FIELD("isActive", DataTypes.BOOLEAN()),
+                                        DataTypes.FIELD(
+                                                "nestedDetails",
+                                                DataTypes.ROW(
+                                                        DataTypes.FIELD(
+                                                                "balance", DataTypes.STRING()))))));
+
+        DeserializationSchema<RowData> schemaDecoder =
+                new JsonFormatFactory()
+                        .createDecodingFormat(dynamicTableFactoryContext, new Configuration())
+                        .createRuntimeDecoder(dynamicTableSourceContext, physicalDataType);
+
+        try {
+            schemaDecoder.open(
+                    SerializationSchemaUtils.createDeserializationInitContext(
+                            JavaNetHttpPollingClientConnectionTest.class));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to open schema decoder: " + e.getMessage(), e);
+        }
+
+        return pollingClientFactory.createPollClient(lookupConfig, schemaDecoder);
+    }
+
+    private void setupServerStub() {
+        wireMockServer.stubFor(
+                get(urlEqualTo("/service?id=1&uuid=2"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withBody(
+                                                readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
+    }
+
+    private void setUpPollingClientFactory(String baseUrl, HeaderPreprocessor headerPreprocessor) {
+
+        LookupRow lookupRow =
+                new LookupRow()
+                        .addLookupEntry(
+                                new RowDataSingleValueLookupSchemaEntry(
+                                        "id",
+                                        RowData.createFieldGetter(
+                                                DataTypes.STRING().getLogicalType(), 0)))
+                        .addLookupEntry(
+                                new RowDataSingleValueLookupSchemaEntry(
+                                        "uuid",
+                                        RowData.createFieldGetter(
+                                                DataTypes.STRING().getLogicalType(), 1)));
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
+        GetRequestFactory requestFactory =
+                new GetRequestFactory(
+                        new GenericGetQueryCreator(lookupRow),
+                        headerPreprocessor,
+                        HttpLookupConfig.builder().url(baseUrl + ENDPOINT).build());
+        this.pollingClientFactory = new JavaNetHttpPollingClientFactory(requestFactory);
+    }
+
+    private void assertResult(Collection<RowData> results) {
+        assertThat(results).hasSize(1);
+        RowData result = results.iterator().next();
+        assertThat(result.getArity()).isEqualTo(4);
+        assertThat(result.getString(1).toString())
+                .isEqualTo("Returned HTTP message for parameter PARAM, COUNTER");
+
+        RowData detailsRow = result.getRow(3, 2);
+        assertThat(detailsRow.getBoolean(0)).isEqualTo(true);
+
+        RowData nestedDetailsRow = detailsRow.getRow(1, 1);
+        assertThat(nestedDetailsRow.getString(0).toString()).isEqualTo("$1,729.34");
+    }
+}
