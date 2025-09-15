@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- optimized logging in HttpHeaderUtils.
+
 ## [0.20.0] - 2025-05-23
 
 -   Added option to define a proxy for the lookup source (including authentication)
