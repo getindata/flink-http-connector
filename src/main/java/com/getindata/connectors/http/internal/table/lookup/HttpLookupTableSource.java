@@ -126,7 +126,7 @@ public class HttpLookupTableSource
                                                                      pollingClientFactory) {
         MetadataConverter[] metadataConverters={};
         if (this.metadataKeys != null) {
-            this.metadataKeys.stream()
+            metadataConverters = this.metadataKeys.stream()
                     .map(
                         k ->
                                     Stream.of(HttpLookupTableSource.ReadableMetadata.values())

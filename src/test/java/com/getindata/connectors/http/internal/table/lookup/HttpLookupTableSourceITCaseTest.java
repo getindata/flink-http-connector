@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -44,6 +45,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
 class HttpLookupTableSourceITCaseTest {
@@ -208,7 +210,7 @@ class HttpLookupTableSourceITCaseTest {
         SortedSet<Row> rows = testLookupJoinWithMetadata(lookupTableWithMetadata, 4);
 
         // THEN
-        assertEnrichedRows(rows);
+        assertEnrichedRowsWithMetadata(rows);
     }
 
     @Test
@@ -238,13 +240,7 @@ class HttpLookupTableSourceITCaseTest {
                 + ")";
 
         // WHEN/THEN
-        //assertThrows(TimeoutException.class, () -> testLookupJoin(lookupTable, 4));
-        try {
-            testLookupJoin(lookupTable, 4);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("aaabbbb",e);
-        }
+        assertThrows(TimeoutException.class, () -> testLookupJoin(lookupTable, 4));
     }
 
     @Test
@@ -1035,17 +1031,23 @@ class HttpLookupTableSourceITCaseTest {
         tEnv.executeSql(sourceTable);
         tEnv.executeSql(lookupTable);
     }
-
     private void assertEnrichedRows(Collection<Row> collectedRows) {
+        assertEnrichedRows(collectedRows, 6);
+    }
+
+    private void assertEnrichedRowsWithMetadata(Collection<Row> collectedRows) {
+        assertEnrichedRows(collectedRows, 9);
+    }
+
+    private void assertEnrichedRows(Collection<Row> collectedRows, int rowArity) {
         // validate every row and its column.
         assertAll(() -> {
                 assertThat(collectedRows.size()).isEqualTo(4);
                 int intElement = 0;
                 for (Row row : collectedRows) {
                     intElement++;
-                    assertThat(row.getArity()).isEqualTo(6);
-
-                    // "id" nad "id2" columns should be different for every row.
+                    assertThat(row.getArity()).isEqualTo(rowArity);
+                    // "id" and "id2" columns should be different for every row.
                     assertThat(row.getField("id")).isEqualTo(String.valueOf(intElement));
                     assertThat(row.getField("id2")).isEqualTo(String.valueOf(intElement + 1));
 
@@ -1053,6 +1055,8 @@ class HttpLookupTableSourceITCaseTest {
                         .isEqualTo("fbb68a46-80a9-46da-9d40-314b5287079c");
                     assertThat(row.getField("isActive")).isEqualTo(true);
                     assertThat(row.getField("balance")).isEqualTo("$1,729.34");
+                    // We don't need to assert on the metadata values since they're not part of the test
+                    // but we could add assertions here if needed
                 }
             }
         );

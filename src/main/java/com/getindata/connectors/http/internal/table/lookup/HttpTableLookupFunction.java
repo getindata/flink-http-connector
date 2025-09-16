@@ -81,22 +81,25 @@ public class HttpTableLookupFunction extends LookupFunction {
     public Collection<RowData> lookup(RowData keyRow) {
         localHttpCallCounter.incrementAndGet();
         List<RowData> outputList = new ArrayList<>();
-        // TODO turn into a constant?
         final int metadataArity = metadataConverters.length;
         try {
             Collection<RowData> httpCollector = client.pull(keyRow);
-            if (httpCollector.size() != 1) {
-                throw new RuntimeException("Expected 1 row data got " + httpCollector.size());
-            }
-            GenericRowData physicalRow = (GenericRowData) httpCollector.iterator().next();
-            final int physicalArity = physicalRow.getArity();
-            final GenericRowData producedRow =
+            // When there are no metadata columns or we have no results then
+            // return what the client pulls.
+            if (this.fail_job_on_error || httpCollector.size() == 0) {
+                localHttpCallCounter.incrementAndGet();
+                return httpCollector;
+            } else {
+                GenericRowData physicalRow = (GenericRowData) httpCollector.iterator().next();
+                final int physicalArity = physicalRow.getArity();
+                final GenericRowData producedRow =
                     new GenericRowData(physicalRow.getRowKind(), physicalArity + metadataArity);
-            // We need to copy in the physical row into the producedRow
-            for (int pos = 0; pos < physicalArity; pos++) {
-                producedRow.setField(pos, physicalRow.getField(pos));
+                // We need to copy in the physical row into the producedRow
+                for (int pos = 0; pos < physicalArity; pos++) {
+                    producedRow.setField(pos, physicalRow.getField(pos));
+                }
+                outputList.add(producedRow);
             }
-            outputList.add(producedRow);
         } catch (Exception e) {
             if (this.fail_job_on_error) throw e;
             Throwable cause =e.getCause();

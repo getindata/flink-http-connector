@@ -57,7 +57,7 @@ public class HttpClientWithRetry {
                         "Incorrect response code: " + response.statusCode(), response);
             }
             return response;
-        } catch (IOException | InterruptedException | HttpStatusCodeValidationFailedException e) {
+        } catch (IOException | InterruptedException e) {
             throw e;    //re-throw without wrapping
         } catch (Throwable t) {
             throw new RuntimeException("Unexpected exception", t);

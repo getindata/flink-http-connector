@@ -5,17 +5,19 @@ import java.util.Map;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_FAIL_JOB_ON_ERROR;
 
-public class TestHttpTableLookupFunction {
-
+public class HttpTableLookupFunctionTest {
+    @Test
     void testconstructor() {
         assertThat(getHttpTableLookupFunction(null).getFail_job_on_error()).isTrue();
         assertThat(getHttpTableLookupFunction(true).getFail_job_on_error()).isTrue();
         assertThat(getHttpTableLookupFunction(false).getFail_job_on_error()).isFalse();
     }
+    @Test
     private static @NotNull HttpTableLookupFunction getHttpTableLookupFunction(Boolean flag) {
         ReadableConfig readableConfig;
         if (flag == null ) {
@@ -37,4 +39,5 @@ public class TestHttpTableLookupFunction {
                 null);
         return httpTableLookupFunction;
     }
+
 }
