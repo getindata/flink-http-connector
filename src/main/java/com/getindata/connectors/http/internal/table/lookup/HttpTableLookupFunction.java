@@ -100,30 +100,36 @@ public class HttpTableLookupFunction extends LookupFunction {
                 }
                 outputList.add(producedRow);
             }
-        } catch (Exception e) {
-            if (this.fail_job_on_error) throw e;
-            Throwable cause =e.getCause();
-            if (cause instanceof HttpStatusCodeValidationFailedException) {
-                final GenericRowData producedRow = getProducedRowForError(
-                        cause.getMessage(),
-                        ((HttpStatusCodeValidationFailedException) cause).getResponse(),
-                        metadataArity,
-                        metadataConverters);
-                outputList.add(producedRow);
-            } else {
-                // cause might not have a message so just use it's toString.
-                String msg= e.getMessage() +"," + cause;
-                final GenericRowData producedRow = getProducedRowForError(
-                        msg,
-                        null,
-                        metadataArity,
-                        metadataConverters);
-                outputList.add(producedRow);
-            }
+        } catch (RuntimeException e) {
+            outputList = processExceptionsFromLookup(e, metadataArity);
+        }
+        return outputList;
+    }
+    List<RowData> processExceptionsFromLookup(RuntimeException e, int metadataArity) {
+        List<RowData> outputList = new ArrayList<>();
+        if (this.fail_job_on_error) throw e;
+        Throwable cause = e.getCause();
+        if (cause instanceof HttpStatusCodeValidationFailedException) {
+            final GenericRowData producedRow = getProducedRowForError(
+                cause.getMessage(),
+                ((HttpStatusCodeValidationFailedException) cause).getResponse(),
+                    metadataArity,
+                    metadataConverters);
+            outputList.add(producedRow);
+        } else {
+            // cause might not have a message so just use it's toString.
+            String msg= e.getMessage() +"," + cause;
+            final GenericRowData producedRow = getProducedRowForError(
+                    msg,
+                    null,
+                    metadataArity,
+                    metadataConverters);
+            outputList.add(producedRow);
         }
         return outputList;
     }
 
+    @VisibleForTesting
     private GenericRowData getProducedRowForError(String msg,
                                                   HttpResponse httpResponse,
                                                   int metadataArity,
