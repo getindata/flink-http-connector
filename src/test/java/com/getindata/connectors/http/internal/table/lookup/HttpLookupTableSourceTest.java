@@ -1,6 +1,13 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
+
+import javax.net.ssl.SSLSession;
 
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.metrics.groups.CacheMetricGroup;
@@ -36,25 +43,25 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTabl
 class HttpLookupTableSourceTest {
 
     public static final DataType PHYSICAL_ROW_DATA_TYPE =
-        row(List.of(DataTypes.FIELD("id", DataTypes.STRING().notNull())));
+            row(List.of(DataTypes.FIELD("id", DataTypes.STRING().notNull())));
 
     private static final ResolvedSchema SCHEMA =
-        new ResolvedSchema(
-            Arrays.asList(
-                Column.physical("id", DataTypes.STRING().notNull()),
-                Column.physical("msg", DataTypes.STRING().notNull()),
-                Column.physical("uuid", DataTypes.STRING().notNull()),
-                Column.physical("details", DataTypes.ROW(
-                    DataTypes.FIELD("isActive", DataTypes.BOOLEAN()),
-                    DataTypes.FIELD("nestedDetails", DataTypes.ROW(
-                            DataTypes.FIELD("balance", DataTypes.STRING())
-                        )
-                    )
-                ).notNull())
-            ),
-            Collections.emptyList(),
-            UniqueConstraint.primaryKey("id", List.of("id"))
-        );
+            new ResolvedSchema(
+                    Arrays.asList(
+                            Column.physical("id", DataTypes.STRING().notNull()),
+                            Column.physical("msg", DataTypes.STRING().notNull()),
+                            Column.physical("uuid", DataTypes.STRING().notNull()),
+                            Column.physical("details", DataTypes.ROW(
+                                    DataTypes.FIELD("isActive", DataTypes.BOOLEAN()),
+                                    DataTypes.FIELD("nestedDetails", DataTypes.ROW(
+                                                    DataTypes.FIELD("balance", DataTypes.STRING())
+                                            )
+                                    )
+                            ).notNull())
+                    ),
+                    Collections.emptyList(),
+                    UniqueConstraint.primaryKey("id", List.of("id"))
+            );
 
     // lookupKey index {{0}} means first column.
     private final int[][] lookupKey = {{0}};
@@ -64,52 +71,71 @@ class HttpLookupTableSourceTest {
 
         LookupRow expectedLookupRow = new LookupRow();
         expectedLookupRow.addLookupEntry(
-            new RowDataSingleValueLookupSchemaEntry(
-                "id",
-                RowData.createFieldGetter(DataTypes.STRING().notNull().getLogicalType(), 0)
-            )
+                new RowDataSingleValueLookupSchemaEntry(
+                        "id",
+                        RowData.createFieldGetter(DataTypes.STRING().notNull().getLogicalType(), 0)
+                )
         );
         expectedLookupRow.setLookupPhysicalRowDataType(PHYSICAL_ROW_DATA_TYPE);
     }
+
     @Test
     void testlistReadableMetadata() {
         HttpLookupTableSource tableSource =
                 (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
-        Map<String, DataType> listMetadataMap =tableSource.listReadableMetadata();
-        // {"error_code"=INT, "error_headers"=MAP<STRING, ARRAY<STRING>>, "error_string"=STRING}
-        Map<String, DataType>   expectedMap = new LinkedHashMap<>();
-        expectedMap.put("error_code", new AtomicDataType(new IntType(true)));
-        expectedMap.put("error_headers", DataTypes.MAP(DataTypes.STRING(), DataTypes.ARRAY(DataTypes.STRING())));
+        Map<String, DataType> listMetadataMap = tableSource.listReadableMetadata();
+        Map<String, DataType> expectedMap = new LinkedHashMap<>();
+        expectedMap.put("http_status_code", new AtomicDataType(new IntType(true)));
+        expectedMap.put("http_headers", DataTypes.MAP(DataTypes.STRING(), DataTypes.ARRAY(DataTypes.STRING())));
         expectedMap.put("error_string", DataTypes.STRING());
         assertThat(listMetadataMap).isEqualTo(expectedMap);
     }
+    /*
+    @Test
+    void testreadReadableMetadata() {
+        HttpLookupTableSource tableSource =
+                (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
+        final String testData = "ABC";
+        assertThat(HttpLookupTableSource.ReadableMetadata
+                .HTTP_ERROR_STRING.converter.read(testData, null)).isEqualTo(StringData.fromString(testData));
+        MockHttpResponse httpResponse = new MockHttpResponse();
+        httpResponse.setStatusCode(500);
+
+        assertThat(HttpLookupTableSource.ReadableMetadata
+                .HTTP_ERROR_CODE.converter.read(testData, null)).isEqualTo(StringData.fromString(testData));
+
+        assertThat(HttpLookupTableSource.ReadableMetadata
+                .HTTP_HEADERS.converter.read(testData, null)).isEqualTo(StringData.fromString(testData));
+
+    }
+    */
 
     @Test
     @SuppressWarnings("unchecked")
     void shouldCreateTableSourceWithParams() {
         HttpLookupTableSource tableSource =
-            (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
+                (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
 
         LookupTableSource.LookupRuntimeProvider lookupProvider =
-            tableSource.getLookupRuntimeProvider(new LookupRuntimeProviderContext(lookupKey));
+                tableSource.getLookupRuntimeProvider(new LookupRuntimeProviderContext(lookupKey));
         HttpTableLookupFunction tableFunction = (HttpTableLookupFunction)
-            ((LookupFunctionProvider) lookupProvider).createLookupFunction();
+                ((LookupFunctionProvider) lookupProvider).createLookupFunction();
 
         LookupRow actualLookupRow = tableFunction.getLookupRow();
         assertThat(actualLookupRow).isNotNull();
         assertThat(actualLookupRow.getLookupEntries()).isNotEmpty();
         assertThat(actualLookupRow.getLookupPhysicalRowDataType())
-            .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
+                .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
 
         HttpLookupConfig actualLookupConfig = tableFunction.getOptions();
         assertThat(actualLookupConfig).isNotNull();
         assertThat(
-            actualLookupConfig.getReadableConfig().get(
-                ConfigOptions.key("connector").stringType().noDefaultValue())
+                actualLookupConfig.getReadableConfig().get(
+                        ConfigOptions.key("connector").stringType().noDefaultValue())
         )
-            .withFailMessage(
-                "Readable config probably was not passed from Table Factory or it is empty.")
-            .isNotNull();
+                .withFailMessage(
+                        "Readable config probably was not passed from Table Factory or it is empty.")
+                .isNotNull();
     }
 
     @Test
@@ -118,32 +144,32 @@ class HttpLookupTableSourceTest {
         Map<String, String> options = getOptionsWithAsync();
 
         HttpLookupTableSource tableSource =
-            (HttpLookupTableSource) createTableSource(SCHEMA, options);
+                (HttpLookupTableSource) createTableSource(SCHEMA, options);
 
         AsyncLookupFunctionProvider lookupProvider =
-            (AsyncLookupFunctionProvider)
-                tableSource.getLookupRuntimeProvider(
-                    new LookupRuntimeProviderContext(lookupKey));
+                (AsyncLookupFunctionProvider)
+                        tableSource.getLookupRuntimeProvider(
+                                new LookupRuntimeProviderContext(lookupKey));
 
         AsyncHttpTableLookupFunction tableFunction =
-            (AsyncHttpTableLookupFunction) lookupProvider.createAsyncLookupFunction();
+                (AsyncHttpTableLookupFunction) lookupProvider.createAsyncLookupFunction();
 
         LookupRow actualLookupRow = tableFunction.getLookupRow();
         assertThat(actualLookupRow).isNotNull();
         assertThat(actualLookupRow.getLookupEntries()).isNotEmpty();
         assertThat(actualLookupRow.getLookupPhysicalRowDataType())
-            .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
+                .isEqualTo(PHYSICAL_ROW_DATA_TYPE);
 
         HttpLookupConfig actualLookupConfig = tableFunction.getOptions();
         assertThat(actualLookupConfig).isNotNull();
         assertThat(actualLookupConfig.isUseAsync()).isTrue();
         assertThat(
-            actualLookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.ASYNC_POLLING)
+                actualLookupConfig.getReadableConfig().get(HttpLookupConnectorOptions.ASYNC_POLLING)
         )
-            .withFailMessage(
-                "Readable config probably was not passed" +
-                    " from Table Factory or it is empty.")
-            .isTrue();
+                .withFailMessage(
+                        "Readable config probably was not passed" +
+                                " from Table Factory or it is empty.")
+                .isTrue();
     }
 
     @ParameterizedTest
@@ -199,8 +225,8 @@ class HttpLookupTableSourceTest {
         Class expected;
 
         private TestSpec(boolean hasCache,
-            boolean isAsync,
-            Class expected) {
+                         boolean isAsync,
+                         Class expected) {
             this.hasCache = hasCache;
             this.isAsync = isAsync;
             this.expected = expected;
@@ -255,8 +281,61 @@ class HttpLookupTableSourceTest {
 
     private Map<String, String> getOptions() {
         return Map.of(
-            "connector", "rest-lookup",
-            "url", "http://localhost:8080/service",
-            "format", "json");
+                "connector", "rest-lookup",
+                "url", "http://localhost:8080/service",
+                "format", "json");
+    }
+
+    class MockHttpResponse implements HttpResponse<byte[]> {
+        int statusCode = 0;
+        private Map<String, List<String>> headersMap = new HashMap<>();
+
+        @Override
+        public int statusCode() {
+            return statusCode;
+        }
+
+        @Override
+        public HttpRequest request() {
+            return null;
+        }
+
+        @Override
+        public Optional<HttpResponse<byte[]>> previousResponse() {
+            return Optional.empty();
+        }
+
+        @Override
+        public HttpHeaders headers() {
+            return null;
+        }
+
+        @Override
+        public URI uri() {
+            return null;
+        }
+
+        @Override
+        public HttpClient.Version version() {
+            return null;
+        }
+
+        //public void setHeaders(HttpHeaders headers) {
+        //    this.headers = headers;
+        //}
+
+        public void setStatusCode(int statusCode) {
+            this.statusCode = statusCode;
+        }
+
+        @Override
+        public byte[] body() {
+            return new byte[0];
+        }
+
+        @Override
+        public Optional<SSLSession> sslSession() {
+            return Optional.empty();
+        }
     }
 }

@@ -13,7 +13,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.metrics.MetricGroup;
 
-import com.getindata.connectors.http.HttpStatusCodeValidationFailedException;
 import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 
 @Slf4j
@@ -48,15 +47,10 @@ public class HttpClientWithRetry {
     public <T> HttpResponse<T> send(
             Supplier<HttpRequest> requestSupplier,
             HttpResponse.BodyHandler<T> responseBodyHandler
-    ) throws IOException, InterruptedException, HttpStatusCodeValidationFailedException {
+    ) throws IOException, InterruptedException{
         try {
-            var response = Retry.decorateCheckedSupplier(retry,
+            return Retry.decorateCheckedSupplier(retry,
                 () -> httpClient.send(requestSupplier.get(), responseBodyHandler)).apply();
-            if (!responseChecker.isSuccessful(response)) {
-                throw new HttpStatusCodeValidationFailedException(
-                        "Incorrect response code: " + response.statusCode(), response);
-            }
-            return response;
         } catch (IOException | InterruptedException e) {
             throw e;    //re-throw without wrapping
         } catch (Throwable t) {

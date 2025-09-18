@@ -47,7 +47,7 @@ import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConn
  * This implementation supports HTTP traffic only.
  */
 @Slf4j
-public class JavaNetHttpPollingClient implements PollingClient<RowData> {
+public class JavaNetHttpPollingClient implements PollingClient {
 
     private static final String RESULT_TYPE_SINGLE_VALUE = "single-value";
     private static final String RESULT_TYPE_ARRAY = "array";
@@ -91,11 +91,13 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         httpClient.registerMetrics(context.getMetricGroup());
     }
 
-
     @Override
-    public Collection<RowData> pull(RowData lookupRow) {
+    public HttpRowDataWrapper pull(RowData lookupRow) {
         if (lookupRow == null) {
-            return Collections.emptyList();
+            return new HttpRowDataWrapper(Collections.emptyList(),
+                    null,
+                    null,
+                    ContinueOnErrorType.NONE);
         }
         try {
             log.debug("Collection<RowData> pull with Rowdata={}.", lookupRow);
@@ -105,7 +107,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         }
     }
 
-    private Collection<RowData> queryAndProcess(RowData lookupData) throws Exception {
+    private HttpRowDataWrapper queryAndProcess(RowData lookupData) throws Exception {
         var request = requestFactory.buildLookupRequest(lookupData);
 
         var oidcProcessor = HttpHeaderUtils.createOIDCHeaderPreprocessor(options.getReadableConfig());
@@ -161,7 +163,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         return httpRequest;
     }
 
-    private Collection<RowData> processHttpResponse(
+    private HttpRowDataWrapper processHttpResponse(
             HttpResponse<String> response,
             HttpLookupSourceRequestEntry request) throws IOException {
 
@@ -171,11 +173,23 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         log.debug("Received status code [{}] for RestTableSource request with Server response body [{}] ",
                 response.statusCode(), responseBody);
-
+        HttpRowDataWrapper httpRowDataWrapper;
         if (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response)) {
-            return Collections.emptyList();
+            httpRowDataWrapper = new HttpRowDataWrapper(
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    ContinueOnErrorType.NONE);
+        } else {
+            // TODO do we know whether this is an error or not????
+            httpRowDataWrapper = new HttpRowDataWrapper(
+                    deserialize(responseBody),
+                    response.headers().map(),
+                    response.statusCode(),
+                    ContinueOnErrorType.HTTP_FAILED
+            );
         }
-        return deserialize(responseBody);
+        return httpRowDataWrapper;
     }
 
     @VisibleForTesting

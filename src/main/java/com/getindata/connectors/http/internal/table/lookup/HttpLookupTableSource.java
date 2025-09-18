@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -113,7 +112,7 @@ public class HttpLookupTableSource
                 dynamicTableFactoryContext
             );
 
-        PollingClientFactory<RowData> pollingClientFactory =
+        PollingClientFactory pollingClientFactory =
             createPollingClientFactory(lookupQueryCreator, lookupConfig);
 
         return getLookupRuntimeProvider(lookupRow, responseSchemaDecoder, pollingClientFactory);
@@ -122,7 +121,7 @@ public class HttpLookupTableSource
     protected LookupRuntimeProvider getLookupRuntimeProvider(LookupRow lookupRow,
                                                              DeserializationSchema<RowData>
                                                                      responseSchemaDecoder,
-                                                             PollingClientFactory<RowData>
+                                                             PollingClientFactory
                                                                      pollingClientFactory) {
         MetadataConverter[] metadataConverters={};
         if (this.metadataKeys != null) {
@@ -191,7 +190,7 @@ public class HttpLookupTableSource
         return true;
     }
 
-    private PollingClientFactory<RowData> createPollingClientFactory(
+    private PollingClientFactory createPollingClientFactory(
             LookupQueryCreator lookupQueryCreator,
             HttpLookupConfig lookupConfig) {
 
@@ -322,55 +321,72 @@ public class HttpLookupTableSource
         this.metadataKeys = connectorMetadataKeys;
         this.producedDataType = producedDataType;
     }
+
     // --------------------------------------------------------------------------------------------
     // Metadata handling
     // --------------------------------------------------------------------------------------------
     enum ReadableMetadata {
-        HTTP_ERROR_STRING(
+        ERROR_STRING(
             "error_string",
             DataTypes.STRING(),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;
-                @Override
-                public Object read(String msg, HttpResponse httpResponse) {
+
+                public Object read(String msg, HttpRowDataWrapper httpRowDataWrapper) {
                     return StringData.fromString(msg);
                 }
-        }),
-        HTTP_ERROR_CODE(
-            "error_code",
+            }),
+        HTTP_STATUS_CODE(
+            "http_status_code",
             DataTypes.INT(),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;
-                @Override
-                public Object read(String msg, HttpResponse httpResponse) {
-                    return httpResponse != null? httpResponse.statusCode():null;
+
+                public Object read(String msg, HttpRowDataWrapper httpRowDataWrapper) {
+                    return (httpRowDataWrapper != null) ? httpRowDataWrapper.getHttpStatusCode() : null;
                 }
-        }),
+            }
+        ),
         HTTP_HEADERS(
-            "error_headers",
+            "http_headers",
             DataTypes.MAP(DataTypes.STRING(), DataTypes.ARRAY(DataTypes.STRING())),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;
-                @Override
-                public Object read(String msg, HttpResponse httpResponse) {
-                    if (httpResponse == null) return null;
-                    Map<String, List<String>> httpHeadersMap = httpResponse.headers().map();
+                public Object read(String msg, HttpRowDataWrapper httpRowDataWrapper) {
+                    if (httpRowDataWrapper == null) {
+                        return null;
+                    }
+                    Map<String, List<String>> httpHeadersMap = httpRowDataWrapper.getHttpHeadersMap();
                     Map<StringData, ArrayData> stringDataMap = new HashMap<>();
-                    for (String key: httpHeadersMap.keySet()) {
+                    for (String key : httpHeadersMap.keySet()) {
                         List<StringData> strDataList = new ArrayList<>();
                         httpHeadersMap.get(key).stream()
-                               .forEach((c) -> strDataList.add(StringData.fromString(c)));
+                                .forEach((c) -> strDataList.add(StringData.fromString(c)));
                         stringDataMap.put(StringData.fromString(key), new GenericArrayData(strDataList.toArray()));
                     }
                     return new GenericMapData(stringDataMap);
                 }
-        });
+            }
+        ),
+        CONTINUE_ON_ERROR_TYPE(
+            "continue_on_error_type",
+            DataTypes.STRING(),
+            new MetadataConverter() {
+                private static final long serialVersionUID = 1L;
+
+                public Object read(String msg, HttpRowDataWrapper httpRowDataWrapper) {
+                    if (httpRowDataWrapper == null) {
+                        return null;
+                    }
+                    return StringData.fromString(httpRowDataWrapper.getContinueOnErrorType().name());
+                }
+            })
+        ;
         final String key;
 
         final DataType dataType;
         final MetadataConverter converter;
 
-        //TODO decide if we need a MetadataConverter
         ReadableMetadata(String key, DataType dataType, MetadataConverter converter) {
             this.key = key;
             this.dataType = dataType;
