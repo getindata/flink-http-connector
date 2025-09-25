@@ -8,8 +8,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum RetryStrategyType {
     FIXED_DELAY("fixed-delay"),
-    EXPONENTIAL_DELAY("exponential-delay"),
-    ;
+    EXPONENTIAL_DELAY("exponential-delay");
 
     private final String code;
 

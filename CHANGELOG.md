@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added ability to continue on error, introducing new metadata columns and new configuration option
+  `gid.connector.http.source.lookup.continue_on_error` 
+
 ## [0.21.0] - 2025-09-16
 
 -   optimized logging in HttpHeaderUtils.

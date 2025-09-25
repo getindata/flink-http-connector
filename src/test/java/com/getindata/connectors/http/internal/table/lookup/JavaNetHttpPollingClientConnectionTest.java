@@ -141,7 +141,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
+        Collection<RowData> results = pollingClient.pull(lookupRowData).getData();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -168,7 +168,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(setUpBodyRequestFactory(methodName));
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
+        Collection<RowData> results = pollingClient.pull(lookupRowData).getData();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -212,7 +212,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
+        Collection<RowData> results = pollingClient.pull(lookupRowData).getData();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -246,7 +246,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
+        Collection<RowData> results = pollingClient.pull(lookupRowData).getData();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));
@@ -278,7 +278,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
+        Collection<RowData> results = pollingClient.pull(lookupRowData).getData();
 
         // THEN
         assertThat(results.isEmpty()).isEqualTo(isExpectedResponseEmpty);
@@ -302,7 +302,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(null);
+        Collection<RowData> results = pollingClient.pull(null).getData();
 
         // THEN
         assertThat(results.isEmpty()).isTrue();
@@ -333,7 +333,7 @@ class JavaNetHttpPollingClientConnectionTest {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient();
 
         // WHEN
-        Collection<RowData> results = pollingClient.pull(lookupRowData);
+        Collection<RowData> results = pollingClient.pull(lookupRowData).getData();
 
         // THEN
         wireMockServer.verify(RequestPatternBuilder.forCustomMatcher(stubMapping.getRequest()));

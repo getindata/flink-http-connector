@@ -9,7 +9,7 @@ import org.apache.flink.util.ConfigurationException;
 import com.getindata.connectors.http.internal.PollingClientFactory;
 import com.getindata.connectors.http.internal.utils.JavaNetHttpClientFactory;
 
-public class JavaNetHttpPollingClientFactory implements PollingClientFactory<RowData> {
+public class JavaNetHttpPollingClientFactory implements PollingClientFactory {
 
     private final HttpRequestFactory requestFactory;
 

@@ -263,7 +263,7 @@ public class JavaNetHttpPollingClientHttpsConnectionTest extends HttpsConnection
 
     private void testPollingClientConnection() throws ConfigurationException {
         JavaNetHttpPollingClient pollingClient = setUpPollingClient(properties);
-        Collection<RowData> result = pollingClient.pull(lookupRowData);
+        Collection<RowData> result = pollingClient.pull(lookupRowData).getData();
 
         assertResult(result);
     }

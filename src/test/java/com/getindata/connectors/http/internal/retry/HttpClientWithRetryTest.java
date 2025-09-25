@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import com.getindata.connectors.http.HttpStatusCodeValidationFailedException;
 import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 
-
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 class HttpClientWithRetryTest {
@@ -96,6 +95,7 @@ class HttpClientWithRetryTest {
         when(httpClient.send(any(), any())).thenReturn(response);
         when(responseChecker.isSuccessful(response)).thenReturn(false);
         when(responseChecker.isTemporalError(response)).thenReturn(false);
+
 
         assertThrows(HttpStatusCodeValidationFailedException.class,
             () -> client.send(mock(Supplier.class), mock(HttpResponse.BodyHandler.class)));
