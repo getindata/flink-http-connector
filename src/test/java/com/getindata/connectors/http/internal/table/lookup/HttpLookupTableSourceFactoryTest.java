@@ -2,8 +2,8 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.util.*;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
@@ -37,13 +37,12 @@ public class HttpLookupTableSourceFactoryTest {
 
     @Test
     void validateHttpLookupSourceOptions() {
-
         HttpLookupTableSourceFactory httpLookupTableSourceFactory
                 = new HttpLookupTableSourceFactory();
-        TableConfig tableConfig  = new TableConfig();
+        Configuration tableConfig = new Configuration();
         httpLookupTableSourceFactory.validateHttpLookupSourceOptions(tableConfig);
         tableConfig.set(HttpLookupConnectorOptions
-                .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key(), "aaa");
+                .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL, "aaa");
 
         try {
             httpLookupTableSourceFactory.validateHttpLookupSourceOptions(tableConfig);
@@ -53,7 +52,7 @@ public class HttpLookupTableSourceFactoryTest {
         }
         // should now work.
         tableConfig.set(HttpLookupConnectorOptions
-            .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST.key(), "bbb");
+            .SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST, "bbb");
 
         httpLookupTableSourceFactory.validateHttpLookupSourceOptions(tableConfig);
     }

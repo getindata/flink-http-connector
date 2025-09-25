@@ -5,9 +5,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 
+import org.apache.flink.api.connector.sink2.StatefulSinkWriter;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.connector.base.sink.writer.config.AsyncSinkWriterConfiguration;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
@@ -115,7 +118,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     @Override
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> createWriter(
-            InitContext context) throws IOException {
+            WriterInitContext context) throws IOException {
 
         ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = getElementConverter();
         if (elementConverter instanceof SchemaLifecycleAwareElementConverter) {
@@ -126,12 +129,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         return new HttpSinkWriter<>(
             elementConverter,
             context,
-            getMaxBatchSize(),
-            getMaxInFlightRequests(),
-            getMaxBufferedRequests(),
-            getMaxBatchSizeInBytes(),
-            getMaxTimeInBufferMS(),
-            getMaxRecordSizeInBytes(),
+            getAsyncSinkWriterConfiguration(),
             endpointUrl,
             sinkHttpClientBuilder.build(
                 properties,
@@ -146,19 +144,14 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
 
     @Override
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> restoreWriter(
-                InitContext context,
+                WriterInitContext context,
                 Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState)
             throws IOException {
 
         return new HttpSinkWriter<>(
             getElementConverter(),
             context,
-            getMaxBatchSize(),
-            getMaxInFlightRequests(),
-            getMaxBufferedRequests(),
-            getMaxBatchSizeInBytes(),
-            getMaxTimeInBufferMS(),
-            getMaxRecordSizeInBytes(),
+            getAsyncSinkWriterConfiguration(),
             endpointUrl,
             sinkHttpClientBuilder.build(
                 properties,
@@ -169,6 +162,17 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
             recoveredState,
             properties
         );
+    }
+
+    private AsyncSinkWriterConfiguration getAsyncSinkWriterConfiguration() {
+        return AsyncSinkWriterConfiguration.builder()
+            .setMaxBatchSize(getMaxBatchSize())
+            .setMaxBatchSizeInBytes(getMaxBatchSizeInBytes())
+            .setMaxInFlightRequests(getMaxInFlightRequests())
+            .setMaxBufferedRequests(getMaxBufferedRequests())
+            .setMaxTimeInBufferMS(getMaxTimeInBufferMS())
+            .setMaxRecordSizeInBytes(getMaxRecordSizeInBytes())
+            .build();
     }
 
     @Override
