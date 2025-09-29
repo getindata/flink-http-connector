@@ -959,7 +959,6 @@ class HttpLookupTableSourceITCaseTest {
                         + "AND o.id2 = c.id2";
 
         TableResult result = tEnv.executeSql(joinQuery);
-        //result.await(15, TimeUnit.SECONDS);
 
         // THEN
         return getCollectedRows(result);
@@ -1008,7 +1007,6 @@ class HttpLookupTableSourceITCaseTest {
                     assertThat(row.getField("isActive")).isEqualTo(true);
                     assertThat(row.getField("balance")).isEqualTo("$1,729.34");
                     if (withMetadata) {
-                        System.err.println("row.getField(completionState)" + row.getField("completionState"));
                         assertThat(row.getField("errStr")).isNull();
                         assertThat(row.getField("headers")).isNotNull();
                         assertThat(row.getField("statusCode")).isEqualTo(200);
@@ -1153,7 +1151,8 @@ class HttpLookupTableSourceITCaseTest {
     private void setUpServerBodyStub(
             String methodName,
             WireMockServer wireMockServer,
-            List<StringValuePattern> matchingJsonPaths, Integer badStatus) {
+            List<StringValuePattern> matchingJsonPaths,
+            Integer badStatus) {
         setUpServerBodyStub(methodName, wireMockServer, matchingJsonPaths, null, null, badStatus, false);
     }
     private void setUpServerBodyStub(
@@ -1223,87 +1222,116 @@ class HttpLookupTableSourceITCaseTest {
         String lookupTable = createLookupTableSql(spec);
 
         // WHEN
-        SortedSet<Row> rows;
-        if (spec.useMetadata) {
-            rows = testLookupJoinWithMetadata(lookupTable, spec.maxRows);
-        } else {
-            rows = testLookupJoin(lookupTable, spec.maxRows);
+        SortedSet<Row> rows =null;
+        boolean expectToContinue = spec.continueOnError && (spec.connectionError || spec.deserError || spec.badStatus);
+        try {
+            if (spec.useMetadata) {
+                rows = testLookupJoinWithMetadata(lookupTable, spec.maxRows);
+            } else {
+                rows = testLookupJoin(lookupTable, spec.maxRows);
+            }
+            // THEN
+            assertResultsForSpec(spec, rows);
+        } catch (Exception e) {
+            assertThat(expectToContinue).isFalse();
         }
-
-        // THEN
-        assertResultsForSpec(spec, rows);
     }
     static Collection<TestSpec> testSpecProvider() {
         List<TestSpec> specs = new ArrayList<>();
 
         // Basic test cases (testHttpLookupJoin)
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
-            specs.add(new TestSpec(
-                    "Basic HTTP Lookup Join",
-                    method,
-                    false, // useMetadata
-                    false, // badStatus
-                    false, // deserError
-                    false, // connectionError
-                    4,     // maxRows
-                    true   // useAsync
-            ));
+            for (boolean asyncFlag : Arrays.asList(false, true)) {
+                for (boolean continueOnError : Arrays.asList(false, true)) {
+                    specs.add(new TestSpec(
+                            "Basic HTTP Lookup Join",
+                            method,
+                            false, // useMetadata
+                            false, // badStatus
+                            false, // deserError
+                            false, // connectionError
+                            4,     // maxRows
+                            asyncFlag, // useAsync
+                            continueOnError
+                    ));
+                }
+            }
         }
 
         // Metadata success test cases (testHttpLookupJoinWithMetadataSuccess)
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
-            specs.add(new TestSpec(
-                    "HTTP Lookup Join With Metadata Success",
-                    method,
-                    true,  // useMetadata
-                    false, // badStatus
-                    false, // deserError
-                    false, // connectionError
-                    4,     // maxRows
-                    true   // useAsync
-            ));
+            for (boolean asyncFlag : Arrays.asList(false, true)) {
+                for (boolean continueOnError : Arrays.asList(false, true)) {
+                    specs.add(new TestSpec(
+                            "HTTP Lookup Join With Metadata Success",
+                            method,
+                            true,  // useMetadata
+                            false, // badStatus
+                            false, // deserError
+                            false, // connectionError
+                            4,     // maxRows
+                            asyncFlag,   // useAsync
+                            continueOnError
+                    ));
+                }
+            }
         }
 
         // Bad status test cases (testHttpLookupJoinWithMetadataBadStatus)
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
-            specs.add(new TestSpec(
-                    "HTTP Lookup Join With Metadata Bad Status",
-                    method,
-                    true,  // useMetadata
-                    true,  // badStatus
-                    false, // deserError
-                    false, // connectionError
-                    4,     // maxRows
-                    false  // useAsync
-            ));
+            for (boolean asyncFlag : Arrays.asList(false, true)) {
+                for (boolean continueOnError : Arrays.asList(false, true)) {
+                    specs.add(new TestSpec(
+                            "HTTP Lookup Join With Metadata Bad Status",
+                            method,
+                            true,  // useMetadata
+                            true,  // badStatus
+                            false, // deserError
+                            false, // connectionError
+                            4,     // maxRows
+                            asyncFlag,   // useAsync
+                            continueOnError
+                    ));
+                }
+            }
         }
 
         // Deserialization error test cases (testHttpLookupJoinWithMetadataDeserException)
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
-            specs.add(new TestSpec(
-                    "HTTP Lookup Join With Metadata Deserialization Error",
-                    method,
-                    true,  // useMetadata
-                    false, // badStatus
-                    true,  // deserError
-                    false, // connectionError
-                    4,     // maxRows
-                    false  // useAsync
-            ));
+            for (boolean asyncFlag : Arrays.asList(false, true)) {
+                for (boolean continueOnError : Arrays.asList(false, true)) {
+                    specs.add(new TestSpec(
+                            "HTTP Lookup Join With Metadata Deserialization Error",
+                            method,
+                            true,  // useMetadata
+                            false, // badStatus
+                            true,  // deserError
+                            false, // connectionError
+                            4,     // maxRows
+                            asyncFlag,   // useAsync
+                            continueOnError
+                    ));
+                }
+            }
         }
 
         // Connection error test cases (testHttpLookupJoinWithMetadataException)
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
-            specs.add(new TestSpec(
-                    "HTTP Lookup Join With Metadata Connection Error",
-                    method,
-                    true,  // useMetadata
-                    false, // badStatus
-                    false, // deserError
-                    true,  // connectionError
-                    4,     // maxRows
-                    false  // useAsync
-            ));
+            for (boolean asyncFlag : Arrays.asList(false, true)) {
+                for (boolean continueOnError : Arrays.asList(false, true)) {
+                    specs.add(new TestSpec(
+                            "HTTP Lookup Join With Metadata Connection Error",
+                            method,
+                            true,  // useMetadata
+                            false, // badStatus
+                            false, // deserError
+                            true,  // connectionError
+                            4,     // maxRows
+                            asyncFlag,  // useAsync
+                            continueOnError
+                    ));
+                }
+            }
         }
 
         return specs;
@@ -1323,11 +1351,12 @@ class HttpLookupTableSourceITCaseTest {
         // Test execution configuration
         final int maxRows;
         final boolean useAsync;
+        final boolean continueOnError;
 
         // Constructor
         private TestSpec(String testName, String methodName, boolean useMetadata,
                          boolean badStatus, boolean deserError, boolean connectionError,
-                         int maxRows, boolean useAsync) {
+                         int maxRows, boolean useAsync, boolean continueOnError) {
             this.testName = testName;
             this.methodName = methodName;
             this.useMetadata = useMetadata;
@@ -1336,6 +1365,7 @@ class HttpLookupTableSourceITCaseTest {
             this.connectionError = connectionError;
             this.maxRows = maxRows;
             this.useAsync = useAsync;
+            this.continueOnError = continueOnError;
         }
 
         @Override
@@ -1434,12 +1464,11 @@ class HttpLookupTableSourceITCaseTest {
         //    sql.append("'gid.connector.http.source.lookup.continue_on_error    '='true',");
         //}
         sql.append("'gid.connector.http.source.lookup.continue_on_error'='true',");
-        sql.append("'asyncPolling'='false')");
 
-        //sql.append("'asyncPolling' = '").append(spec.useAsync ? "true" : "false").append("',")
-        //    .append("'table.exec.async-lookup.buffer-capacity' = '50',")
-        //    .append("'table.exec.async-lookup.timeout' = '120s'")
-        //    .append(")");
+        sql.append("'asyncPolling' = '").append(spec.useAsync ? "true" : "false").append("',")
+            .append("'table.exec.async-lookup.buffer-capacity' = '50',")
+            .append("'table.exec.async-lookup.timeout' = '120s'")
+            .append(")");
 
         return sql.toString();
     }

@@ -82,7 +82,7 @@ public class HttpLookupConnectorOptions {
                     .noDefaultValue()
                     .withDescription("Http client connection timeout.");
 
-    public static final ConfigOption<Boolean> SOURCE_LOOKUP_CONTINUE_ON_ERROR=
+    public static final ConfigOption<Boolean> SOURCE_LOOKUP_CONTINUE_ON_ERROR =
             ConfigOptions.key(CONTINUE_ON_ERROR)
                     .booleanType()
                     .defaultValue(false)

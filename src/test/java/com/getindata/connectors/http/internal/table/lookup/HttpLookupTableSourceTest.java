@@ -1,13 +1,6 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.*;
-
-import javax.net.ssl.SSLSession;
 
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.metrics.groups.CacheMetricGroup;
@@ -344,58 +337,5 @@ class HttpLookupTableSourceTest {
                 "connector", "rest-lookup",
                 "url", "http://localhost:8080/service",
                 "format", "json");
-    }
-
-    class MockHttpResponse implements HttpResponse<byte[]> {
-        int statusCode = 0;
-        private Map<String, List<String>> headersMap = new HashMap<>();
-
-        @Override
-        public int statusCode() {
-            return statusCode;
-        }
-
-        @Override
-        public HttpRequest request() {
-            return null;
-        }
-
-        @Override
-        public Optional<HttpResponse<byte[]>> previousResponse() {
-            return Optional.empty();
-        }
-
-        @Override
-        public HttpHeaders headers() {
-            return null;
-        }
-
-        @Override
-        public URI uri() {
-            return null;
-        }
-
-        @Override
-        public HttpClient.Version version() {
-            return null;
-        }
-
-        //public void setHeaders(HttpHeaders headers) {
-        //    this.headers = headers;
-        //}
-
-        public void setStatusCode(int statusCode) {
-            this.statusCode = statusCode;
-        }
-
-        @Override
-        public byte[] body() {
-            return new byte[0];
-        }
-
-        @Override
-        public Optional<SSLSession> sslSession() {
-            return Optional.empty();
-        }
     }
 }
