@@ -1380,7 +1380,7 @@ class HttpLookupTableSourceITCaseTest {
             return testName + " [" + methodName + "]";
         }
     }
-    
+
     private void setupServerStubForSpec(TestSpec spec) {
         if (spec.badStatus) {
             // Setup for bad status test
@@ -1467,10 +1467,7 @@ class HttpLookupTableSourceITCaseTest {
         }
 
         sql.append("'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',");
-
-        //if (spec.useMetadata) {
-        //    sql.append("'gid.connector.http.source.lookup.continue_on_error    '='true',");
-        //}
+        
         sql.append("'gid.connector.http.source.lookup.continue_on_error'='true',");
 
         sql.append("'asyncPolling' = '").append(spec.useAsync ? "true" : "false").append("',")
