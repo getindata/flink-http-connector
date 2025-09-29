@@ -986,6 +986,20 @@ class HttpLookupTableSourceITCaseTest {
         tEnv.executeSql(lookupTable);
     }
 
+    private void assertResultsForSpec(TestSpec spec, Collection<Row> rows) {
+        if (spec.badStatus) {
+            assertEnrichedRowsNoDataBadStatus(rows);
+        } else if (spec.deserError) {
+            assertEnrichedRowsDeserException(rows);
+        } else if (spec.connectionError) {
+            assertEnrichedRowsException(rows);
+        } else if (spec.useMetadata) {
+            assertEnrichedRows(rows, true);
+        } else {
+            assertEnrichedRows(rows);
+        }
+    }
+
     private void assertEnrichedRows(Collection<Row> collectedRows) {
         assertEnrichedRows(collectedRows, false);
     }
@@ -1472,19 +1486,5 @@ class HttpLookupTableSourceITCaseTest {
             .append("'table.exec.async-lookup.timeout' = '120s'")
             .append(")");
         return sql.toString();
-    }
-
-    private void assertResultsForSpec(TestSpec spec, Collection<Row> rows) {
-        if (spec.badStatus) {
-            assertEnrichedRowsNoDataBadStatus(rows);
-        } else if (spec.deserError) {
-            assertEnrichedRowsDeserException(rows);
-        } else if (spec.connectionError) {
-            assertEnrichedRowsException(rows);
-        } else if (spec.useMetadata) {
-            assertEnrichedRows(rows, true);
-        } else {
-            assertEnrichedRows(rows);
-        }
     }
 }
