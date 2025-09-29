@@ -1465,16 +1465,12 @@ class HttpLookupTableSourceITCaseTest {
         } else {
             sql.append("'url' = 'http://localhost:9090/client',");
         }
-
         sql.append("'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',");
-        
         sql.append("'gid.connector.http.source.lookup.continue_on_error'='true',");
-
         sql.append("'asyncPolling' = '").append(spec.useAsync ? "true" : "false").append("',")
             .append("'table.exec.async-lookup.buffer-capacity' = '50',")
             .append("'table.exec.async-lookup.timeout' = '120s'")
             .append(")");
-
         return sql.toString();
     }
 
