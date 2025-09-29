@@ -643,6 +643,7 @@ class HttpLookupTableSourceITCaseTest {
         "Basic dXNlcjpwYXNzd29yZA==, Basic dXNlcjpwYXNzd29yZA==, true",
         "Bearer dXNlcjpwYXNzd29yZA==, Bearer dXNlcjpwYXNzd29yZA==, true"
     })
+
     void testLookupWithUseRawAuthHeader(
             String authHeaderRawValue,
             String expectedAuthHeaderValue,
@@ -984,6 +985,7 @@ class HttpLookupTableSourceITCaseTest {
         tEnv.executeSql(sourceTable);
         tEnv.executeSql(lookupTable);
     }
+
     private void assertEnrichedRows(Collection<Row> collectedRows) {
         assertEnrichedRows(collectedRows, false);
     }
@@ -1016,6 +1018,7 @@ class HttpLookupTableSourceITCaseTest {
             }
         );
     }
+
     private void assertEnrichedRowsNoDataBadStatus(Collection<Row> collectedRows ) {
 
         final int rowArity = 10;
@@ -1148,6 +1151,7 @@ class HttpLookupTableSourceITCaseTest {
             List<StringValuePattern> matchingJsonPaths) {
         setUpServerBodyStub(methodName, wireMockServer, matchingJsonPaths, null, null, null, false);
     }
+
     private void setUpServerBodyStub(
             String methodName,
             WireMockServer wireMockServer,
@@ -1155,6 +1159,7 @@ class HttpLookupTableSourceITCaseTest {
             Integer badStatus) {
         setUpServerBodyStub(methodName, wireMockServer, matchingJsonPaths, null, null, badStatus, false);
     }
+
     private void setUpServerBodyStub(
             String methodName,
             WireMockServer wireMockServer,
@@ -1211,6 +1216,7 @@ class HttpLookupTableSourceITCaseTest {
 
         wireMockServer.addStubMapping(stubMapping);
     }
+
     // Prototype parameterizedTest
     @ParameterizedTest
     @MethodSource("testSpecProvider")
@@ -1236,6 +1242,7 @@ class HttpLookupTableSourceITCaseTest {
             assertThat(expectToContinue).isFalse();
         }
     }
+
     static Collection<TestSpec> testSpecProvider() {
         List<TestSpec> specs = new ArrayList<>();
 
@@ -1373,6 +1380,7 @@ class HttpLookupTableSourceITCaseTest {
             return testName + " [" + methodName + "]";
         }
     }
+    
     private void setupServerStubForSpec(TestSpec spec) {
         if (spec.badStatus) {
             // Setup for bad status test
