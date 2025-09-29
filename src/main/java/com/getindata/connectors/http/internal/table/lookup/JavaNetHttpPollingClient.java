@@ -98,11 +98,10 @@ public class JavaNetHttpPollingClient implements PollingClient {
     @Override
     public HttpRowDataWrapper pull(RowData lookupRow) {
         if (lookupRow == null) {
-            return new HttpRowDataWrapper(Collections.emptyList(),
-                    null,
-                    null,
-                    null,
-                    HttpCompletionState.SUCCESS);
+            return HttpRowDataWrapper.builder()
+                    .data(Collections.emptyList())
+                    .httpCompletionState(HttpCompletionState.SUCCESS)
+                    .build();
         }
         try {
             log.debug("Collection<RowData> pull with Rowdata={}.", lookupRow);
@@ -136,12 +135,11 @@ public class JavaNetHttpPollingClient implements PollingClient {
             if (errMessage == null) {
                 errMessage = e.toString();
             }
-            httpRowDataWrapper = new HttpRowDataWrapper(
-                    Collections.emptyList(),
-                    errMessage,
-                    null,
-                    null,
-                    HttpCompletionState.EXCEPTION);
+            return HttpRowDataWrapper.builder()
+                    .data(Collections.emptyList())
+                    .errorMessage(errMessage)
+                    .httpCompletionState(HttpCompletionState.EXCEPTION)
+                    .build();
         }
         if (httpRowDataWrapper  == null) {
             // Case 3 Successful path.
@@ -217,22 +215,20 @@ public class JavaNetHttpPollingClient implements PollingClient {
 
         log.debug("Received status code [{}] for RestTableSource request with Server response body [{}] ",
                 response.statusCode(), responseBody);
-        HttpRowDataWrapper httpRowDataWrapper;
         if (!isError && (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response))) {
-            httpRowDataWrapper = new HttpRowDataWrapper(
-                Collections.emptyList(),
-                null,
-                null,
-                null,
-                HttpCompletionState.SUCCESS);
+            return HttpRowDataWrapper.builder()
+                    .data(Collections.emptyList())
+                    .httpCompletionState(HttpCompletionState.SUCCESS)
+                    .build();
         } else {
             if (isError) {
-                httpRowDataWrapper = new HttpRowDataWrapper(
-                    Collections.emptyList(),
-                    responseBody,
-                    response.headers().map(),
-                    response.statusCode(),
-                    HttpCompletionState.HTTP_ERROR_STATUS);
+                return HttpRowDataWrapper.builder()
+                        .data(Collections.emptyList())
+                        .errorMessage(responseBody)
+                        .httpHeadersMap(response.headers().map())
+                        .httpStatusCode(response.statusCode())
+                        .httpCompletionState(HttpCompletionState.HTTP_ERROR_STATUS)
+                        .build();
             } else {
                 Collection<RowData> rowData = Collections.emptyList();
                 HttpCompletionState httpCompletionState= HttpCompletionState.SUCCESS;
@@ -244,16 +240,15 @@ public class JavaNetHttpPollingClient implements PollingClient {
                     httpCompletionState = HttpCompletionState.EXCEPTION;
                     errMessage = e.getMessage();
                 }
-                httpRowDataWrapper = new HttpRowDataWrapper(
-                    rowData,
-                    errMessage,
-                    response.headers().map(),
-                    response.statusCode(),
-                    httpCompletionState
-                );
+                return HttpRowDataWrapper.builder()
+                        .data(rowData)
+                        .errorMessage(errMessage)
+                        .httpHeadersMap(response.headers().map())
+                        .httpStatusCode(response.statusCode())
+                        .httpCompletionState( httpCompletionState)
+                        .build();
             }
         }
-        return httpRowDataWrapper;
     }
 
     @VisibleForTesting

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import lombok.Builder;
 import lombok.Data;
 import org.apache.flink.table.data.RowData;
 
@@ -13,6 +14,7 @@ import org.apache.flink.table.data.RowData;
  * It also contains information from the http response, namely the http headers map
  * and the http status code where available. The extra information is for the metadata columns.
  */
+@Builder
 @Data
 public class HttpRowDataWrapper {
     private final Collection<RowData> data;

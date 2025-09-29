@@ -10,41 +10,38 @@ public class HttpRowDataWrapperTest {
 
     @Test
     void testshouldIgnore() {
-        HttpRowDataWrapper httpRowDataWrapper = new HttpRowDataWrapper(Collections.emptyList(),
-                null,
-                null,
-                null,
-                HttpCompletionState.SUCCESS);
+        HttpRowDataWrapper httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .data(Collections.emptyList())
+                .httpCompletionState(HttpCompletionState.SUCCESS)
+                .build();
         assertThat(httpRowDataWrapper.shouldIgnore()).isTrue();
-        httpRowDataWrapper = new HttpRowDataWrapper(null,
-                "aa",
-                null,
-                null,
-                HttpCompletionState.SUCCESS);
+        httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .errorMessage("aa")
+                .httpCompletionState(HttpCompletionState.SUCCESS)
+                .build();
         assertThat(httpRowDataWrapper.shouldIgnore()).isFalse();
-        httpRowDataWrapper = new HttpRowDataWrapper(Collections.emptyList(),
-                "aa",
-                null,
-                null,
-                HttpCompletionState.SUCCESS);
+        httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .data(Collections.emptyList())
+                .errorMessage("aa")
+                .httpCompletionState(HttpCompletionState.SUCCESS)
+                .build();
         assertThat(httpRowDataWrapper.shouldIgnore()).isFalse();
-        httpRowDataWrapper = new HttpRowDataWrapper(Collections.emptyList(),
-                null,
-                new HashMap<>(),
-                null,
-                HttpCompletionState.SUCCESS);
+        httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .data(Collections.emptyList())
+                .httpHeadersMap(new HashMap<>())
+                .httpCompletionState(HttpCompletionState.SUCCESS)
+                .build();
         assertThat(httpRowDataWrapper.shouldIgnore()).isFalse();
-        httpRowDataWrapper = new HttpRowDataWrapper(Collections.emptyList(),
-                null,
-                null,
-                123,
-                HttpCompletionState.SUCCESS);
+        httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .data(Collections.emptyList())
+                .httpStatusCode(123)
+                .httpCompletionState(HttpCompletionState.SUCCESS)
+                .build();
         assertThat(httpRowDataWrapper.shouldIgnore()).isFalse();
-        httpRowDataWrapper = new HttpRowDataWrapper(Collections.emptyList(),
-                null,
-                null,
-                null,
-                HttpCompletionState.EXCEPTION);
+        httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .data(Collections.emptyList())
+                .httpCompletionState(HttpCompletionState.EXCEPTION)
+                .build();
         assertThat(httpRowDataWrapper.shouldIgnore()).isFalse();
     }
 }

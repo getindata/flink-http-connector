@@ -109,15 +109,12 @@ class HttpLookupTableSourceTest {
         Map<String, List<String>> testHeaders = new HashMap<>();
         testHeaders.put("AAA",List.of("BBB","CCC"));
         testHeaders.put("DDD",List.of("EEE"));
-
-        HttpRowDataWrapper httpRowDataWrapper= new HttpRowDataWrapper(
-                                null,
-                testErrorString,
-                testHeaders,
-                500,
-                testCompletionState
-        );
-
+        HttpRowDataWrapper httpRowDataWrapper = HttpRowDataWrapper.builder()
+                .errorMessage(testErrorString)
+                .httpStatusCode(500)
+                .httpHeadersMap(testHeaders)
+                .httpCompletionState( testCompletionState)
+                .build();
         assertThat(ERROR_STRING.converter.read(httpRowDataWrapper))
             .isEqualTo(StringData.fromString(testErrorString));
         assertThat(ERROR_STRING.converter.read(null))
