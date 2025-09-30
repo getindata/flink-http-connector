@@ -191,7 +191,7 @@ Metadata columns can be specified and hold http information. They are optional r
 
 | Key                   | Data Type                        | Description                            |
 |-----------------------|----------------------------------|----------------------------------------|
-| error-string             | STRING NULL                      | A message associated with the error    |
+| error-string          | STRING NULL                      | A message associated with the error    |
 | http-status-code      | INT NULL                         | The HTTP status code                   |
 | http-headers-map      | MAP <STRING, ARRAY<STRING>> NULL | The headers returned with the response |
 | http-completion-state | STRING NULL                      | The completion state of the http call. |
