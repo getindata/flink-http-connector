@@ -327,7 +327,7 @@ public class HttpLookupTableSource
     // --------------------------------------------------------------------------------------------
     enum ReadableMetadata {
         ERROR_STRING(
-            "error_string",
+            "error-string",
             DataTypes.STRING(),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;
@@ -340,7 +340,7 @@ public class HttpLookupTableSource
                 }
             }),
         HTTP_STATUS_CODE(
-            "http_status_code",
+            "http-status-code",
             DataTypes.INT(),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;
@@ -351,7 +351,7 @@ public class HttpLookupTableSource
             }
         ),
         HTTP_HEADERS(
-            "http_headers",
+            "http-headers",
             DataTypes.MAP(DataTypes.STRING(), DataTypes.ARRAY(DataTypes.STRING())),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;
@@ -375,7 +375,7 @@ public class HttpLookupTableSource
             }
         ),
         HTTP_COMPLETION_STATE(
-            "http_completion_state",
+            "http-completion-state",
             DataTypes.STRING(),
             new MetadataConverter() {
                 private static final long serialVersionUID = 1L;

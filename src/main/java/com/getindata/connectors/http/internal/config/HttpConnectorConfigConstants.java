@@ -89,7 +89,7 @@ public final class HttpConnectorConfigConstants {
         SOURCE_LOOKUP_PREFIX + "connection.timeout";
 
     public static final String CONTINUE_ON_ERROR =
-            SOURCE_LOOKUP_PREFIX + "continue_on_error";
+            SOURCE_LOOKUP_PREFIX + "continue-on-error";
 
     public static final String SOURCE_PROXY_HOST =
             SOURCE_LOOKUP_PREFIX + "proxy.host";

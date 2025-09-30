@@ -19,6 +19,8 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -1264,17 +1266,13 @@ class HttpLookupTableSourceITCaseTest {
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
             for (boolean asyncFlag : Arrays.asList(false, true)) {
                 for (boolean continueOnError : Arrays.asList(false, true)) {
-                    specs.add(new TestSpec(
-                            "Basic HTTP Lookup Join",
-                            method,
-                            false, // useMetadata
-                            false, // badStatus
-                            false, // deserError
-                            false, // connectionError
-                            4,     // maxRows
-                            asyncFlag, // useAsync
-                            continueOnError
-                    ));
+                    specs.add(TestSpec.builder()
+                            .testName("Basic HTTP Lookup Join")
+                            .methodName(method)
+                            .maxRows(4)
+                            .useAsync(asyncFlag)
+                            .continueOnError(continueOnError)
+                            .build());
                 }
             }
         }
@@ -1283,17 +1281,14 @@ class HttpLookupTableSourceITCaseTest {
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
             for (boolean asyncFlag : Arrays.asList(false, true)) {
                 for (boolean continueOnError : Arrays.asList(false, true)) {
-                    specs.add(new TestSpec(
-                            "HTTP Lookup Join With Metadata Success",
-                            method,
-                            true,  // useMetadata
-                            false, // badStatus
-                            false, // deserError
-                            false, // connectionError
-                            4,     // maxRows
-                            asyncFlag,   // useAsync
-                            continueOnError
-                    ));
+                    specs.add(TestSpec.builder()
+                            .methodName(method)
+                            .testName("HTTP Lookup Join With Metadata Success")
+                            .useMetadata(true)
+                            .maxRows(4)
+                            .useAsync(asyncFlag)
+                            .continueOnError(continueOnError)
+                            .build());
                 }
             }
         }
@@ -1302,17 +1297,15 @@ class HttpLookupTableSourceITCaseTest {
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
             for (boolean asyncFlag : Arrays.asList(false, true)) {
                 for (boolean continueOnError : Arrays.asList(false, true)) {
-                    specs.add(new TestSpec(
-                            "HTTP Lookup Join With Metadata Bad Status",
-                            method,
-                            true,  // useMetadata
-                            true,  // badStatus
-                            false, // deserError
-                            false, // connectionError
-                            4,     // maxRows
-                            asyncFlag,   // useAsync
-                            continueOnError
-                    ));
+                    specs.add(TestSpec.builder()
+                            .testName("HTTP Lookup Join With Metadata Bad Status")
+                            .methodName(method)
+                            .useMetadata(true)
+                            .maxRows(4)
+                            .useAsync(asyncFlag)
+                            .badStatus(true)
+                            .continueOnError(continueOnError)
+                            .build());
                 }
             }
         }
@@ -1321,17 +1314,16 @@ class HttpLookupTableSourceITCaseTest {
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
             for (boolean asyncFlag : Arrays.asList(false, true)) {
                 for (boolean continueOnError : Arrays.asList(false, true)) {
-                    specs.add(new TestSpec(
-                            "HTTP Lookup Join With Metadata Deserialization Error",
-                            method,
-                            true,  // useMetadata
-                            false, // badStatus
-                            true,  // deserError
-                            false, // connectionError
-                            4,     // maxRows
-                            asyncFlag,   // useAsync
-                            continueOnError
-                    ));
+                    specs.add(TestSpec.builder()
+                            .testName("HTTP Lookup Join With Metadata Deserialization Error")
+                            .methodName(method)
+                            .useMetadata(true)
+                            .maxRows(4)
+                            .useAsync(asyncFlag)
+                            .deserError(true)
+                            .continueOnError(continueOnError)
+                            .build()
+                    );
                 }
             }
         }
@@ -1340,24 +1332,24 @@ class HttpLookupTableSourceITCaseTest {
         for (String method : Arrays.asList("GET", "POST", "PUT")) {
             for (boolean asyncFlag : Arrays.asList(false, true)) {
                 for (boolean continueOnError : Arrays.asList(false, true)) {
-                    specs.add(new TestSpec(
-                            "HTTP Lookup Join With Metadata Connection Error",
-                            method,
-                            true,  // useMetadata
-                            false, // badStatus
-                            false, // deserError
-                            true,  // connectionError
-                            4,     // maxRows
-                            asyncFlag,  // useAsync
-                            continueOnError
-                    ));
+                    specs.add(TestSpec.builder()
+                            .testName("HTTP Lookup Join With Metadata Connection Error")
+                            .methodName(method)
+                            .useMetadata(true)
+                            .maxRows(4)
+                            .useAsync(asyncFlag)
+                            .connectionError(true)
+                            .continueOnError(continueOnError)
+                            .build()
+                    );
                 }
             }
         }
 
         return specs;
     }
-
+    @Builder
+    @Data
     private static class TestSpec {
         // Test identification
         final String testName;
@@ -1373,21 +1365,6 @@ class HttpLookupTableSourceITCaseTest {
         final int maxRows;
         final boolean useAsync;
         final boolean continueOnError;
-
-        // Constructor
-        private TestSpec(String testName, String methodName, boolean useMetadata,
-                         boolean badStatus, boolean deserError, boolean connectionError,
-                         int maxRows, boolean useAsync, boolean continueOnError) {
-            this.testName = testName;
-            this.methodName = methodName;
-            this.useMetadata = useMetadata;
-            this.badStatus = badStatus;
-            this.deserError = deserError;
-            this.connectionError = connectionError;
-            this.maxRows = maxRows;
-            this.useAsync = useAsync;
-            this.continueOnError = continueOnError;
-        }
 
         @Override
         public String toString() {
@@ -1459,10 +1436,10 @@ class HttpLookupTableSourceITCaseTest {
 
         if (spec.useMetadata) {
             sql.append(",")
-                    .append("errStr STRING METADATA FROM 'error_string',")
-                    .append("statusCode INTEGER METADATA FROM 'http_status_code',")
-                    .append("headers MAP<STRING, ARRAY<STRING>> METADATA from 'http_headers',")
-                    .append("completionState STRING METADATA from 'http_completion_state'");
+                    .append("errStr STRING METADATA FROM 'error-string',")
+                    .append("statusCode INTEGER METADATA FROM 'http-status-code',")
+                    .append("headers MAP<STRING, ARRAY<STRING>> METADATA from 'http-headers',")
+                    .append("completionState STRING METADATA from 'http-completion-state'");
         }
 
         sql.append(") WITH (")
@@ -1480,7 +1457,7 @@ class HttpLookupTableSourceITCaseTest {
             sql.append("'url' = 'http://localhost:9090/client',");
         }
         sql.append("'gid.connector.http.source.lookup.header.Content-Type' = 'application/json',");
-        sql.append("'gid.connector.http.source.lookup.continue_on_error'='true',");
+        sql.append("'gid.connector.http.source.lookup.continue-on-error'='true',");
         sql.append("'asyncPolling' = '").append(spec.useAsync ? "true" : "false").append("',")
             .append("'table.exec.async-lookup.buffer-capacity' = '50',")
             .append("'table.exec.async-lookup.timeout' = '120s'")

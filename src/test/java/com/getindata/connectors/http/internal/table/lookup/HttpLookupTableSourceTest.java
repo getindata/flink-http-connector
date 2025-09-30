@@ -79,7 +79,7 @@ class HttpLookupTableSourceTest {
     }
 
     @Test
-    void testlistReadableMetadata() {
+    void testListReadableMetadata() {
         HttpLookupTableSource tableSource =
                 (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
         Map<String, DataType> listMetadataMap = tableSource.listReadableMetadata();
@@ -134,8 +134,20 @@ class HttpLookupTableSourceTest {
         assertThat(keys.size()).isEqualTo(2);
 
         // Create a map to store the converted data for comparison
-        Map<String, List<String>> actualMap = new HashMap<>();
-        ArrayData valueArray = mapData.valueArray();
+        Map<String, List<String>> actualMap = convertGenericMapDataToMap(mapData, keys);
+        // Now compare the extracted map with the expected map
+        assertThat(actualMap).isEqualTo(testHeaders);
+
+        assertThat(HTTP_COMPLETION_STATE.converter.read(null)).isNull();
+
+        assertThat(HTTP_COMPLETION_STATE.converter.read( httpRowDataWrapper))
+                .isEqualTo(StringData.fromString(testCompletionState.name()));
+    }
+
+    private static @NotNull Map<String, List<String>>
+        convertGenericMapDataToMap(GenericMapData genericMapData, ArrayData keys) {
+        Map<String, List<String>> map = new HashMap<>();
+        ArrayData valueArray = genericMapData.valueArray();
         // Extract and convert each key-value pair
         for (int i = 0; i < keys.size(); i++) {
             ArrayData values = valueArray.getArray(i);
@@ -149,15 +161,9 @@ class HttpLookupTableSourceTest {
                 valueList.add(element.toString());
             }
 
-            actualMap.put(keyStr, valueList);
+            map.put(keyStr, valueList);
         }
-        // Now compare the extracted map with the expected map
-        assertThat(actualMap).isEqualTo(testHeaders);
-
-        assertThat(HTTP_COMPLETION_STATE.converter.read(null)).isNull();
-
-        assertThat(HTTP_COMPLETION_STATE.converter.read( httpRowDataWrapper))
-                .isEqualTo(StringData.fromString(testCompletionState.name()));
+        return map;
     }
 
     @Test

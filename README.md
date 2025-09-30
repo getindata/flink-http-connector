@@ -178,25 +178,25 @@ Because of that, if AsyncIO timer passes, Flink will throw TimeoutException whic
 
 #### Available Metadata (Lookup source)
 
-The metadata column `http_status_code`, if specified in the table definition, will get the HTTP status code.
-The metadata column `http_headers_map `, if specified in the table definition, will get a map of the HTTP headers.
+The metadata column `http-status-code`, if specified in the table definition, will get the HTTP status code.
+The metadata column `http-headers-map `, if specified in the table definition, will get a map of the HTTP headers.
 
 HTTP requests can fail either immediately or after temporary error retries. The usual behaviour after such failures is to end the job. If you would like to continue 
-processing after these failures then specify `gid.connector.http.source.lookup.continue_on_error` as true. THe lookup join will complete without content in the expected enrichment columns from the http call,
+processing after these failures then specify `gid.connector.http.source.lookup.continue-on-error` as true. THe lookup join will complete without content in the expected enrichment columns from the http call,
 this means that these columns will be null for nullable columns and hold a default value for the type for non-nullable columns.
 
-When using `gid.connector.http.source.lookup.continue_on_error` as true, consider adding extra metadata columns that will surface information about failures into your stream.
+When using `gid.connector.http.source.lookup.continue-on-error` as true, consider adding extra metadata columns that will surface information about failures into your stream.
 
 Metadata columns can be specified and hold http information. They are optional read-only columns that must be declared VIRTUAL to exclude them during an INSERT INTO operation.
 
 | Key                   | Data Type                        | Description                            |
 |-----------------------|----------------------------------|----------------------------------------|
-| error_string          | STRING NULL                      | A message associated with the error    |
-| http_status_code      | INT NULL                         | The HTTP status code                   |
-| http_headers_map      | MAP <STRING, ARRAY<STRING>> NULL | The headers returned with the response |
-| http_completion_state | STRING NULL                      | The completion state of the http call. |
+| error-string             | STRING NULL                      | A message associated with the error    |
+| http-status-code      | INT NULL                         | The HTTP status code                   |
+| http-headers-map      | MAP <STRING, ARRAY<STRING>> NULL | The headers returned with the response |
+| http-completion-state | STRING NULL                      | The completion state of the http call. |
 
-##### http_completion_state possible values
+##### http-completion-state possible values
 
 | Value             | Description            |
 |:------------------|------------------------|
@@ -204,7 +204,7 @@ Metadata columns can be specified and hold http information. They are optional r
 | HTTP_ERROR_STATUS | HTTP error status code |
 | EXCEPTION         | An Exception occurred  |
 
-If the error_string metadata column is defined on the table and the call succeeds then it will have a null value.
+If the `error-string` metadata column is defined on the table and the call succeeds then it will have a null value.
 
 When a http lookup call fails and populates the metadata columns with the error information, the expected enrichment columns from the http call
 are not populated, this means that they will be null for nullable columns and hold a default value for the type for non-nullable columns. 
@@ -224,7 +224,7 @@ Notice that HTTP codes are categorized into into 3 groups:
 - error responses - unexpected responses are not retried. Any HTTP error code which is not configured as successful or temporary error is treated as an unretriable error.
 
 For temporary errors that have reached max retries attempts (per request) and error responses, the operation will
-succeed if `gid.connector.http.source.lookup.continue_on_error` is true, otherwise the job will fail.
+succeed if `gid.connector.http.source.lookup.continue-on-error` is true, otherwise the job will fail.
 
 ##### Retry strategy
 User can choose retry strategy type for source table:
@@ -594,7 +594,7 @@ be requested if the current time is later than the cached token expiry time minu
 | gid.connector.http.source.lookup.retry-strategy.exponential-delay.initial-backoff    | optional | Exponential-delay initial delay. Default 1 second.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | gid.connector.http.source.lookup.retry-strategy.exponential-delay.max-backoff        | optional | Exponential-delay maximum delay. Default 1 minute. Use with `lookup.max-retries` parameter.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | gid.connector.http.source.lookup.retry-strategy.exponential-delay.backoff-multiplier | optional | Exponential-delay multiplier. Default value 1.5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| gid.connector.http.source.lookup.continue_on_error                                   | optional | When true, the flow will continue on errors, returning row content. When false (the default) the job ends on errors.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| gid.connector.http.source.lookup.continue-on-error                                   | optional | When true, the flow will continue on errors, returning row content. When false (the default) the job ends on errors.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | gid.connector.http.source.lookup.proxy.host                                          | optional | Specify the hostname of the proxy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | gid.connector.http.source.lookup.proxy.port                                          | optional | Specify the port of the proxy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | gid.connector.http.source.lookup.proxy.username                                      | optional | Specify the username used for proxy authentication.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
