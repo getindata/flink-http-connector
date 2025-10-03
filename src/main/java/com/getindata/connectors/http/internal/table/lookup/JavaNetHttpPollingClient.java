@@ -29,6 +29,7 @@ import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.StringUtils;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.HttpStatusCodeValidationFailedException;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.PollingClient;
 import com.getindata.connectors.http.internal.retry.HttpClientWithRetry;
@@ -37,17 +38,19 @@ import com.getindata.connectors.http.internal.status.HttpCodesParser;
 import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.RESULT_TYPE;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_CONTINUE_ON_ERROR;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST;
+
 
 /**
  * An implementation of {@link PollingClient} that uses Java 11's {@link HttpClient}.
  * This implementation supports HTTP traffic only.
  */
 @Slf4j
-public class JavaNetHttpPollingClient implements PollingClient<RowData> {
+public class JavaNetHttpPollingClient implements PollingClient {
 
     private static final String RESULT_TYPE_SINGLE_VALUE = "single-value";
     private static final String RESULT_TYPE_ARRAY = "array";
@@ -59,6 +62,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
     private final HttpLookupConfig options;
     private final Set<Integer> ignoredErrorCodes;
+    private final boolean continueOnError;
 
     public JavaNetHttpPollingClient(
             HttpClient httpClient,
@@ -71,7 +75,6 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         this.objectMapper = new ObjectMapper();
         this.httpPostRequestCallback = options.getHttpPostRequestCallback();
         this.options = options;
-
         var config = options.getReadableConfig();
 
         this.ignoredErrorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES));
@@ -79,6 +82,7 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         var successCodes = new HashSet<Integer>();
         successCodes.addAll(HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_SUCCESS_CODES)));
         successCodes.addAll(ignoredErrorCodes);
+        this.continueOnError = config.get(SOURCE_LOOKUP_CONTINUE_ON_ERROR);
 
         this.httpClient = HttpClientWithRetry.builder()
                 .httpClient(httpClient)
@@ -91,11 +95,13 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         httpClient.registerMetrics(context.getMetricGroup());
     }
 
-
     @Override
-    public Collection<RowData> pull(RowData lookupRow) {
+    public HttpRowDataWrapper pull(RowData lookupRow) {
         if (lookupRow == null) {
-            return Collections.emptyList();
+            return HttpRowDataWrapper.builder()
+                    .data(Collections.emptyList())
+                    .httpCompletionState(HttpCompletionState.SUCCESS)
+                    .build();
         }
         try {
             log.debug("Collection<RowData> pull with Rowdata={}.", lookupRow);
@@ -105,13 +111,42 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         }
     }
 
-    private Collection<RowData> queryAndProcess(RowData lookupData) throws Exception {
+    private HttpRowDataWrapper queryAndProcess(RowData lookupData) throws Exception {
         var request = requestFactory.buildLookupRequest(lookupData);
 
         var oidcProcessor = HttpHeaderUtils.createOIDCHeaderPreprocessor(options.getReadableConfig());
-        var response = httpClient.send(
-            () -> updateHttpRequestIfRequired(request, oidcProcessor), BodyHandlers.ofString());
-        return processHttpResponse(response, request);
+        HttpResponse<String> response =null;
+        HttpRowDataWrapper httpRowDataWrapper = null;
+        try {
+            response = httpClient.send(
+                () -> updateHttpRequestIfRequired(request, oidcProcessor), BodyHandlers.ofString());
+        } catch (HttpStatusCodeValidationFailedException e) {
+            // Case 1 http non successful response
+            if (!this.continueOnError) throw e;
+            // use the response in the Exception
+            response = (HttpResponse<String>) e.getResponse();
+            httpRowDataWrapper = processHttpResponse(response, request, true);
+        } catch (Exception e) {
+            // Case 2 Exception occurred
+            if (!this.continueOnError) throw e;
+            String errMessage =  e.getMessage();
+            // some exceptions do not have messages including the java.net.ConnectException we can get here if
+            // the connection is bad.
+            if (errMessage == null) {
+                errMessage = e.toString();
+            }
+            return HttpRowDataWrapper.builder()
+                    .data(Collections.emptyList())
+                    .errorMessage(errMessage)
+                    .httpCompletionState(HttpCompletionState.EXCEPTION)
+                    .build();
+        }
+        if (httpRowDataWrapper  == null) {
+            // Case 3 Successful path.
+            httpRowDataWrapper = processHttpResponse(response, request, false);
+        }
+
+        return httpRowDataWrapper;
     }
 
     /**
@@ -161,9 +196,18 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
         return httpRequest;
     }
 
-    private Collection<RowData> processHttpResponse(
+    /**
+     * Process the http response.
+     * @param response http response
+     * @param request http request
+     * @param isError whether the http response is an error (i.e. not successful after the retry
+     *                processing and accounting for the config)
+     * @return HttpRowDataWrapper http row information and http error information
+     */
+    private HttpRowDataWrapper processHttpResponse(
             HttpResponse<String> response,
-            HttpLookupSourceRequestEntry request) throws IOException {
+            HttpLookupSourceRequestEntry request,
+            boolean isError) throws IOException {
 
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
 
@@ -171,11 +215,40 @@ public class JavaNetHttpPollingClient implements PollingClient<RowData> {
 
         log.debug("Received status code [{}] for RestTableSource request with Server response body [{}] ",
                 response.statusCode(), responseBody);
-
-        if (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response)) {
-            return Collections.emptyList();
+        if (!isError && (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response))) {
+            return HttpRowDataWrapper.builder()
+                    .data(Collections.emptyList())
+                    .httpCompletionState(HttpCompletionState.SUCCESS)
+                    .build();
+        } else {
+            if (isError) {
+                return HttpRowDataWrapper.builder()
+                        .data(Collections.emptyList())
+                        .errorMessage(responseBody)
+                        .httpHeadersMap(response.headers().map())
+                        .httpStatusCode(response.statusCode())
+                        .httpCompletionState(HttpCompletionState.HTTP_ERROR_STATUS)
+                        .build();
+            } else {
+                Collection<RowData> rowData = Collections.emptyList();
+                HttpCompletionState httpCompletionState= HttpCompletionState.SUCCESS;
+                String errMessage = null;
+                try {
+                    rowData = deserialize(responseBody);
+                } catch (IOException e) {
+                    if (!this.continueOnError) throw e;
+                    httpCompletionState = HttpCompletionState.EXCEPTION;
+                    errMessage = e.getMessage();
+                }
+                return HttpRowDataWrapper.builder()
+                        .data(rowData)
+                        .errorMessage(errMessage)
+                        .httpHeadersMap(response.headers().map())
+                        .httpStatusCode(response.statusCode())
+                        .httpCompletionState( httpCompletionState)
+                        .build();
+            }
         }
-        return deserialize(responseBody);
     }
 
     @VisibleForTesting

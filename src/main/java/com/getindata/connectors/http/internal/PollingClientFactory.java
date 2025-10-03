@@ -3,14 +3,15 @@ package com.getindata.connectors.http.internal;
 import java.io.Serializable;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.ConfigurationException;
 
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupConfig;
 
-public interface PollingClientFactory<OUT> extends Serializable {
+public interface PollingClientFactory extends Serializable {
 
-    PollingClient<OUT> createPollClient(
+    PollingClient createPollClient(
         HttpLookupConfig options,
-        DeserializationSchema<OUT> schemaDecoder
+        DeserializationSchema<RowData> schemaDecoder
     ) throws ConfigurationException;
 }
