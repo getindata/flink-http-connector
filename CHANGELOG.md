@@ -2,8 +2,10 @@
 
 ## [Unreleased]
 
-- Added ability to continue on error, introducing new metadata columns and new configuration option
-  `gid.connector.http.source.lookup.continue-on-error` 
+## [0.22.0] - 2025-10-03
+
+-   Added ability to continue on error, introducing new metadata columns and new configuration option
+    `gid.connector.http.source.lookup.continue-on-error` 
 
 ## [0.21.0] - 2025-09-16
 
@@ -247,7 +249,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.21.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.22.0...HEAD
+
+[0.22.0]: https://github.com/getindata/flink-http-connector/compare/0.21.0...0.22.0
 
 [0.21.0]: https://github.com/getindata/flink-http-connector/compare/0.20.0...0.21.0
 
