@@ -124,7 +124,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             Builder requestBuilder = java.net.http.HttpRequest
                 .newBuilder()
                 .uri(endpointUri)
-                .version(Version.HTTP_1_1)
+                .version(Version.HTTP_2)
                 .timeout(Duration.ofSeconds(httpRequestTimeOutSeconds))
                 .method(method, publisher);
 
