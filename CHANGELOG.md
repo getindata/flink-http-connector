@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Added http 2 support.
+
 ## [0.22.0] - 2025-10-03
 
 -   Added ability to continue on error, introducing new metadata columns and new configuration option

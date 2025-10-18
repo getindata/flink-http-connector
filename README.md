@@ -12,6 +12,7 @@ The goal for HTTP TableLookup connector was to use it in Flink SQL statement as 
  
 Currently, HTTP source connector supports only Lookup Joins (TableLookup) [1] in Table/SQL API.
 `HttpSink` supports both Streaming API (when using [HttpSink](src/main/java/com/getindata/connectors/http/internal/sink/HttpSink.java) built using [HttpSinkBuilder](src/main/java/com/getindata/connectors/http/internal/sink/HttpSinkBuilder.java)) and the Table API (using connector created in [HttpDynamicTableSinkFactory](src/main/java/com/getindata/connectors/http/internal/table/HttpDynamicTableSinkFactory.java)). 
+Note that the connector will work with both http 1.1 and http 2 endpoints.
 
 ## Updating the connector
 In case of updating http-connector please see [Breaking changes](#breaking-changes) section.
