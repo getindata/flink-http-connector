@@ -4,6 +4,7 @@
 
 - Added http 2 support.
 - Amend to not log HTTP request response and header values by default.
+- Added http 2 support.
 
 ## [0.22.0] - 2025-10-03
 

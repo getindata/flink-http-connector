@@ -210,7 +210,6 @@ public class JavaNetHttpPollingClient implements PollingClient {
             boolean isError) throws IOException {
 
         this.httpPostRequestCallback.call(response, request, "endpoint", Collections.emptyMap());
-        request.getHttpRequest().uri();
         var responseBody = response.body();
 
         log.debug("Received status code [{}] for RestTableSource request", response.statusCode());
