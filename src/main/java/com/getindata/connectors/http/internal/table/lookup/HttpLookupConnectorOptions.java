@@ -39,6 +39,17 @@ public class HttpLookupConnectorOptions {
             .stringType()
             .noDefaultValue();
 
+    public static final ConfigOption<String> LOOKUP_HTTP_VERSION =
+        ConfigOptions.key(SOURCE_LOOKUP_QUERY_HTTP_VERSION)
+            .stringType()
+            .noDefaultValue()
+            .withDescription("Version of HTTP to use for lookup HTTP requests. " +
+                "The valid values are HTTP_1_1 and HTTP_2, which specify HTTP 1.1 or 2" +
+                " respectively. This option may be required as HTTP_1_1, if the" +
+                " endpoint is http 1.1, because some http 1.1 endpoints reject HTTP" +
+                " Version 2 calls, with 'Invalid HTTP request received' and " +
+                " 'HTTP/2 upgrade not supported'.");
+
     public static final ConfigOption<String> LOOKUP_REQUEST_FORMAT =
         ConfigOptions.key("lookup-request.format")
             .stringType()

@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Added http 2 support.
+- Ability to specify http versions for http lookups. 
 
 ## [0.22.0] - 2025-10-03
 
