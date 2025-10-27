@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
-import java.time.Duration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -48,10 +47,11 @@ public class GetRequestFactory extends RequestFactoryBase {
      */
     @Override
     protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
-        return HttpRequest.newBuilder()
+        HttpRequest.Builder builder = super.setUpRequestMethod(lookupQueryInfo);
+        builder
             .uri(constructGetUri(lookupQueryInfo))
-            .GET()
-            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
+            .GET();
+        return builder;
     }
 
     URI constructGetUri(LookupQueryInfo lookupQueryInfo) {

@@ -59,6 +59,9 @@ public final class HttpConnectorConfigConstants {
     public static final String SOURCE_LOOKUP_QUERY_CREATOR_IDENTIFIER =
         SOURCE_LOOKUP_PREFIX + "query-creator";
 
+    public static final String SOURCE_LOOKUP_QUERY_HTTP_VERSION =
+        SOURCE_LOOKUP_PREFIX + "http-version";
+
     // -------------- HTTPS security settings --------------
     public static final String ALLOW_SELF_SIGNED =
         GID_CONNECTOR_HTTP + "security.cert.server.allowSelfSigned";

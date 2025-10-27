@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+
+- Ability to specify http versions for http lookups. 
 - Amend to not log HTTP request response and header values by default.
 - Added http 2 support.
 
