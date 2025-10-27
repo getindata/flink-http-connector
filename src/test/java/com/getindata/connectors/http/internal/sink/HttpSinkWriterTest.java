@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse.ResponseItem;
+import com.getindata.connectors.http.internal.config.ResponseItemStatus;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -105,24 +106,28 @@ class HttpSinkWriterTest {
     }
 
     @Test
-    public void testErrorMetricWhenAPartOfRequestsFailed() throws InterruptedException {
+    public void testErrorMetricWhenFailureRequestsOccur() throws InterruptedException {
         createHttpSinkWriter(DeliveryGuarantee.NONE);
 
         CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
         future.complete(new SinkHttpClientResponse(
             Arrays.asList(
-                new ResponseItem(null, false),
-                new ResponseItem(null, true))
+                new ResponseItem(null, ResponseItemStatus.SUCCESS),
+                new ResponseItem(null, ResponseItemStatus.IGNORE),
+                new ResponseItem(null, ResponseItemStatus.TEMPORAL),
+                new ResponseItem(null, ResponseItemStatus.FAILURE))
         ));
 
         when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
+        HttpSinkRequestEntry request3 = new HttpSinkRequestEntry("PUT", "lorem".getBytes());
+        HttpSinkRequestEntry request4 = new HttpSinkRequestEntry("PUT", "ipsum".getBytes());
         Consumer<List<HttpSinkRequestEntry>> requestResult =
             httpSinkRequestEntries -> log.info(String.valueOf(httpSinkRequestEntries));
 
-        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
+        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2, request3, request4);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
         // would be good to use Countdown Latch instead sleep...
@@ -162,8 +167,8 @@ class HttpSinkWriterTest {
         CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
         future.complete(new SinkHttpClientResponse(
             Arrays.asList(
-                new ResponseItem(null, false),
-                new ResponseItem(null, true))
+                new ResponseItem(null, ResponseItemStatus.TEMPORAL),
+                new ResponseItem(null, ResponseItemStatus.SUCCESS))
         ));
 
         when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
@@ -181,5 +186,135 @@ class HttpSinkWriterTest {
         Thread.sleep(2000);
         verify(errorCounter).inc(1);
         assertEquals(1, entriesToRetry.size());
+    }
+
+    @Test
+    public void testTemporalRequestsWithNoneGuaranteeDoNotRetry() throws InterruptedException {
+        createHttpSinkWriter(DeliveryGuarantee.NONE);
+
+        CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
+        future.complete(new SinkHttpClientResponse(
+            Arrays.asList(
+                new ResponseItem(null, ResponseItemStatus.TEMPORAL),
+                new ResponseItem(null, ResponseItemStatus.SUCCESS))
+        ));
+
+        when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
+
+        final List<HttpSinkRequestEntry> entriesToRetry = new ArrayList<>();
+
+        HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
+        HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+
+        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
+        this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
+
+        // would be good to use Countdown Latch instead sleep...
+        Thread.sleep(2000);
+        verify(errorCounter).inc(1);
+        assertEquals(0, entriesToRetry.size());
+    }
+
+    @Test
+    public void testAllSuccessfulRequests() throws InterruptedException {
+        createHttpSinkWriter(DeliveryGuarantee.NONE);
+
+        CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
+        future.complete(new SinkHttpClientResponse(
+            Arrays.asList(
+                new ResponseItem(null, ResponseItemStatus.SUCCESS),
+                new ResponseItem(null, ResponseItemStatus.SUCCESS))
+        ));
+
+        when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
+
+        final List<HttpSinkRequestEntry> entriesToRetry = new ArrayList<>();
+
+        HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
+        HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+
+        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
+        this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
+
+        // would be good to use Countdown Latch instead sleep...
+        Thread.sleep(2000);
+        assertEquals(0, entriesToRetry.size());
+    }
+
+    @Test
+    public void testIgnoredRequests() throws InterruptedException {
+        createHttpSinkWriter(DeliveryGuarantee.NONE);
+
+        CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
+        future.complete(new SinkHttpClientResponse(
+            Arrays.asList(
+                new ResponseItem(null, ResponseItemStatus.IGNORE),
+                new ResponseItem(null, ResponseItemStatus.SUCCESS))
+        ));
+
+        when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
+
+        final List<HttpSinkRequestEntry> entriesToRetry = new ArrayList<>();
+
+        HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
+        HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+
+        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
+        this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
+
+        // would be good to use Countdown Latch instead sleep...
+        Thread.sleep(2000);
+        assertEquals(0, entriesToRetry.size());
+    }
+
+    @Test
+    public void testFailureRequestsWithAtLeastOnceGuarantee() throws InterruptedException {
+        createHttpSinkWriter(DeliveryGuarantee.AT_LEAST_ONCE);
+
+        CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
+        future.complete(new SinkHttpClientResponse(
+            Arrays.asList(
+                new ResponseItem(null, ResponseItemStatus.FAILURE),
+                new ResponseItem(null, ResponseItemStatus.SUCCESS))
+        ));
+
+        when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
+
+        HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
+        HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
+        Consumer<List<HttpSinkRequestEntry>> requestResult =
+            httpSinkRequestEntries -> log.info(String.valueOf(httpSinkRequestEntries));
+
+        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
+        this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
+
+        // would be good to use Countdown Latch instead sleep...
+        Thread.sleep(2000);
+        verify(errorCounter).inc(1);
+    }
+
+    @Test
+    public void testUnsupportedDeliveryGuaranteeThrowsException() throws InterruptedException {
+        createHttpSinkWriter(DeliveryGuarantee.EXACTLY_ONCE);
+
+        CompletableFuture<SinkHttpClientResponse> future = new CompletableFuture<>();
+        future.completeExceptionally(new Exception("Test Exception"));
+
+        when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
+
+        HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
+        HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
+        Consumer<List<HttpSinkRequestEntry>> requestResult =
+            httpSinkRequestEntries -> log.info(String.valueOf(httpSinkRequestEntries));
+
+        List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
+        this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
+
+        // would be good to use Countdown Latch instead sleep...
+        Thread.sleep(2000);
+        verify(errorCounter).inc(2);
     }
 }

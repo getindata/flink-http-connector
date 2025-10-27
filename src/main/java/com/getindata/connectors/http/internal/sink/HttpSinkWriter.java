@@ -22,9 +22,12 @@ import org.apache.flink.connector.base.sink.writer.strategy.RateLimitingStrategy
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
+import com.getindata.connectors.http.BatchHttpStatusCodeValidationFailedException;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.config.ResponseItemStatus;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 /**
@@ -117,7 +120,6 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
             .build();
     }
 
-    // TODO: Reintroduce retries by adding backoff policy
     @Override
     protected void submitRequestEntries(
             List<HttpSinkRequestEntry> requestEntries,
@@ -126,10 +128,42 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
         future.whenCompleteAsync((response, err) -> {
             if (err != null) {
                 handleFullyFailedRequest(err, requestEntries, requestResult);
-            } else if (response.getRequests().stream().anyMatch(r -> !r.isSuccessful())) {
-                handlePartiallyFailedRequest(response, requestEntries, requestResult);
             } else {
-                requestResult.accept(Collections.emptyList());
+                List<HttpRequest> failedRequests = response.getFailedRequests();
+                List<HttpRequest> ignoredRequests = response.getIgnoredRequests();
+                List<HttpRequest> temporalRequests = response.getTemporalRequests();
+
+                if (!failedRequests.isEmpty()) {
+                    numRecordsSendErrorsCounter.inc(failedRequests.size());
+                    log.error(
+                            "failed requests: {}, throwing BatchHttpStatusCodeValidationFailedException from sink",
+                            failedRequests
+                    );
+                    getFatalExceptionCons().accept(new BatchHttpStatusCodeValidationFailedException(
+                            String.format("Received %d fatal response codes", failedRequests.size()), failedRequests)
+                    );
+                }
+
+                if (!ignoredRequests.isEmpty()) {
+                    log.info("Ignoring {} requests", ignoredRequests.size());
+                }
+
+                if (!temporalRequests.isEmpty()) {
+                    numRecordsSendErrorsCounter.inc(temporalRequests.size());
+                    if (deliveryGuarantee == DeliveryGuarantee.AT_LEAST_ONCE) {
+                        log.warn("Retrying {} requests", temporalRequests.size());
+                        handlePartiallyFailedRequest(response, requestEntries, requestResult);
+                    } else {
+                        log.warn(
+                            "Http Sink failed to write {} requests but will continue due to {} DeliveryGuarantee",
+                            temporalRequests.size(),
+                            deliveryGuarantee
+                        );
+                        requestResult.accept(Collections.emptyList());
+                    }
+                } else {
+                    requestResult.accept(Collections.emptyList());
+                }
             }
         }, sinkWriterThreadPool);
     }
@@ -138,46 +172,41 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                                           List<HttpSinkRequestEntry> requestEntries,
                                           Consumer<List<HttpSinkRequestEntry>> requestResult) {
         int failedRequestsNumber = requestEntries.size();
-        log.error(
-                "Http Sink fatally failed to write all {} requests",
-                failedRequestsNumber);
         numRecordsSendErrorsCounter.inc(failedRequestsNumber);
 
         if (deliveryGuarantee == DeliveryGuarantee.AT_LEAST_ONCE) {
             // Retry all requests.
+            log.error("Http Sink fatally failed to write and will retry {} requests", failedRequestsNumber, err);
             requestResult.accept(requestEntries);
         } else if (deliveryGuarantee == DeliveryGuarantee.NONE) {
             // Do not retry failed requests.
+            log.error(
+                    "Http Sink fatally failed to write {} requests but will continue due to {} DeliveryGuarantee",
+                    failedRequestsNumber,
+                    deliveryGuarantee,
+                    err
+            );
             requestResult.accept(Collections.emptyList());
+        } else {
+            throw new UnsupportedOperationException(
+                    "Unsupported delivery guarantee: " + deliveryGuarantee);
         }
     }
 
     private void handlePartiallyFailedRequest(SinkHttpClientResponse response,
                                               List<HttpSinkRequestEntry> requestEntries,
                                               Consumer<List<HttpSinkRequestEntry>> requestResult) {
-        long failedRequestsNumber = response.getRequests().stream()
-                .filter(r -> !r.isSuccessful())
-                .count();
-        log.error("Http Sink failed to write and will retry {} requests",
-                failedRequestsNumber);
-        numRecordsSendErrorsCounter.inc(failedRequestsNumber);
-
-        if (deliveryGuarantee == DeliveryGuarantee.AT_LEAST_ONCE) {
-            // Assumption: the order of response.requests is the same as requestEntries.
-            // See com.getindata.connectors.http.internal.sink.httpclient.
-            // JavaNetSinkHttpClient#putRequests where requests are submitted sequentially and
-            // then their futures are joined sequentially too.
-            List<HttpSinkRequestEntry> failedRequestEntries = new ArrayList<>();
-            for (int i = 0; i < response.getRequests().size(); ++i) {
-                if (!response.getRequests().get(i).isSuccessful()) {
-                    failedRequestEntries.add(requestEntries.get(i));
-                }
+        // Assumption: the order of response.requests is the same as requestEntries.
+        // See com.getindata.connectors.http.internal.sink.httpclient.
+        // JavaNetSinkHttpClient#putRequests where requests are submitted sequentially and
+        // then their futures are joined sequentially too.
+        List<HttpSinkRequestEntry> failedRequestEntries = new ArrayList<>();
+        for (int i = 0; i < response.getRequests().size(); ++i) {
+            if (response.getRequests().get(i).getStatus().equals(ResponseItemStatus.TEMPORAL)) {
+                failedRequestEntries.add(requestEntries.get(i));
             }
-            requestResult.accept(failedRequestEntries);
-        } else if (deliveryGuarantee == DeliveryGuarantee.NONE) {
-            // Do not retry failed requests.
-            requestResult.accept(Collections.emptyList());
         }
+        requestResult.accept(failedRequestEntries);
     }
 
     @Override

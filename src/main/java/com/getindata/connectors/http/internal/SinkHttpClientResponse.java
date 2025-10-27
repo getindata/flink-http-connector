@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 
+import com.getindata.connectors.http.internal.config.ResponseItemStatus;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 
@@ -26,14 +27,28 @@ public class SinkHttpClientResponse {
 
     public List<HttpRequest> getSuccessfulRequests() {
         return requests.stream()
-                .filter(ResponseItem::isSuccessful)
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.SUCCESS))
                 .map(ResponseItem::getRequest)
                 .collect(Collectors.toList());
     }
 
     public List<HttpRequest> getFailedRequests() {
         return requests.stream()
-                .filter(r -> !r.isSuccessful())
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.FAILURE))
+                .map(ResponseItem::getRequest)
+                .collect(Collectors.toList());
+    }
+
+    public List<HttpRequest> getTemporalRequests() {
+        return requests.stream()
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.TEMPORAL))
+                .map(ResponseItem::getRequest)
+                .collect(Collectors.toList());
+    }
+
+    public List<HttpRequest> getIgnoredRequests() {
+        return requests.stream()
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.IGNORE))
                 .map(ResponseItem::getRequest)
                 .collect(Collectors.toList());
     }
@@ -42,6 +57,6 @@ public class SinkHttpClientResponse {
     @ToString
     public static class ResponseItem {
         private final HttpRequest request;
-        private final boolean successful;
+        private final ResponseItemStatus status;
     }
 }
