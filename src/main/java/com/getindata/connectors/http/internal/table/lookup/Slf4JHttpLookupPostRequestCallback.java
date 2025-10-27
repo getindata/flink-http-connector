@@ -2,15 +2,11 @@ package com.getindata.connectors.http.internal.table.lookup;
 
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.StringJoiner;
 
 import lombok.extern.slf4j.Slf4j;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.internal.utils.ConfigUtils;
 
 /**
  * A {@link HttpPostRequestCallback} that logs pairs of request and response as <i>INFO</i> level
@@ -31,40 +27,26 @@ public class Slf4JHttpLookupPostRequestCallback
             Map<String, String> headerMap) {
 
         HttpRequest httpRequest = requestEntry.getHttpRequest();
-        StringJoiner headers = new StringJoiner(";");
-
-        for (Entry<String, List<String>> reqHeaders : httpRequest.headers().map().entrySet()) {
-            StringJoiner values = new StringJoiner(";");
-            for (String value : reqHeaders.getValue()) {
-                values.add(value);
-            }
-            String header = reqHeaders.getKey() + ": [" + values + "]";
-            headers.add(header);
-        }
 
         if (response == null) {
             log.warn("Null Http response for request " + httpRequest.uri().toString());
 
             log.info(
                 "Got response for a request.\n  Request:\n    URL: {}\n    " +
-                    "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: null",
+                    "Method: {}\n Params/Body: {}\nResponse: null",
                 httpRequest.uri().toString(),
                 httpRequest.method(),
-                headers,
                 requestEntry.getLookupQueryInfo()
             );
         } else {
             log.info(
                 "Got response for a request.\n  Request:\n    URL: {}\n    " +
-                    "Method: {}\n    Headers: {}\n    Params/Body: {}\nResponse: {}\n    Body: {}",
+                    "Method: {}\n Params/Body: {}\nResponse status code: {}\n",
                 httpRequest.uri().toString(),
                 httpRequest.method(),
-                headers,
                 requestEntry.getLookupQueryInfo(),
-                response,
-                response.body().replaceAll(ConfigUtils.UNIVERSAL_NEW_LINE_REGEXP, "")
+                response.statusCode()
             );
         }
-
     }
 }

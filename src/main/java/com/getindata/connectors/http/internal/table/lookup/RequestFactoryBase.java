@@ -4,7 +4,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
@@ -60,11 +59,6 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
             );
 
         this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(headerMap);
-
-        log.debug("RequestFactoryBase headersAndValues: " +
-                Arrays.stream(headersAndValues)
-                        .map(Object::toString)
-                        .collect(Collectors.joining(",")));
         this.httpRequestTimeOutSeconds = Integer.parseInt(
             options.getProperties().getProperty(
                 HttpConnectorConfigConstants.LOOKUP_HTTP_TIMEOUT_SECONDS,
