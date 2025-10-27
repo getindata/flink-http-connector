@@ -428,10 +428,9 @@ that implements interface `HttpPostRequestCallbackFactory<HttpRequest>` to creat
 of class `CustomHttpSinkPostRequestCallbackFactory` in `resources/META-INF/services/org.apache.flink.table.factories.Factory` file 
 and then reference identifier `rest-sink-logger` in the HttpSink DDL property field `gid.connector.http.sink.request-callback`.
 
-  A default implementation that logs those pairs as *INFO* level logs using Slf4j
-([Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java))
-is provided.
-
+A default implementation that logs those pairs as *INFO* level logs using Slf4j ([Slf4jHttpPostRequestCallback](src/main/java/com/getindata/connectors/http/internal/table/sink/Slf4jHttpPostRequestCallback.java)) is provided.
+If you would like to log more http content (that maybe contain sensitive information), then you can provide a customized version
+of this callback; for inspiration on how to customize in this way, look back in the git history of this file.
 
 - Http Lookup Source processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
 behaviour of the additional stage of processing done by Table Function API by implementing
