@@ -25,7 +25,7 @@ class HttpResponseCheckerTest {
         assertThrows(ConfigurationException.class,
             () -> new HttpResponseChecker(Set.of(404), Set.of(404), emptySet()));
         assertThrows(ConfigurationException.class,
-                () -> new HttpResponseChecker("404", "404", ""));
+            () -> new HttpResponseChecker("404", "404", ""));
     }
 
     @Test
@@ -33,7 +33,7 @@ class HttpResponseCheckerTest {
         assertThrows(ConfigurationException.class,
             () -> new HttpResponseChecker(Set.of(200), Set.of(404), Set.of(404)));
         assertThrows(ConfigurationException.class,
-                () -> new HttpResponseChecker("200", "404", "404"));
+            () -> new HttpResponseChecker("200", "404", "404"));
     }
 
     @Test
@@ -41,7 +41,7 @@ class HttpResponseCheckerTest {
         assertThrows(ConfigurationException.class,
             () -> new HttpResponseChecker(emptySet(), Set.of(500), emptySet()));
         assertThrows(ConfigurationException.class,
-                () -> new HttpResponseChecker("", "500", ""));
+            () -> new HttpResponseChecker("", "500", ""));
     }
 
     private static Stream<InputArgs> testData() {
@@ -126,34 +126,22 @@ class HttpResponseCheckerTest {
     void testNullSuccessCodeExprThrowsNullPointerException() {
         assertThrows(NullPointerException.class,
             () -> new HttpResponseChecker(null, "5XX", "404"));
+        assertThrows(NullPointerException.class,
+            () -> new HttpResponseChecker(null, Set.of(500), Set.of(404)));
     }
 
     @Test
     void testNullTemporalErrorCodeExprThrowsNullPointerException() {
         assertThrows(NullPointerException.class,
             () -> new HttpResponseChecker("2XX", null, "404"));
+        assertThrows(NullPointerException.class,
+            () -> new HttpResponseChecker(Set.of(200), null, Set.of(404)));
     }
 
     @Test
     void testNullIgnoreCodeExprThrowsNullPointerException() {
         assertThrows(NullPointerException.class,
             () -> new HttpResponseChecker("2XX", "5XX", null));
-    }
-
-    @Test
-    void testNullSuccessCodesSetThrowsNullPointerException() {
-        assertThrows(NullPointerException.class,
-            () -> new HttpResponseChecker(null, Set.of(500), Set.of(404)));
-    }
-
-    @Test
-    void testNullTemporalErrorCodesSetThrowsNullPointerException() {
-        assertThrows(NullPointerException.class,
-            () -> new HttpResponseChecker(Set.of(200), null, Set.of(404)));
-    }
-
-    @Test
-    void testNullIgnoreCodesSetThrowsNullPointerException() {
         assertThrows(NullPointerException.class,
             () -> new HttpResponseChecker(Set.of(200), Set.of(500), null));
     }
