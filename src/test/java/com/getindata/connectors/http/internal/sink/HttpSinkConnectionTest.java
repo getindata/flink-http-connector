@@ -21,6 +21,7 @@ import org.apache.flink.metrics.MetricConfig;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.reporter.MetricReporter;
 import org.apache.flink.metrics.reporter.MetricReporterFactory;
+import org.apache.flink.runtime.client.JobExecutionException;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.testutils.junit.extensions.ContextClassLoaderExtension;
 import org.junit.jupiter.api.AfterEach;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.getindata.connectors.http.HttpSink;
@@ -191,13 +193,11 @@ public class HttpSinkConnectionTest {
     @Test
     public void testServerErrorConnection() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-                .withHeader("Content-Type", equalTo("application/json"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(serverError())
                 .willSetStateTo("Cause Success"));
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-                .withHeader("Content-Type", equalTo("application/json"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs("Cause Success")
                 .willReturn(aResponse().withStatus(200))
@@ -249,7 +249,7 @@ public class HttpSinkConnectionTest {
                 .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
                 .build();
         source.sinkTo(httpSink);
-        env.execute("Http Sink test failed connection");
+        assertThrows(JobExecutionException.class, () -> env.execute("Http Sink test failed connection"));
 
         assertEquals(1, SendErrorsTestReporterFactory.getCount());
         // var postedRequests = wireMockServer
