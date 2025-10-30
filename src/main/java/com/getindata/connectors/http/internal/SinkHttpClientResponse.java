@@ -1,31 +1,62 @@
 package com.getindata.connectors.http.internal;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 
+import com.getindata.connectors.http.internal.config.ResponseItemStatus;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 
 /**
  * Data class holding {@link HttpSinkRequestEntry} instances that {@link SinkHttpClient} attempted
- * to write, divided into two lists &mdash; successful and failed ones.
+ * to write.
  */
 @Data
 @ToString
 public class SinkHttpClientResponse {
 
     /**
-     * A list of successfully written requests.
+     * A list of requests along with write status.
      */
     @NonNull
-    private final List<HttpRequest> successfulRequests;
+    private final List<ResponseItem> requests;
 
-    /**
-     * A list of requests that {@link SinkHttpClient} failed to write.
-     */
-    @NonNull
-    private final List<HttpRequest> failedRequests;
+    public List<HttpRequest> getSuccessfulRequests() {
+        return requests.stream()
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.SUCCESS))
+                .map(ResponseItem::getRequest)
+                .collect(Collectors.toList());
+    }
+
+    public List<HttpRequest> getFailedRequests() {
+        return requests.stream()
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.FAILURE))
+                .map(ResponseItem::getRequest)
+                .collect(Collectors.toList());
+    }
+
+    public List<HttpRequest> getTemporalRequests() {
+        return requests.stream()
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.TEMPORAL))
+                .map(ResponseItem::getRequest)
+                .collect(Collectors.toList());
+    }
+
+    public List<HttpRequest> getIgnoredRequests() {
+        return requests.stream()
+                .filter(r -> r.getStatus().equals(ResponseItemStatus.IGNORE))
+                .map(ResponseItem::getRequest)
+                .collect(Collectors.toList());
+    }
+
+    @Data
+    @ToString
+    public static class ResponseItem {
+        private final HttpRequest request;
+        private final ResponseItemStatus status;
+    }
 }

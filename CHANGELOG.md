@@ -3,6 +3,7 @@
 ## [Unreleased]
 ### Fixed
 - Fixed http sink NEP issue when flink job restore from checkpoint.
+- Added new HTTP Sink configuration options: `gid.connector.http.sink.success-codes`, `gid.connector.http.sink.retry-codes`, and `gid.connector.http.sink.ignored-response-codes`.
 
 -   Simplify the implementation of deserialize change added in the last release and add proper testing. 
 -   HttpPostRequestCallback adds open and close methods

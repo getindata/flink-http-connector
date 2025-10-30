@@ -18,10 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
-import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker;
-import com.getindata.connectors.http.internal.status.ComposeHttpStatusCodeChecker.ComposeHttpStatusCodeCheckerConfig;
+import com.getindata.connectors.http.internal.status.HttpResponseChecker;
+import static com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient.createHttpResponseChecker;
 
-class ComposeHttpStatusCodeCheckerTest {
+class ComposeHttpStatusCodeCheckerDeprecationTest {
 
     private static final String STRING_CODES = "403, 100,200, 300, , 303 ,200";
 
@@ -33,7 +33,7 @@ class ComposeHttpStatusCodeCheckerTest {
             .boxed()
             .collect(Collectors.toList());
 
-    private ComposeHttpStatusCodeChecker codeChecker;
+    private HttpResponseChecker codeChecker;
 
     @BeforeAll
     public static void beforeAll() {
@@ -53,14 +53,11 @@ class ComposeHttpStatusCodeCheckerTest {
     @MethodSource("propertiesArguments")
     public void shouldPassOnDefault(Properties properties) {
 
-        ComposeHttpStatusCodeCheckerConfig checkerConfig = prepareCheckerConfig(properties);
-
-        codeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
-
+        codeChecker = prepareCheckerConfig(properties);
         assertAll(() -> {
             assertThat(codeChecker.isErrorCode(100)).isFalse();
             assertThat(codeChecker.isErrorCode(200)).isFalse();
-            assertThat(codeChecker.isErrorCode(500)).isTrue();
+            assertThat(codeChecker.isTemporalError(500)).isTrue();
             assertThat(codeChecker.isErrorCode(501)).isTrue();
             assertThat(codeChecker.isErrorCode(400)).isTrue();
             assertThat(codeChecker.isErrorCode(404)).isTrue();
@@ -72,24 +69,22 @@ class ComposeHttpStatusCodeCheckerTest {
 
         Properties properties = new Properties();
         properties.setProperty(
-            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST,
-            STRING_CODES);
+                HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST,
+                STRING_CODES);
         properties.setProperty(
-            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST,
-            "1XX, 2XX, 3XX, 4XX, 5XX"
+                HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST,
+                "1XX, 2XX, 3XX, 4XX, 5XX"
         );
 
-        ComposeHttpStatusCodeCheckerConfig checkerConfig = prepareCheckerConfig(properties);
-
-        codeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
+        codeChecker = prepareCheckerConfig(properties);
 
         assertAll(() -> {
             CODES.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isFalse());
 
             assertThat(codeChecker.isErrorCode(301))
                 .withFailMessage(
-                    "Not on a white list but matches 3XX range. "
-                        + "Should be considered as error code.")
+                        "Not on a white list but matches 3XX range. "
+                                + "Should be considered as error code.")
                 .isTrue();
         });
     }
@@ -100,11 +95,10 @@ class ComposeHttpStatusCodeCheckerTest {
         Properties properties = new Properties();
         properties.setProperty(
             HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST,
-            STRING_CODES);
+            STRING_CODES
+        );
 
-        ComposeHttpStatusCodeCheckerConfig checkerConfig = prepareCheckerConfig(properties);
-
-        codeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
+        codeChecker = prepareCheckerConfig(properties);
 
         assertAll(() -> CODES.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isTrue()));
     }
@@ -114,20 +108,19 @@ class ComposeHttpStatusCodeCheckerTest {
 
         Properties properties = new Properties();
         properties.setProperty(
-            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, "1xx, 2XX ");
+            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, "1xx, 2XX "
+        );
 
         List<Integer> codes = List.of(100, 110, 200, 220);
 
-        ComposeHttpStatusCodeCheckerConfig checkerConfig = prepareCheckerConfig(properties);
-
-        codeChecker = new ComposeHttpStatusCodeChecker(checkerConfig);
+        codeChecker = prepareCheckerConfig(properties);
 
         assertAll(() -> {
             codes.forEach(code -> assertThat(codeChecker.isErrorCode(code)).isTrue());
 
             assertThat(codeChecker.isErrorCode(303))
                 .withFailMessage(
-                    "Out ot Error code type range therefore should be not marked as error code.")
+                        "Out ot Error code type range therefore should be not marked as error code.")
                 .isFalse();
         });
     }
@@ -138,13 +131,12 @@ class ComposeHttpStatusCodeCheckerTest {
 
         Properties properties = new Properties();
         properties.setProperty(
-            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, listCode);
-
-        ComposeHttpStatusCodeCheckerConfig checkerConfig = prepareCheckerConfig(properties);
+            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, listCode
+        );
 
         assertThrows(
             Exception.class,
-            () -> new ComposeHttpStatusCodeChecker(checkerConfig)
+            () -> prepareCheckerConfig(properties)
         );
     }
 
@@ -161,11 +153,7 @@ class ComposeHttpStatusCodeCheckerTest {
         return properties;
     }
 
-    private ComposeHttpStatusCodeCheckerConfig prepareCheckerConfig(Properties properties) {
-        return ComposeHttpStatusCodeCheckerConfig.builder()
-            .properties(properties)
-            .whiteListPrefix(HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST)
-            .errorCodePrefix(HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST)
-            .build();
+    private HttpResponseChecker prepareCheckerConfig(Properties properties) {
+        return createHttpResponseChecker(properties);
     }
 }

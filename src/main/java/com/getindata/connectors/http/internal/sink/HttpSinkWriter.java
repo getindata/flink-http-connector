@@ -16,8 +16,10 @@ import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
+import com.getindata.connectors.http.BatchHttpStatusCodeValidationFailedException;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.utils.ThreadUtils;
 
 /**
@@ -91,8 +93,10 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
             if (err != null) {
                 int failedRequestsNumber = requestEntries.size();
                 log.error(
-                    "Http Sink fatally failed to write all {} requests",
-                    failedRequestsNumber);
+                        "Http Sink fatally failed to write {} requests",
+                        failedRequestsNumber,
+                        err
+                );
                 numRecordsSendErrorsCounter.inc(failedRequestsNumber);
 
                 // TODO: Make `HttpSinkInternal` retry the failed requests.
@@ -100,11 +104,33 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                 //  to the `numRecordsSendErrors` metric. It is due to the fact we do not have
                 //  a clear image how we want to do it, so it would be both efficient and correct.
                 //requestResult.accept(requestEntries);
-            } else if (response.getFailedRequests().size() > 0) {
-                int failedRequestsNumber = response.getFailedRequests().size();
-                log.error("Http Sink failed to write and will retry {} requests",
-                    failedRequestsNumber);
-                numRecordsSendErrorsCounter.inc(failedRequestsNumber);
+            } else {
+                List<HttpRequest> failedRequests = response.getFailedRequests();
+                List<HttpRequest> ignoredRequests = response.getIgnoredRequests();
+                List<HttpRequest> temporalRequests = response.getTemporalRequests();
+
+                if (!failedRequests.isEmpty()) {
+                    numRecordsSendErrorsCounter.inc(failedRequests.size());
+                    log.error(
+                            "failed requests: {}, throwing BatchHttpStatusCodeValidationFailedException from sink",
+                            failedRequests
+                    );
+                    getFatalExceptionCons().accept(new BatchHttpStatusCodeValidationFailedException(
+                            String.format("Received %d fatal response codes", failedRequests.size()), failedRequests)
+                    );
+                }
+
+                if (!ignoredRequests.isEmpty()) {
+                    log.info("Ignoring {} requests", ignoredRequests.size());
+                }
+
+                if (!temporalRequests.isEmpty()) {
+                    numRecordsSendErrorsCounter.inc(temporalRequests.size());
+                    log.error(
+                            "Http Sink failed to write {} temporal requests",
+                            temporalRequests.size()
+                    );
+                }
 
                 // TODO: Make `HttpSinkInternal` retry the failed requests. Currently,
                 //  it does not retry those at all, only adds their count to the
