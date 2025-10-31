@@ -15,6 +15,7 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.MetricOptions;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Metric;
 import org.apache.flink.metrics.MetricConfig;
@@ -160,7 +161,7 @@ public class HttpSinkConnectionTest {
                 .setEndpointUrl("http://localhost:" + SERVER_PORT + endpoint)
                 .setElementConverter(
                     (s, _context) ->
-                    new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+                        new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
                 .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
                 .setProperty(
                         HttpConnectorConfigConstants.SINK_HEADER_PREFIX + "Content-Type",
@@ -189,18 +190,43 @@ public class HttpSinkConnectionTest {
     }
 
     @Test
-    public void testServerErrorConnection() throws Exception {
+    public void testNoRetryWithNoneConnection() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-                .withHeader("Content-Type", equalTo("application/json"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(serverError())
                 .willSetStateTo("Cause Success"));
-        wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-                .withHeader("Content-Type", equalTo("application/json"))
-                .inScenario("Retry Scenario")
+
+        var source = env.fromCollection(List.of(messages.get(0)));
+        var httpSink = HttpSink.<String>builder()
+            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
+            .setElementConverter(
+                (s, _context) ->
+                    new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+            .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setDeliveryGuarantee(DeliveryGuarantee.NONE)
+            .build();
+        source.sinkTo(httpSink);
+
+        env.execute("Http Sink none delivery guarantee retry");
+
+        assertEquals(1, SendErrorsTestReporterFactory.getCount());
+    }
+
+    @Test
+    public void testRetryableServerErrorConnection() throws Exception {
+        wireMockServer.stubFor(post(urlPathEqualTo("/myendpoint"))
+                .withRequestBody(equalTo("[{\"http-sink-id\":0}]"))
+                .inScenario("Retry Success Scenario")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(serviceUnavailable())
+                .willSetStateTo("Cause Success"));
+
+        wireMockServer.stubFor(post(urlPathEqualTo("/myendpoint"))
+                .withRequestBody(equalTo("[{\"http-sink-id\":0}]"))
+                .inScenario("Retry Success Scenario")
                 .whenScenarioStateIs("Cause Success")
-                .willReturn(aResponse().withStatus(200))
+                .willReturn(aResponse().withStatus(200).withBody("msg1"))
                 .willSetStateTo("Cause Success"));
 
         var source = env.fromCollection(List.of(messages.get(0)));
@@ -210,30 +236,77 @@ public class HttpSinkConnectionTest {
                     (s, _context) ->
                     new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
                 .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
         source.sinkTo(httpSink);
         env.execute("Http Sink test failed connection");
 
         assertEquals(1, SendErrorsTestReporterFactory.getCount());
-        // TODO: reintroduce along with the retries
-        //  var postedRequests = wireMockServer
-        //  .findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
-        //  assertEquals(2, postedRequests.size());
-        //  assertEquals(postedRequests.get(0).getBodyAsString(),
-        //  postedRequests.get(1).getBodyAsString());
+
+        var postedRequests = wireMockServer
+                .findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
+        assertEquals(2, postedRequests.size());
+        assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
+    }
+
+    @Test
+    public void testMixedRetryable() throws Exception {
+        wireMockServer.stubFor(post(urlPathEqualTo("/myendpoint"))
+                .withRequestBody(equalTo("[{\"http-sink-id\":0}]"))
+                .inScenario("Retry Success Scenario")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(serviceUnavailable())
+                .willSetStateTo("Cause Success"));
+
+        wireMockServer.stubFor(post(urlPathEqualTo("/myendpoint"))
+                .withRequestBody(equalTo("[{\"http-sink-id\":0}]"))
+                .inScenario("Retry Success Scenario")
+                .whenScenarioStateIs("Cause Success")
+                .willReturn(aResponse().withStatus(200).withBody("msg1"))
+                .willSetStateTo("Cause Success"));
+
+        wireMockServer.stubFor(post(urlPathEqualTo("/myendpoint"))
+                .withRequestBody(equalTo("[{\"http-sink-id\":1}]"))
+                .inScenario("Retry Success Scenario")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(aResponse().withStatus(200).withBody("msg2"))
+                .willSetStateTo(STARTED));
+
+        wireMockServer.stubFor(post(urlPathEqualTo("/myendpoint"))
+                .withRequestBody(equalTo("[{\"http-sink-id\":1}]"))
+                .inScenario("Retry Success Scenario")
+                .whenScenarioStateIs("Cause Success")
+                .willReturn(aResponse().withStatus(200).withBody("msg2"))
+                .willSetStateTo("Cause Success"));
+
+        var source = env.fromCollection(List.of(messages.get(0), messages.get(1)));
+        var httpSink = HttpSink.<String>builder()
+            .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
+            .setElementConverter(
+                (s, _context) ->
+                new HttpSinkRequestEntry("POST", s.getBytes(StandardCharsets.UTF_8)))
+            .setSinkHttpClientBuilder(JavaNetSinkHttpClient::new)
+            .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+            .build();
+        source.sinkTo(httpSink);
+        env.execute("Http Sink test failed connection");
+
+        assertEquals(1, SendErrorsTestReporterFactory.getCount());
+
+        var postedRequests = wireMockServer
+                .findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
+        assertEquals(3, postedRequests.size());
     }
 
     @Test
     public void testFailedConnection() throws Exception {
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-                .withHeader("Content-Type", equalTo("application/json"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(aResponse().withFault(Fault.EMPTY_RESPONSE))
                 .willSetStateTo("Cause Success"));
 
         wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint"))
-                .withHeader("Content-Type", equalTo("application/json"))
                 .inScenario("Retry Scenario")
                 .whenScenarioStateIs("Cause Success")
                 .willReturn(aResponse().withStatus(200))
@@ -241,6 +314,7 @@ public class HttpSinkConnectionTest {
 
         var source = env.fromCollection(List.of(messages.get(0)));
         var httpSink = HttpSink.<String>builder()
+                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .setEndpointUrl("http://localhost:" + SERVER_PORT + "/myendpoint")
                 .setElementConverter(
                     (s, _context) ->
@@ -252,11 +326,10 @@ public class HttpSinkConnectionTest {
         env.execute("Http Sink test failed connection");
 
         assertEquals(1, SendErrorsTestReporterFactory.getCount());
-        // var postedRequests = wireMockServer
-        // .findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
-        // assertEquals(2, postedRequests.size());
-        // assertEquals(postedRequests.get(0).getBodyAsString(),
-        // postedRequests.get(1).getBodyAsString());
+        var postedRequests = wireMockServer
+            .findAll(postRequestedFor(urlPathEqualTo("/myendpoint")));
+        assertEquals(2, postedRequests.size());
+        assertEquals(postedRequests.get(0).getBodyAsString(), postedRequests.get(1).getBodyAsString());
     }
 
     @Test
