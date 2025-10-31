@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added HTTP Sink request retries with delivery guarantee support (`sink.delivery-guarantee`).
 - Amend to not log HTTP request response and header values by default.
 - Added http 2 support.
 
