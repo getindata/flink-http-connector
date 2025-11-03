@@ -29,7 +29,7 @@ public class HttpDynamicSinkConnectorOptions {
     public static final ConfigOption<DeliveryGuarantee> DELIVERY_GUARANTEE =
         ConfigOptions.key("sink.delivery-guarantee")
             .enumType(DeliveryGuarantee.class)
-            .defaultValue(DeliveryGuarantee.NONE)
+            .defaultValue(DeliveryGuarantee.AT_LEAST_ONCE)
             .withDescription("Defines the delivery semantic for the HTTP sink. " +
                     "Accepted enumerations are 'at-least-once', and 'none'. " +
                     "'exactly-once' semantic is not supported.");

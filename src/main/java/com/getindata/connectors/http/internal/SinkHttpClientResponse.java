@@ -25,32 +25,27 @@ public class SinkHttpClientResponse {
     @NonNull
     private final List<ResponseItem> requests;
 
-    public List<HttpRequest> getSuccessfulRequests() {
+    private List<HttpRequest> getRequestByStatus(final ResponseItemStatus status) {
         return requests.stream()
-                .filter(r -> r.getStatus().equals(ResponseItemStatus.SUCCESS))
+                .filter(r -> r.getStatus().equals(status))
                 .map(ResponseItem::getRequest)
                 .collect(Collectors.toList());
+    }
+
+    public List<HttpRequest> getSuccessfulRequests() {
+        return getRequestByStatus(ResponseItemStatus.SUCCESS);
     }
 
     public List<HttpRequest> getFailedRequests() {
-        return requests.stream()
-                .filter(r -> r.getStatus().equals(ResponseItemStatus.FAILURE))
-                .map(ResponseItem::getRequest)
-                .collect(Collectors.toList());
+        return getRequestByStatus(ResponseItemStatus.FAILURE);
     }
 
     public List<HttpRequest> getTemporalRequests() {
-        return requests.stream()
-                .filter(r -> r.getStatus().equals(ResponseItemStatus.TEMPORAL))
-                .map(ResponseItem::getRequest)
-                .collect(Collectors.toList());
+        return getRequestByStatus(ResponseItemStatus.TEMPORAL);
     }
 
     public List<HttpRequest> getIgnoredRequests() {
-        return requests.stream()
-                .filter(r -> r.getStatus().equals(ResponseItemStatus.IGNORE))
-                .map(ResponseItem::getRequest)
-                .collect(Collectors.toList());
+        return getRequestByStatus(ResponseItemStatus.IGNORE);
     }
 
     @Data

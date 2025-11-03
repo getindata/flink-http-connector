@@ -153,13 +153,16 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                     if (deliveryGuarantee == DeliveryGuarantee.AT_LEAST_ONCE) {
                         log.warn("Retrying {} requests", temporalRequests.size());
                         handlePartiallyFailedRequest(response, requestEntries, requestResult);
-                    } else {
+                    } else if (deliveryGuarantee == DeliveryGuarantee.NONE) {
                         log.warn(
                             "Http Sink failed to write {} requests but will continue due to {} DeliveryGuarantee",
                             temporalRequests.size(),
                             deliveryGuarantee
                         );
                         requestResult.accept(Collections.emptyList());
+                    } else {
+                        throw new UnsupportedOperationException(
+                                "Unsupported delivery guarantee: " + deliveryGuarantee);
                     }
                 } else {
                     requestResult.accept(Collections.emptyList());

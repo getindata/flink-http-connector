@@ -196,7 +196,7 @@ public class HttpSinkBuilder<InputT> extends
             Optional.ofNullable(getMaxBatchSizeInBytes()).orElse(DEFAULT_MAX_BATCH_SIZE_IN_B),
             Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
             Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
-            Optional.ofNullable(deliveryGuarantee).orElse(DeliveryGuarantee.NONE),
+            Optional.ofNullable(deliveryGuarantee).orElse(DeliveryGuarantee.AT_LEAST_ONCE),
             endpointUrl,
             httpPostRequestCallback,
             headerPreprocessor,
