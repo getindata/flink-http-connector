@@ -5,7 +5,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
-import java.time.Duration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -42,10 +41,11 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
      */
     @Override
     protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
-        return HttpRequest.newBuilder()
+        HttpRequest.Builder builder = super.setUpRequestMethod(lookupQueryInfo);
+        builder
             .uri(constructUri(lookupQueryInfo))
-            .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()))
-            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
+            .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()));
+        return builder;
     }
 
     @Override
