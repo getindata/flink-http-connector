@@ -508,8 +508,8 @@ By default all 400 and 500 response codes will be interpreted as error code.
 
 #### Retries and delivery guarantee
 HTTP Sink supports automatic retries when `sink.delivery-guarantee` is set to `at-least-once`. Failed requests will be automatically retried based on the configured status codes.
-- When `sink.delivery-guarantee` is `at-least-once`: Failed requests are retried automatically using AIMD (Additive Increase Multiplicative Decrease) rate limiting strategy.
-- When `sink.delivery-guarantee` is `none` (default): Failed requests are logged but not retried.
+- When `sink.delivery-guarantee` is `at-least-once` (default): Failed requests are retried automatically.
+- When `sink.delivery-guarantee` is `none`: Failed requests are logged but not retried.
 
 This behavior can be changed by using below properties in table definition (DDL) or passing it via `setProperty' method from Sink's builder. The property name are:
 - `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
@@ -692,7 +692,7 @@ Notes:
 | gid.connector.http.logging.level                        | optional | Logging levels for HTTP content. Valid values are `MIN` (the default), `REQRESPONSE` and `MAX`.                                                                                                                                                  |
 | insert-method                                           | optional | Specify which HTTP method to use in the request. The value should be set either to `POST` or `PUT`.                                                                                                                                              |
 | sink.batch.max-size                                     | optional | Maximum number of elements that may be passed in a batch to be written downstream.                                                                                                                                                               |
-| sink.delivery-guarantee                                 | optional | Defines the delivery semantic for the HTTP sink. Accepted enumerations are 'at-least-once', and 'none' (actually 'none' is the same as 'at-most-once'. 'exactly-once' semantic is not supported.                                                 |
+| sink.delivery-guarantee                                 | optional | Defines the delivery semantic for the HTTP sink. Accepted enumerations are 'at-least-once', and 'none' (actually 'none' is the same as 'at-most-once'). 'exactly-once' semantic is not supported.                                                |
 | sink.requests.max-inflight                              | optional | The maximum number of in flight requests that may exist, if any more in flight requests need to be initiated once the maximum has been reached, then it will be blocked until some have completed.                                               |
 | sink.requests.max-buffered                              | optional | Maximum number of buffered records before applying backpressure.                                                                                                                                                                                 |
 | sink.flush-buffer.size                                  | optional | The maximum size of a batch of entries that may be sent to the HTTP endpoint measured in bytes.                                                                                                                                                  |
