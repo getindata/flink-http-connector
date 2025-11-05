@@ -451,10 +451,10 @@ is provided.
 
 ## HTTP status code handler
 ### Sink table
-You can configure HTTP status code handling for HTTP sink table and enable automatic retries with delivery guarantees.
+You can configure HTTP status code handling for HTTP sink table and enable automatic retries with delivery guarantees by using below properties in table definition (DDL) or passing it via `setProperty' method from Sink's builder.
 
 #### Retries and delivery guarantee
-HTTP Sink supports automatic retries when `sink.delivery-guarantee` is set to `at-least-once`. Failed requests will be automatically retried based on the configured status codes.
+HTTP Sink supports automatic retries when `sink.delivery-guarantee` is set to `at-least-once`. Retryable requests will be automatically retried based on the configured status codes.
 - When `sink.delivery-guarantee` is `at-least-once` (default): Failed requests are retried automatically using AIMD (Additive Increase Multiplicative Decrease) rate limiting strategy.
 - When `sink.delivery-guarantee` is `none`: Failed requests are logged but not retried.
 
@@ -464,7 +464,9 @@ The sink categorizes HTTP responses into groups:
 - Ignored responses (`gid.connector.http.sink.ignored-response-codes`): Responses whose content is ignored but treated as successful.
 - Error codes: Any response code not classified in the above groups.
 
-Parameters support whitelisting and blacklisting: `2XX,404,!203` means all codes from 200-299, plus 404, except 203.
+Parameters support whitelisting and blacklisting: `2XX,404,!203` means all codes from 200-299, plus 404, except 203.  Many status codes can be defined in one value, where each code should be separated with comma, for example:
+`401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
+An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors
 
 #### Legacy error code configuration
 For backward compatibility, you can use the legacy properties:

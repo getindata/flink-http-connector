@@ -5,11 +5,6 @@
 - Added HTTP Sink request retries with delivery guarantee support (`sink.delivery-guarantee`).
 - Added AIMD rate limiting strategy for HTTP Sink backpressure management.
 - Added new HTTP Sink configuration options: `gid.connector.http.sink.success-codes`, `gid.connector.http.sink.retry-codes`, and `gid.connector.http.sink.ignored-response-codes`.
-- Amend to not log HTTP request response and header values by default.
-- Added HTTP Sink request retries with delivery guarantee support (`sink.delivery-guarantee`).
-- Added AIMD rate limiting strategy for HTTP Sink backpressure management.
-- Added new HTTP Sink configuration options: `gid.connector.http.sink.success-codes`, `gid.connector.http.sink.retry-codes`, and `gid.connector.http.sink.ignored-response-codes`.
-- Added http 2 support.
 
 ## [0.22.0] - 2025-10-03
 
