@@ -464,7 +464,9 @@ The sink categorizes HTTP responses into groups:
 - Ignored responses (`gid.connector.http.sink.ignored-response-codes`): Responses whose content is ignored but treated as successful.
 - Error codes: Any response code not classified in the above groups.
 
-Parameters support whitelisting and blacklisting: `2XX,404,!203` means all codes from 200-299, plus 404, except 203.  Many status codes can be defined in one value, where each code should be separated with comma, for example:
+Above parameters support allowlists and denylists. A sample configuration may look like this:
+`2XX,404,!203` - meaning all codes from group 2XX (200-299), with 404 and without 203 ('!' character). Group denylists e.g. !2XX is not supported. 
+Many status codes can be defined in one value, where each code should be separated with comma, for example:
 `401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
 An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors
 
@@ -485,8 +487,8 @@ Successful response, but its content will be ignored. For example, an HTTP 404 N
 Any response code that is not classified as a retry or success code falls into this category. Receiving such a response will result in a job failure.
 
 
-Above parameters support whitelisting and blacklisting. A sample configuration may look like this:
-`2XX,404,!203` - meaning all codes from group 2XX (200-299), with 404 and without 203 ('!' character). Group blacklisting e.g. !2XX is not supported.
+Above parameters support allowlists and denylists. A sample configuration may look like this:
+`2XX,404,!203` - meaning all codes from group 2XX (200-299), with 404 and without 203 ('!' character). Group denylists e.g. !2XX is not supported.
 
 The same format is used in parameter `gid.connector.http.source.lookup.retry-codes`.
 
