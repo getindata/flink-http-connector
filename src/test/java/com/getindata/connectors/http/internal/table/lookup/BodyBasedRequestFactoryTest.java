@@ -1,33 +1,56 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.net.URI;
-import java.util.Collection;
-import java.util.Map;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.flink.configuration.Configuration;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.LOOKUP_HTTP_VERSION;
+
 public class BodyBasedRequestFactoryTest {
 
     @ParameterizedTest
     @MethodSource("configProvider")
     void testconstructUri(TestSpec testSpec) throws Exception {
-        LookupQueryInfo lookupQueryInfo = new LookupQueryInfo(testSpec.url,
+        Set<Configuration> configs = new HashSet();
+
+        Configuration configuration= new Configuration();
+        Configuration configuration_http11 = new Configuration();
+        Configuration configuration_http2 = new Configuration();
+
+        configuration_http2.setString(LOOKUP_HTTP_VERSION, String.valueOf(HttpClient.Version.HTTP_2));
+        configuration_http11.setString(LOOKUP_HTTP_VERSION, String.valueOf(HttpClient.Version.HTTP_1_1));
+
+        configs.add(configuration);
+        configs.add(configuration_http11);
+        configs.add(configuration_http2);
+
+        for(Configuration config: configs) {
+            LookupQueryInfo lookupQueryInfo = new LookupQueryInfo(testSpec.url,
                 testSpec.bodyBasedUrlQueryParams,
                 testSpec.pathBasedUrlParams);
-        HttpLookupConfig httpLookupConfig = HttpLookupConfig.builder()
+            HttpLookupConfig httpLookupConfig = HttpLookupConfig.builder()
                 .lookupMethod(testSpec.lookupMethod)
                 .url(testSpec.url)
                 .useAsync(false)
+                .readableConfig(config)
                 .build();
-        BodyBasedRequestFactory bodyBasedRequestFactory =
+            BodyBasedRequestFactory bodyBasedRequestFactory =
                 new BodyBasedRequestFactory("test", null, null, httpLookupConfig);
 
-        URI uri = bodyBasedRequestFactory.constructUri(lookupQueryInfo);
-        assertThat(uri.toString()).isEqualTo(testSpec.expected);
+            URI uri = bodyBasedRequestFactory.constructUri(lookupQueryInfo);
+            assertThat(uri.toString()).isEqualTo(testSpec.expected);
+        }
     }
 
     private static class TestSpec {

@@ -1,7 +1,9 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -38,6 +40,7 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
      */
     private final String[] headersAndValues;
     private final HttpLookupConfig options;
+    final HttpClient.Version httpVersion;
 
     public RequestFactoryBase(
             LookupQueryCreator lookupQueryCreator,
@@ -65,6 +68,12 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
                 DEFAULT_REQUEST_TIMEOUT_SECONDS
             )
         );
+        String httpVersionFromConfig = options.getReadableConfig().get(HttpLookupConnectorOptions.LOOKUP_HTTP_VERSION);
+        if (httpVersionFromConfig == null) {
+            httpVersion = null;
+        } else {
+            httpVersion = HttpClient.Version.valueOf(httpVersionFromConfig);
+        }
     }
 
     @Override
@@ -88,7 +97,14 @@ public abstract class RequestFactoryBase implements HttpRequestFactory {
      * @param lookupQuery lookup query used for request query parameters or body.
      * @return {@link HttpRequest.Builder} for given lookupQuery.
      */
-    protected abstract Builder setUpRequestMethod(LookupQueryInfo lookupQuery);
+    protected Builder setUpRequestMethod(LookupQueryInfo lookupQuery) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .timeout(Duration.ofSeconds(this.httpRequestTimeOutSeconds));
+        if (httpVersion !=null) {
+            builder.version(httpVersion);
+        }
+        return builder;
+    }
 
     protected static StringBuilder resolvePathParameters(LookupQueryInfo lookupQueryInfo,
                                                          StringBuilder resolvedUrl) {
