@@ -2,8 +2,10 @@
 
 ## [Unreleased]
 
-- Ability to specify http versions for http lookups. 
-- Amend to not log HTTP request response and header values by default.
+## [0.23.0] - 2025-11-07
+
+-   Ability to specify http versions for http lookups. 
+-   Amend to not log HTTP request response and header values by default.
 
 ## [0.22.0] - 2025-10-03
 
@@ -252,7 +254,9 @@
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.22.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.23.0...HEAD
+
+[0.23.0]: https://github.com/getindata/flink-http-connector/compare/0.22.0...0.23.0
 
 [0.22.0]: https://github.com/getindata/flink-http-connector/compare/0.21.0...0.22.0
 
