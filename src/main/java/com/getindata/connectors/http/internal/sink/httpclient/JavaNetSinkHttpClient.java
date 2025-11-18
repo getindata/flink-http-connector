@@ -14,6 +14,7 @@ import org.apache.flink.annotation.VisibleForTesting;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
+import com.getindata.connectors.http.internal.HttpLogger;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -39,6 +40,8 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private final HttpPostRequestCallback<HttpRequest> httpPostRequestCallback;
 
     private final RequestSubmitter requestSubmitter;
+
+    private final Properties properties;
 
     public JavaNetSinkHttpClient(
             Properties properties,
@@ -69,6 +72,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             properties,
             headersAndValues
         );
+        this.properties = properties;
     }
 
     @Override
@@ -98,10 +102,9 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         for (var response : responses) {
             var sinkRequestEntry = response.getHttpRequest();
             var optResponse = response.getResponse();
-
+            HttpLogger.getHttpLogger(properties).logResponse(response.getResponse().get());
             httpPostRequestCallback.call(
                 optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
-
             // TODO Add response processor here and orchestrate it with statusCodeChecker.
             if (optResponse.isEmpty() ||
                 statusCodeChecker.isErrorCode(optResponse.get().statusCode())) {

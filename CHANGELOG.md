@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Allow config control of log HTTP request, response and header logging content
 
 ## [0.23.0] - 2025-11-07
 

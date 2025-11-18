@@ -58,18 +58,18 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
         }
 
         var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
-        String previousReqeustMethod = requestsToSubmit.get(0).method;
+        String previousRequestMethod = requestsToSubmit.get(0).method;
         List<HttpSinkRequestEntry> requestBatch = new ArrayList<>(httpRequestBatchSize);
 
         for (var entry : requestsToSubmit) {
             if (requestBatch.size() == httpRequestBatchSize
-                || !previousReqeustMethod.equalsIgnoreCase(entry.method)) {
+                || !previousRequestMethod.equalsIgnoreCase(entry.method)) {
                 // break batch and submit
                 responseFutures.add(sendBatch(endpointUrl, requestBatch));
                 requestBatch.clear();
             }
             requestBatch.add(entry);
-            previousReqeustMethod = entry.method;
+            previousRequestMethod = entry.method;
         }
 
         // submit anything that left

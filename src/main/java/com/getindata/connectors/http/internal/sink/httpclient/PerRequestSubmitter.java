@@ -40,8 +40,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
 
         for (var entry : requestToSubmit) {
             HttpRequest httpRequest = buildHttpRequest(entry, endpointUri);
-            var response = httpClient
-                .sendAsync(
+            var response = httpClient.sendAsync(
                     httpRequest.getHttpRequest(),
                     HttpResponse.BodyHandlers.ofString())
                 .exceptionally(ex -> {
