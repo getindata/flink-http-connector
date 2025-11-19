@@ -49,8 +49,6 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
         builder
             .uri(constructUri(lookupQueryInfo))
             .method(methodName, BodyPublishers.ofString(body));
-        // we do not view the lookup keys as sensitive; therefore the request body is
-        // not obfuscated.
         HttpLogger.getHttpLogger(options.getProperties()).logRequestBody(body);
         return builder;
     }

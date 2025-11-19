@@ -28,6 +28,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
             HttpClient httpClient) {
 
         super(properties, headersAndValues, httpClient);
+
     }
 
     @Override
