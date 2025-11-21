@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Add UNABLE_TO_DESERIALIZE_RESPONSE http-completion-state. If you have used 
+`gid.connector.http.source.lookup.continue-on-error` in a previous release, please review your SQL or applications to 
+account for this new http-completion-state value. 
+
 ## [0.23.0] - 2025-11-07
 
 -   Ability to specify http versions for http lookups. 

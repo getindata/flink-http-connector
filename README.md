@@ -190,20 +190,24 @@ Metadata columns can be specified and hold http information. They are optional r
 
 | Key                   | Data Type                        | Description                            |
 |-----------------------|----------------------------------|----------------------------------------|
-| error-string          | STRING NULL                      | A message associated with the error    |
+| error-string          | STRING NULL                      | A string associated with the error     |
 | http-status-code      | INT NULL                         | The HTTP status code                   |
 | http-headers-map      | MAP <STRING, ARRAY<STRING>> NULL | The headers returned with the response |
 | http-completion-state | STRING NULL                      | The completion state of the http call. |
 
 ##### http-completion-state possible values
 
-| Value             | Description            |
-|:------------------|------------------------|
-| SUCCESS           | Success                |
-| HTTP_ERROR_STATUS | HTTP error status code |
-| EXCEPTION         | An Exception occurred  |
+| Value                          | Description                         |
+|:-------------------------------|-------------------------------------|
+| SUCCESS                        | Success                             |
+| HTTP_ERROR_STATUS              | HTTP error status code              |
+| EXCEPTION                      | An Exception occurred               |
+| UNABLE_TO_DESERIALIZE_RESPONSE | Unable to deserialize HTTP response |
 
 If the `error-string` metadata column is defined on the table and the call succeeds then it will have a null value.
+When the HTTP response cannot be deserialized, then the `http-completion-state` will be `UNABLE_TO_DESERIALIZE_RESPONSE`
+and the `error-string` will be the response body. Note that `UNABLE_TO_DESERIALIZE_RESPONSE` is a new enum value added
+since [0.22.0], please ensure you amend your applications and SQL appropriately. 
 
 When a http lookup call fails and populates the metadata columns with the error information, the expected enrichment columns from the http call
 are not populated, this means that they will be null for nullable columns and hold a default value for the type for non-nullable columns. 

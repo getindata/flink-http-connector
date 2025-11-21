@@ -78,6 +78,7 @@ class HttpLookupTableSourceITCaseTest {
 
         return row1Id.compareTo(row2Id);
     };
+    public static final String A_TEST_STRING_THAT_IS_NOT_JSON = "A test string that is not json";
 
     private StreamTableEnvironment tEnv;
 
@@ -1081,10 +1082,11 @@ class HttpLookupTableSourceITCaseTest {
                 assertThat(row.getField("balance")).isNull();
                 // metadata
                 assertThat(row.getField("errStr"))
-                    .isEqualTo("Failed to deserialize JSON 'A test string that is not json'.");
+                    .isEqualTo(A_TEST_STRING_THAT_IS_NOT_JSON);
                 assertThat(row.getField("headers")).isNotNull();
                 assertThat(row.getField("statusCode")).isEqualTo(200);
-                assertEquals(row.getField("completionState"), HttpCompletionState.EXCEPTION.name());
+                assertEquals(row.getField("completionState"), HttpCompletionState.UNABLE_TO_DESERIALIZE_RESPONSE
+                    .name());
             }
         }
         );
@@ -1393,7 +1395,7 @@ class HttpLookupTableSourceITCaseTest {
             if (StringUtils.isNullOrWhitespaceOnly(spec.methodName) || spec.methodName.equalsIgnoreCase("GET")) {
                 wireMockServer.stubFor(get(urlPathEqualTo(ENDPOINT))
                         .withHeader("Content-Type", equalTo("application/json"))
-                        .willReturn(aResponse().withBody("A test string that is not json").withStatus(200))
+                        .willReturn(aResponse().withBody(A_TEST_STRING_THAT_IS_NOT_JSON).withStatus(200))
                 );
             } else {
                 setUpServerBodyStub(
