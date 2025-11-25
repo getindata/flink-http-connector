@@ -150,6 +150,11 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
                 Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState)
             throws IOException {
 
+        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = getElementConverter();
+        if (elementConverter instanceof SchemaLifecycleAwareElementConverter) {
+            ((SchemaLifecycleAwareElementConverter<?, ?>) elementConverter).open(context);
+        }
+
         return new HttpSinkWriter<>(
             getElementConverter(),
             context,
