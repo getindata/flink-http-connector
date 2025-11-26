@@ -235,8 +235,8 @@ public class JavaNetHttpPollingClient implements PollingClient {
                     rowData = deserialize(responseBody);
                 } catch (IOException e) {
                     if (!this.continueOnError) throw e;
-                    httpCompletionState = HttpCompletionState.EXCEPTION;
-                    errMessage = e.getMessage();
+                    httpCompletionState = HttpCompletionState.UNABLE_TO_DESERIALIZE_RESPONSE;
+                    errMessage = responseBody;
                 }
                 return HttpRowDataWrapper.builder()
                         .data(rowData)
