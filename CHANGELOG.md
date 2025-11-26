@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-- Add UNABLE_TO_DESERIALIZE_RESPONSE http-completion-state. If you have used 
-`gid.connector.http.source.lookup.continue-on-error` in a previous release, please review your SQL or applications to 
-account for this new http-completion-state value. 
+## [0.24.0] - 2025-11-26
+
+-   Add UNABLE_TO_DESERIALIZE_RESPONSE http-completion-state. If you have used 
+    `gid.connector.http.source.lookup.continue-on-error` in a previous release, please review your SQL or applications to 
+    account for this new http-completion-state value. 
 
 ## [0.23.0] - 2025-11-07
 
@@ -258,7 +260,9 @@ account for this new http-completion-state value.
 
 -   Implement basic support for Http connector for Flink SQL
 
-[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.23.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-http-connector/compare/0.24.0...HEAD
+
+[0.24.0]: https://github.com/getindata/flink-http-connector/compare/0.23.0...0.24.0
 
 [0.23.0]: https://github.com/getindata/flink-http-connector/compare/0.22.0...0.23.0
 
