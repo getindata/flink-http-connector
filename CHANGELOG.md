@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- allow format options to be applied to the http response decoding.
+
 ## [0.24.0] - 2025-11-26
 
 -   Add UNABLE_TO_DESERIALIZE_RESPONSE http-completion-state. If you have used 
