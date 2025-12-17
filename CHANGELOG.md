@@ -4,6 +4,10 @@
 
 - allow format options to be applied to the http response decoding.
 
+### Fixed
+
+-   Fixed Bearer token casing in OIDC Authorization header from "BEARER" to "Bearer" to comply with RFC 6750.
+
 ## [0.24.0] - 2025-11-26
 
 -   Add UNABLE_TO_DESERIALIZE_RESPONSE http-completion-state. If you have used 
