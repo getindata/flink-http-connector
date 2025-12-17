@@ -25,6 +25,7 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
+import org.apache.flink.util.Collector;
 import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.StringUtils;
 
@@ -268,24 +269,52 @@ public class JavaNetHttpPollingClient implements PollingClient {
         }
     }
 
-    private List<RowData> deserializeSingleValue(byte[] rawBytes) throws IOException {
-        return Optional.ofNullable(responseBodyDecoder.deserialize(rawBytes))
-            .map(Collections::singletonList)
-            .orElse(Collections.emptyList());
+    @VisibleForTesting
+    List<RowData> deserializeSingleValue(byte[] rawBytes) throws IOException {
+        List<RowData> result = new ArrayList<>();
+        responseBodyDecoder.deserialize(rawBytes, createRowDataCollector(result));
+        return result;
     }
 
-    private List<RowData> deserializeArray(byte[] rawBytes) throws IOException {
+    @VisibleForTesting
+    Collector<RowData> createRowDataCollector(List<RowData> result) {
+        return new RowDataCollector(result);
+    }
+
+    /**
+     * A simple collector implementation that adds RowData records to a list.
+     */
+    @VisibleForTesting
+    static class RowDataCollector implements Collector<RowData> {
+        private final List<RowData> result;
+
+        RowDataCollector(List<RowData> result) {
+            this.result = result;
+        }
+
+        @Override
+        public void collect(RowData record) {
+            result.add(record);
+        }
+
+        @Override
+        public void close() {
+            // No-op - nothing to clean up
+        }
+    }
+
+    @VisibleForTesting
+    List<RowData> deserializeArray(byte[] rawBytes) throws IOException {
         List<JsonNode> rawObjects =
             objectMapper.readValue(rawBytes, new TypeReference<>() {
             });
         List<RowData> result = new ArrayList<>();
         for (JsonNode rawObject : rawObjects) {
             if (!(rawObject instanceof NullNode)) {
-                RowData deserialized =
-                    responseBodyDecoder.deserialize(rawObject.toString().getBytes());
-                // deserialize() returns null if deserialization fails
-                if (deserialized != null) {
-                    result.add(deserialized);
+                List<RowData> deserialized = deserializeSingleValue(rawObject.toString().getBytes());
+                // deserialize() may return empty list if deserialization fails
+                if (deserialized != null && !deserialized.isEmpty()) {
+                    result.addAll(deserialized);
                 }
             }
         }
