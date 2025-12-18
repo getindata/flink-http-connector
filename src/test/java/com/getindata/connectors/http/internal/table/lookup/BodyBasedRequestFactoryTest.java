@@ -1,6 +1,5 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.Collection;
@@ -21,19 +20,19 @@ public class BodyBasedRequestFactoryTest {
 
     @ParameterizedTest
     @MethodSource("configProvider")
-    void testconstructUri(TestSpec testSpec) throws Exception {
-        Set<Configuration> configs = new HashSet();
+    void testConstructUri(TestSpec testSpec) throws Exception {
+        Set<Configuration> configs = new HashSet<>();
 
-        Configuration configuration= new Configuration();
-        Configuration configuration_http11 = new Configuration();
-        Configuration configuration_http2 = new Configuration();
+        Configuration configuration = new Configuration();
+        Configuration configurationHttp11 = new Configuration();
+        Configuration configurationHttp2 = new Configuration();
 
-        configuration_http2.setString(LOOKUP_HTTP_VERSION, String.valueOf(HttpClient.Version.HTTP_2));
-        configuration_http11.setString(LOOKUP_HTTP_VERSION, String.valueOf(HttpClient.Version.HTTP_1_1));
+        configurationHttp2.setString(LOOKUP_HTTP_VERSION.key(), String.valueOf(HttpClient.Version.HTTP_2));
+        configurationHttp11.setString(LOOKUP_HTTP_VERSION.key(), String.valueOf(HttpClient.Version.HTTP_1_1));
 
         configs.add(configuration);
-        configs.add(configuration_http11);
-        configs.add(configuration_http2);
+        configs.add(configurationHttp11);
+        configs.add(configurationHttp2);
 
         for(Configuration config: configs) {
             LookupQueryInfo lookupQueryInfo = new LookupQueryInfo(testSpec.url,

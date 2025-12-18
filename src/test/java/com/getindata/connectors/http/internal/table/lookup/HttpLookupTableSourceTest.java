@@ -1,6 +1,13 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.metrics.groups.CacheMetricGroup;
@@ -172,8 +179,9 @@ class HttpLookupTableSourceTest {
         HttpLookupTableSource tableSource =
                 (HttpLookupTableSource) createTableSource(SCHEMA, getOptions());
 
+        // FIXME: preferCustomShuffle
         LookupTableSource.LookupRuntimeProvider lookupProvider =
-                tableSource.getLookupRuntimeProvider(new LookupRuntimeProviderContext(lookupKey));
+            tableSource.getLookupRuntimeProvider(new LookupRuntimeProviderContext(lookupKey, false));
         HttpTableLookupFunction tableFunction = (HttpTableLookupFunction)
                 ((LookupFunctionProvider) lookupProvider).createLookupFunction();
 
@@ -205,7 +213,7 @@ class HttpLookupTableSourceTest {
         AsyncLookupFunctionProvider lookupProvider =
                 (AsyncLookupFunctionProvider)
                         tableSource.getLookupRuntimeProvider(
-                                new LookupRuntimeProviderContext(lookupKey));
+                                new LookupRuntimeProviderContext(lookupKey, false));
 
         AsyncHttpTableLookupFunction tableFunction =
                 (AsyncHttpTableLookupFunction) lookupProvider.createAsyncLookupFunction();
@@ -322,9 +330,6 @@ class HttpLookupTableSourceTest {
         HttpLookupTableSource tableSource = new HttpLookupTableSource(
                 null, options,
                 null, null, cache);
-        int[][] lookupKeys = {{1, 2}};
-        LookupTableSource.LookupContext lookupContext =
-                new LookupRuntimeProviderContext(lookupKeys);
         return tableSource.getLookupRuntimeProvider(null, null, null);
     }
 

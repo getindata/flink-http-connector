@@ -9,9 +9,9 @@ import java.time.Duration;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.apache.flink.api.common.RuntimeExecutionMode;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ExecutionOptions;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.ConfigurationException;
@@ -73,8 +73,9 @@ public class JavaNetHttpPollingClientWithWireTest {
         wireMockServer.start();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setRestartStrategy(RestartStrategies.noRestart());
         Configuration config = new Configuration();
+        config.set(RestartStrategyOptions.RESTART_STRATEGY,
+            RestartStrategyOptions.RestartStrategyType.NO_RESTART_STRATEGY.getMainValue());
         config.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.STREAMING);
         env.configure(config, getClass().getClassLoader());
         env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
@@ -128,8 +129,8 @@ public class JavaNetHttpPollingClientWithWireTest {
         HttpRequest newHttpRequest = client.updateHttpRequestIfRequired(request,
                 oidcHeaderPreProcessor);
         assertThat(httpRequest).isEqualTo(newHttpRequest);
-        configuration.setString(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL.key(), "http://localhost:9090/auth");
-        configuration.setString(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST, BEARER_REQUEST);
+        configuration.set(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_ENDPOINT_URL, "http://localhost:9090/auth");
+        configuration.set(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_REQUEST, BEARER_REQUEST);
         configuration.set(SOURCE_LOOKUP_OIDC_AUTH_TOKEN_EXPIRY_REDUCTION,
                 Duration.ofSeconds(1L));
         client = new JavaNetHttpPollingClient(mock(HttpClient.class),

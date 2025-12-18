@@ -78,7 +78,7 @@ class GenericJsonAndUrlQueryCreatorFactoryTest
     }
 
     private void createUsingFactory(boolean async) {
-        this.config.setBoolean(HttpLookupConnectorOptions.ASYNC_POLLING, async);
+        this.config.set(HttpLookupConnectorOptions.ASYNC_POLLING, async);
         LookupRow lookupRow= new LookupRow()
                 .addLookupEntry(
                         new RowDataSingleValueLookupSchemaEntry(

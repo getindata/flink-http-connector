@@ -1,8 +1,8 @@
 package com.getindata.connectors.http.internal.table;
 
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.api.connector.sink2.Sink.InitContext;
 import org.apache.flink.api.connector.sink2.SinkWriter.Context;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.FlinkRuntimeException;
 
@@ -27,7 +27,7 @@ public class SerializationSchemaElementConverter
     }
 
     @Override
-    public void open(InitContext context) {
+    public void open(WriterInitContext context) {
         if (!schemaOpened) {
             try {
                 serializationSchema.open(context.asSerializationSchemaInitializationContext());

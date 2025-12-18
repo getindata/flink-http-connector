@@ -23,10 +23,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.RuntimeExecutionMode;
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ExecutionOptions;
-import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -106,11 +105,14 @@ class HttpLookupTableSourceITCaseTest {
         wireMockServer.start();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setRestartStrategy(RestartStrategies.noRestart());
         Configuration config = new Configuration();
+        config.set(RestartStrategyOptions.RESTART_STRATEGY,
+            RestartStrategyOptions.RestartStrategyType.NO_RESTART_STRATEGY.getMainValue());
         config.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.STREAMING);
         env.configure(config, getClass().getClassLoader());
-        env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
+        env.getCheckpointConfig().setCheckpointInterval(1000L);
+        env.getCheckpointConfig().setCheckpointingConsistencyMode(
+            org.apache.flink.core.execution.CheckpointingMode.EXACTLY_ONCE);
         env.setParallelism(1);  // wire mock server has problem with scenario state during parallel execution
 
         tEnv = StreamTableEnvironment.create(env);
