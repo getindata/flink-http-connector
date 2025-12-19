@@ -106,6 +106,9 @@ public final class HttpConnectorConfigConstants {
     public static final String SOURCE_PROXY_PASSWORD =
             SOURCE_LOOKUP_PREFIX + "proxy.password";
 
+    public static final String HTTP_LOGGING_LEVEL =
+        GID_CONNECTOR_HTTP + "logging.level";
+
     public static final String SINK_HTTP_TIMEOUT_SECONDS =
         GID_CONNECTOR_HTTP + "sink.request.timeout";
 
@@ -117,6 +120,7 @@ public final class HttpConnectorConfigConstants {
 
     public static final String SINK_HTTP_WRITER_THREAD_POOL_SIZE =
         GID_CONNECTOR_HTTP + "sink.writer.thread-pool.size";
+
 
     // -----------------------------------------------------
 

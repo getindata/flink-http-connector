@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 
 import com.getindata.connectors.http.LookupQueryCreator;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
+import com.getindata.connectors.http.internal.HttpLogger;
 import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 
 /**
@@ -21,6 +22,7 @@ import com.getindata.connectors.http.internal.utils.uri.URIBuilder;
 public class BodyBasedRequestFactory extends RequestFactoryBase {
 
     private final String methodName;
+    private final HttpLookupConfig options;
 
     public BodyBasedRequestFactory(
             String methodName,
@@ -30,6 +32,7 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
 
         super(lookupQueryCreator, headerPreprocessor, options);
         this.methodName = methodName.toUpperCase();
+        this.options = options;
     }
 
     /**
@@ -42,9 +45,11 @@ public class BodyBasedRequestFactory extends RequestFactoryBase {
     @Override
     protected Builder setUpRequestMethod(LookupQueryInfo lookupQueryInfo) {
         HttpRequest.Builder builder = super.setUpRequestMethod(lookupQueryInfo);
+        String body = lookupQueryInfo.getLookupQuery();
         builder
             .uri(constructUri(lookupQueryInfo))
-            .method(methodName, BodyPublishers.ofString(lookupQueryInfo.getLookupQuery()));
+            .method(methodName, BodyPublishers.ofString(body));
+        HttpLogger.getHttpLogger(options.getProperties()).logRequestBody(body);
         return builder;
     }
 

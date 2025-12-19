@@ -28,6 +28,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
             HttpClient httpClient) {
 
         super(properties, headersAndValues, httpClient);
+
     }
 
     @Override
@@ -40,8 +41,7 @@ public class PerRequestSubmitter extends AbstractRequestSubmitter {
 
         for (var entry : requestToSubmit) {
             HttpRequest httpRequest = buildHttpRequest(entry, endpointUri);
-            var response = httpClient
-                .sendAsync(
+            var response = httpClient.sendAsync(
                     httpRequest.getHttpRequest(),
                     HttpResponse.BodyHandlers.ofString())
                 .exceptionally(ex -> {

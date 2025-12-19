@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Allow config control of log HTTP request, response and header logging content
 
 - allow format options to be applied to the http response decoding.
 - change deserialize method so it can work with Flink 2
