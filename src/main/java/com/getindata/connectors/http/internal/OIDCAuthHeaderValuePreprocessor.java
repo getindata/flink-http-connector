@@ -45,6 +45,6 @@ public class OIDCAuthHeaderValuePreprocessor implements HeaderValuePreprocessor 
                 oidcExpiryReduction
         );
         // apply the OIDC authentication by adding the dynamically calculated header value.
-        return "BEARER " + auth.authenticate();
+        return "Bearer " + auth.authenticate();
     }
 }

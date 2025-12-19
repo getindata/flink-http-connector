@@ -98,6 +98,14 @@ public class JavaNetHttpPollingClient implements PollingClient {
 
     @Override
     public HttpRowDataWrapper pull(RowData lookupRow) {
+        /*
+         * We are not sure if the following code can be driven. Tested with an equality of booleans (which should
+         * be a filter), but with the latest flink this is rejected by the planner.
+         *
+         * If there is a way for lookupRow to be null here, then the results will not populate any metadata fields
+         * and we should add a new completion state to identify this scenario.
+         */
+
         if (lookupRow == null) {
             return HttpRowDataWrapper.builder()
                     .data(Collections.emptyList())
@@ -214,10 +222,14 @@ public class JavaNetHttpPollingClient implements PollingClient {
         var responseBody = response.body();
 
         log.debug("Received status code [{}] for RestTableSource request", response.statusCode());
-        if (!isError && (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreResponse(response))) {
+        final boolean ignoreStatusCode = ignoreResponse(response);
+        if (!isError && (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreStatusCode)) {
             return HttpRowDataWrapper.builder()
                     .data(Collections.emptyList())
-                    .httpCompletionState(HttpCompletionState.SUCCESS)
+                    .httpHeadersMap(response.headers().map())
+                    .httpStatusCode(response.statusCode())
+                    .httpCompletionState(
+                        ignoreStatusCode ? HttpCompletionState.IGNORE_STATUS_CODE : HttpCompletionState.SUCCESS)
                     .build();
         } else {
             if (isError) {
