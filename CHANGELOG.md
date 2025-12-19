@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - allow format options to be applied to the http response decoding.
+- change deserialize method so it can work with Flink 2
 
 ## [0.24.0] - 2025-11-26
 
