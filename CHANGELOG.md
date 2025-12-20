@@ -4,6 +4,8 @@
 
 - allow format options to be applied to the http response decoding.
 - change deserialize method so it can work with Flink 2
+- Fixed Bearer token casing in OIDC Authorization header from "BEARER" to "Bearer" to comply with RFC 6750.
+- introduce completion state for ignore status
 
 ### Fixed
 

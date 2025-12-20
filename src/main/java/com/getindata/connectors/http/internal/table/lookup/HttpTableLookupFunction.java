@@ -84,9 +84,6 @@ public class HttpTableLookupFunction extends LookupFunction {
         int physicalArity = -1;
 
         GenericRowData producedRow = null;
-        if (httpRowDataWrapper.shouldIgnore()) {
-            return Collections.emptyList();
-        }
         // grab the actual data if there is any from the response and populate the producedRow with it
         if (!httpCollector.isEmpty()) {
             // TODO original code increments again if empty - removing

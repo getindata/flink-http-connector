@@ -197,6 +197,10 @@ this means that these columns will be null for nullable columns and hold a defau
 
 When using `gid.connector.http.source.lookup.continue-on-error` as true, consider adding extra metadata columns that will surface information about failures into your stream.
 
+Note that if Metadata columns are specified and the status code is ignored, then a row containing metadata columns will be produced. If
+the status code is ignored and there are no metadata columns defined, then no row will be emitted; this ensures that the expected 
+inner join behaviour still occurs.
+
 Metadata columns can be specified and hold http information. They are optional read-only columns that must be declared VIRTUAL to exclude them during an INSERT INTO operation.
 
 | Key                   | Data Type                        | Description                            |
