@@ -394,14 +394,18 @@ public class JavaNetHttpPollingClientTest {
         ));
 
         HttpClient mockHttpClient = mock(HttpClient.class);
-        when(mockHttpClient.send(any(), any())).thenReturn((HttpResponse) mockResponse);
+        lenient().when(mockHttpClient.send(any(), any())).thenReturn((HttpResponse) mockResponse);
 
-        // Mock decoder to return a row
+        // Mock decoder to add a row to the collector
         RowData mockRowData = GenericRowData.of(
             StringData.fromString("1"),
             StringData.fromString("test")
         );
-        when(decoder.deserialize(any(byte[].class))).thenReturn(mockRowData);
+        lenient().doAnswer(invocation -> {
+            org.apache.flink.util.Collector<RowData> collector = invocation.getArgument(1);
+            collector.collect(mockRowData);
+            return null;
+        }).when(decoder).deserialize(any(byte[].class), any());
 
         DataType lookupPhysicalDataType = row(List.of(
             DataTypes.FIELD("id", DataTypes.STRING())
