@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- Fixed http sink NEP issue when flink job restore from checkpoint.
 
 - allow format options to be applied to the http response decoding.
 - change deserialize method so it can work with Flink 2
