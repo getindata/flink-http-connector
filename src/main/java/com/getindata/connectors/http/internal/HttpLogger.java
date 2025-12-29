@@ -16,7 +16,7 @@ import static com.getindata.connectors.http.internal.config.HttpConnectorConfigC
 @Slf4j
 public class HttpLogger {
 
-    private final  HttpLoggingLevelType httpLoggingLevelType;
+    private final HttpLoggingLevelType httpLoggingLevelType;
 
     public static HttpLogger getHttpLogger(Properties properties) {
         return new HttpLogger(properties);
