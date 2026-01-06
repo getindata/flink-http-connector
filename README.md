@@ -218,10 +218,16 @@ Metadata columns can be specified and hold http information. They are optional r
 | HTTP_ERROR_STATUS              | HTTP error status code              |
 | EXCEPTION                      | An Exception occurred               |
 | UNABLE_TO_DESERIALIZE_RESPONSE | Unable to deserialize HTTP response |
+| IGNORE_STATUS_CODE             | Status code was ignored             |
 
 If the `error-string` metadata column is defined on the table and the call succeeds then it will have a null value.
 When the HTTP response cannot be deserialized, then the `http-completion-state` will be `UNABLE_TO_DESERIALIZE_RESPONSE`
-and the `error-string` will be the response body. Note that `UNABLE_TO_DESERIALIZE_RESPONSE` is a new enum value added
+and the `error-string` will be the response body.
+When the HTTP status code is in the `http.source.lookup.ignored-response-codes`, then the `http-completion-state` will
+be `IGNORE_STATUS_CODE` and no data is returned; any metadata columns contain information about the API call that
+occurred.
+
+Note that `UNABLE_TO_DESERIALIZE_RESPONSE` and `IGNORE_STATUS_CODE` are new enum values added
 since [0.22.0], please ensure you amend your applications and SQL appropriately. 
 
 When a http lookup call fails and populates the metadata columns with the error information, the expected enrichment columns from the http call
