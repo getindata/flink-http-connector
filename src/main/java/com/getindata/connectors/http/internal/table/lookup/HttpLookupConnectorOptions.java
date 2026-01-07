@@ -5,6 +5,7 @@ import java.time.Duration;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
+import com.getindata.connectors.http.internal.HttpLoggingLevelType;
 import com.getindata.connectors.http.internal.retry.RetryStrategyType;
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.*;
 
@@ -128,6 +129,22 @@ public class HttpLookupConnectorOptions {
                     .stringType()
                     .defaultValue(RetryStrategyType.FIXED_DELAY.getCode())
                     .withDescription("Auto retry strategy type: fixed-delay (default) or exponential-delay.");
+
+    public static final ConfigOption<String> LOGGING_LEVEL_FOR_HTTP =
+        ConfigOptions.key(HTTP_LOGGING_LEVEL)
+            .stringType()
+            .defaultValue(String.valueOf(HttpLoggingLevelType.MIN))
+            .withDescription("VALID values are " + HttpLoggingLevelType.MIN.name() + ", "
+                + HttpLoggingLevelType.REQRESPONSE.name() + " and " + HttpLoggingLevelType.MAX.name()
+                + ". This dictates the amount of content that the debug logging will show around HTTP calls."
+                + " This logging will be issued before HTTP requests and on receipt of responses, so you can see"
+                + " diagnostically when the HTTP calls were made."
+                + " HTTP calls and responses can contain sensitive information, so by default the responses"
+                + " and header information is not logged. This minimal logging is default and corresponds to a config"
+                + " value of " + HttpLoggingLevelType.MIN.name() + ". If you are not in secure environment would like"
+                + " to see the HTTP request and response bodies in the log then specify "
+                + HttpLoggingLevelType.REQRESPONSE.name() + ". If you would also like to see the header values,"
+                + " specify " + HttpLoggingLevelType.MAX.name() + ".");
 
     public static final ConfigOption<String> SOURCE_LOOKUP_HTTP_SUCCESS_CODES =
             ConfigOptions.key(SOURCE_RETRY_SUCCESS_CODES)

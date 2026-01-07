@@ -25,12 +25,6 @@ public class Slf4jHttpPostRequestCallback implements HttpPostRequestCallback<Htt
         HttpRequest requestEntry,
         String endpointUrl,
         Map<String, String> headerMap) {
-
-        // Uncomment if you want to see the requestBody in the log
-        //String requestBody = requestEntry.getElements().stream()
-        //    .map(element -> new String(element, StandardCharsets.UTF_8))
-        //    .collect(Collectors.joining());
-
         if (response == null) {
             log.info(
                 "Got response for a request.\n  Request:\n    " +

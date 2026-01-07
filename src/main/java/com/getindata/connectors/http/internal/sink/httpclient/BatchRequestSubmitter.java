@@ -58,18 +58,18 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
         }
 
         var responseFutures = new ArrayList<CompletableFuture<JavaNetHttpResponseWrapper>>();
-        String previousReqeustMethod = requestsToSubmit.get(0).method;
+        String previousRequestMethod = requestsToSubmit.get(0).method;
         List<HttpSinkRequestEntry> requestBatch = new ArrayList<>(httpRequestBatchSize);
 
         for (var entry : requestsToSubmit) {
             if (requestBatch.size() == httpRequestBatchSize
-                || !previousReqeustMethod.equalsIgnoreCase(entry.method)) {
+                || !previousRequestMethod.equalsIgnoreCase(entry.method)) {
                 // break batch and submit
                 responseFutures.add(sendBatch(endpointUrl, requestBatch));
                 requestBatch.clear();
             }
             requestBatch.add(entry);
-            previousReqeustMethod = entry.method;
+            previousRequestMethod = entry.method;
         }
 
         // submit anything that left
@@ -84,9 +84,9 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
 
     private CompletableFuture<JavaNetHttpResponseWrapper> sendBatch(
             String endpointUrl,
-            List<HttpSinkRequestEntry> reqeustBatch) {
+            List<HttpSinkRequestEntry> requestBatch) {
 
-        HttpRequest httpRequest = buildHttpRequest(reqeustBatch, URI.create(endpointUrl));
+        HttpRequest httpRequest = buildHttpRequest(requestBatch, URI.create(endpointUrl));
         return httpClient
             .sendAsync(
                 httpRequest.getHttpRequest(),
@@ -102,11 +102,11 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             );
     }
 
-    private HttpRequest buildHttpRequest(List<HttpSinkRequestEntry> reqeustBatch, URI endpointUri) {
+    private HttpRequest buildHttpRequest(List<HttpSinkRequestEntry> requestBatch, URI endpointUri) {
 
         try {
-            var method = reqeustBatch.get(0).method;
-            List<byte[]> elements = new ArrayList<>(reqeustBatch.size());
+            var method = requestBatch.get(0).method;
+            List<byte[]> elements = new ArrayList<>(requestBatch.size());
 
             BodyPublisher publisher;
             // By default, Java's BodyPublishers.ofByteArrays(elements) will just put Jsons
@@ -114,7 +114,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
             // What we do here is we pack every Json/byteArray into Json Array hence '[' and ']'
             // at the end, and we separate every element with comma.
             elements.add(BATCH_START_BYTES);
-            for (HttpSinkRequestEntry entry : reqeustBatch) {
+            for (HttpSinkRequestEntry entry : requestBatch) {
                 elements.add(entry.element);
                 elements.add(BATCH_ELEMENT_DELIM_BYTES);
             }
