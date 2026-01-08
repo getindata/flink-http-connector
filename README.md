@@ -223,7 +223,7 @@ Metadata columns can be specified and hold http information. They are optional r
 If the `error-string` metadata column is defined on the table and the call succeeds then it will have a null value.
 When the HTTP response cannot be deserialized, then the `http-completion-state` will be `UNABLE_TO_DESERIALIZE_RESPONSE`
 and the `error-string` will be the response body.
-When the HTTP status code is in the `http.source.lookup.ignored-response-codes`, then the `http-completion-state` will
+When the HTTP status code is in the `gid.connector.http.source.lookup.ignored-response-codes`, then the `http-completion-state` will
 be `IGNORE_STATUS_CODE` and no data is returned; any metadata columns contain information about the API call that
 occurred.
 
