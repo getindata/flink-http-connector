@@ -197,6 +197,10 @@ this means that these columns will be null for nullable columns and hold a defau
 
 When using `gid.connector.http.source.lookup.continue-on-error` as true, consider adding extra metadata columns that will surface information about failures into your stream.
 
+Note that if metadata columns are specified and the status code is ignored, then a row containing metadata columns will be produced. If
+the status code is ignored and there are no metadata columns defined, then no row will be emitted; this ensures that the expected 
+inner join behaviour still occurs.
+
 Metadata columns can be specified and hold http information. They are optional read-only columns that must be declared VIRTUAL to exclude them during an INSERT INTO operation.
 
 | Key                   | Data Type                        | Description                            |
@@ -214,10 +218,16 @@ Metadata columns can be specified and hold http information. They are optional r
 | HTTP_ERROR_STATUS              | HTTP error status code              |
 | EXCEPTION                      | An Exception occurred               |
 | UNABLE_TO_DESERIALIZE_RESPONSE | Unable to deserialize HTTP response |
+| IGNORE_STATUS_CODE             | Status code is ignored              |
 
 If the `error-string` metadata column is defined on the table and the call succeeds then it will have a null value.
 When the HTTP response cannot be deserialized, then the `http-completion-state` will be `UNABLE_TO_DESERIALIZE_RESPONSE`
-and the `error-string` will be the response body. Note that `UNABLE_TO_DESERIALIZE_RESPONSE` is a new enum value added
+and the `error-string` will be the response body.
+When the HTTP status code is in the `gid.connector.http.source.lookup.ignored-response-codes`, then the `http-completion-state` will
+be `IGNORE_STATUS_CODE` and no data is returned; any metadata columns contain information about the API call that
+occurred.
+
+Note that `UNABLE_TO_DESERIALIZE_RESPONSE` and `IGNORE_STATUS_CODE` are new enum values added
 since [0.22.0], please ensure you amend your applications and SQL appropriately. 
 
 When a http lookup call fails and populates the metadata columns with the error information, the expected enrichment columns from the http call
