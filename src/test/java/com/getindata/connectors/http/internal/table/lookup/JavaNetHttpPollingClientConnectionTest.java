@@ -505,4 +505,125 @@ class JavaNetHttpPollingClientConnectionTest {
                                 .withStatus(200)
                                 .withBody(readTestFile(SAMPLES_FOLDER + "HttpResult.json"))));
     }
+
+    @Test
+    void shouldSetIgnoreStatusCodeCompletionStateForIgnoredStatusCodes()
+        throws ConfigurationException {
+        // GIVEN - Configure client with ignored status codes (404, 503)
+        configuration.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES, "404,503");
+        configuration.setString(SOURCE_LOOKUP_HTTP_SUCCESS_CODES, "200");
+        configuration.setString(
+            HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
+
+        // Set up WireMock to return 404
+        this.stubMapping =
+            wireMockServer.stubFor(
+                get(urlEqualTo(ENDPOINT + "?id=1&uuid=2"))
+                    .withHeader("Content-Type", equalTo("application/json"))
+                    .willReturn(aResponse().withStatus(404).withBody("Not Found")));
+
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient();
+
+        // WHEN - Pull data with a lookup row
+        HttpRowDataWrapper result = pollingClient.pull(lookupRowData);
+
+        // THEN - Verify completion state is IGNORE_STATUS_CODE
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.IGNORE_STATUS_CODE);
+        assertThat(result.getData()).isEmpty();
+        assertThat(result.getHttpStatusCode()).isEqualTo(404);
+    }
+
+    @Test
+    void shouldSetIgnoreStatusCodeForMultipleIgnoredCodes() throws ConfigurationException {
+        // GIVEN - Configure client with multiple ignored status codes
+        configuration.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES, "404,503,429");
+        configuration.setString(SOURCE_LOOKUP_HTTP_SUCCESS_CODES, "200");
+        configuration.setString(
+            HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
+
+        // Set up WireMock to return 503
+        this.stubMapping =
+            wireMockServer.stubFor(
+                get(urlEqualTo(ENDPOINT + "?id=1&uuid=2"))
+                    .withHeader("Content-Type", equalTo("application/json"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(503)
+                            .withBody("Service Unavailable")));
+
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient();
+
+        // WHEN
+        HttpRowDataWrapper result = pollingClient.pull(lookupRowData);
+
+        // THEN - Verify 503 is also treated as ignored
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.IGNORE_STATUS_CODE);
+        assertThat(result.getData()).isEmpty();
+        assertThat(result.getHttpStatusCode()).isEqualTo(503);
+    }
+
+    @Test
+    void shouldNotSetIgnoreStatusCodeForNonIgnoredCodes() throws ConfigurationException {
+        // GIVEN - Configure client with ignored status codes (404, 503)
+        configuration.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES, "404,503");
+        configuration.setString(SOURCE_LOOKUP_HTTP_SUCCESS_CODES, "200");
+        configuration.setString(
+            HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
+
+        // Set up WireMock to return 200 (success, not ignored)
+        this.stubMapping = setUpServerStub(200);
+
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient();
+
+        // WHEN
+        HttpRowDataWrapper result = pollingClient.pull(lookupRowData);
+
+        // THEN - Verify completion state is SUCCESS, not IGNORE_STATUS_CODE
+        assertThat(result.getHttpCompletionState()).isEqualTo(HttpCompletionState.SUCCESS);
+        assertThat(result.getData()).isNotEmpty();
+        assertThat(result.getHttpStatusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void shouldReturnMetadataForIgnoredStatusCode() throws ConfigurationException {
+        // GIVEN - Configure client with ignored status codes (404)
+        configuration.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES, "404");
+        configuration.setString(SOURCE_LOOKUP_HTTP_SUCCESS_CODES, "200");
+        configuration.setString(
+            HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
+
+        // Set up WireMock to return 404 with custom headers
+        this.stubMapping =
+            wireMockServer.stubFor(
+                get(urlEqualTo(ENDPOINT + "?id=1&uuid=2"))
+                    .withHeader("Content-Type", equalTo("application/json"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(404)
+                            .withBody("Not Found")
+                            .withHeader("X-Request-Id", "12345")
+                            .withHeader("X-Custom-Header", "custom-value")));
+
+        JavaNetHttpPollingClient pollingClient = setUpPollingClient();
+
+        // WHEN - Pull data with a lookup row
+        HttpRowDataWrapper result = pollingClient.pull(lookupRowData);
+
+        // THEN - Verify completion state is IGNORE_STATUS_CODE
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.IGNORE_STATUS_CODE);
+        // Verify data is empty (no body content)
+        assertThat(result.getData()).isEmpty();
+        // Verify metadata is present - status code
+        assertThat(result.getHttpStatusCode()).isEqualTo(404);
+        // Verify metadata is present - headers
+        assertThat(result.getHttpHeadersMap()).isNotNull();
+        assertThat(result.getHttpHeadersMap()).containsKey("X-Request-Id");
+        assertThat(result.getHttpHeadersMap().get("X-Request-Id")).containsExactly("12345");
+        assertThat(result.getHttpHeadersMap()).containsKey("X-Custom-Header");
+        assertThat(result.getHttpHeadersMap().get("X-Custom-Header"))
+            .containsExactly("custom-value");
+    }
 }
