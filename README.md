@@ -197,7 +197,7 @@ this means that these columns will be null for nullable columns and hold a defau
 
 When using `gid.connector.http.source.lookup.continue-on-error` as true, consider adding extra metadata columns that will surface information about failures into your stream.
 
-Note that if Metadata columns are specified and the status code is ignored, then a row containing metadata columns will be produced. If
+Note that if metadata columns are specified and the status code is ignored, then a row containing metadata columns will be produced. If
 the status code is ignored and there are no metadata columns defined, then no row will be emitted; this ensures that the expected 
 inner join behaviour still occurs.
 
@@ -218,7 +218,7 @@ Metadata columns can be specified and hold http information. They are optional r
 | HTTP_ERROR_STATUS              | HTTP error status code              |
 | EXCEPTION                      | An Exception occurred               |
 | UNABLE_TO_DESERIALIZE_RESPONSE | Unable to deserialize HTTP response |
-| IGNORE_STATUS_CODE             | Status code was ignored             |
+| IGNORE_STATUS_CODE             | Status code is ignored              |
 
 If the `error-string` metadata column is defined on the table and the call succeeds then it will have a null value.
 When the HTTP response cannot be deserialized, then the `http-completion-state` will be `UNABLE_TO_DESERIALIZE_RESPONSE`

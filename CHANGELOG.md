@@ -3,14 +3,10 @@
 ## [Unreleased]
 -   Allow config control of log HTTP request, response and header logging content
 
-- allow format options to be applied to the http response decoding.
-- change deserialize method so it can work with Flink 2
+- Allow format options to be applied to the http response decoding.
+- Change deserialize method so it can work with Flink 2
 - Fixed Bearer token casing in OIDC Authorization header from "BEARER" to "Bearer" to comply with RFC 6750.
-- introduce completion state for ignore status
-
-### Fixed
-
--   Fixed Bearer token casing in OIDC Authorization header from "BEARER" to "Bearer" to comply with RFC 6750.
+- Introduce completion state for ignore status
 
 ## [0.24.0] - 2025-11-26
 
