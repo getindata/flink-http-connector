@@ -1,9 +1,10 @@
 package com.getindata.connectors.http.internal.table.lookup;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -16,7 +17,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.factories.DynamicTableFactory;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.util.Collector;
 import org.apache.flink.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +24,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
@@ -31,6 +35,7 @@ import com.getindata.connectors.http.internal.table.lookup.querycreators.Generic
 import com.getindata.connectors.http.internal.table.lookup.querycreators.GenericJsonQueryCreator;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
+import static com.getindata.connectors.http.internal.table.lookup.HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES;
 import static com.getindata.connectors.http.internal.table.lookup.HttpLookupTableSourceFactory.row;
 
 @ExtendWith(MockitoExtension.class)
@@ -228,126 +233,53 @@ public class JavaNetHttpPollingClientTest {
     }
 
     @Test
-    public void shouldCollectRowDataInCollector() throws ConfigurationException {
-        // GIVEN
-        List<RowData> result = new ArrayList<>();
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            options,
-            new GetRequestFactory(
-                new GenericGetQueryCreator(lookupRow),
-                headerPreprocessor,
-                options
-            )
-        );
-
-        Collector<RowData> collector = client.createRowDataCollector(result);
-
-        RowData row1 = GenericRowData.of(StringData.fromString("test1"));
-        RowData row2 = GenericRowData.of(StringData.fromString("test2"));
-
-        // WHEN
-        collector.collect(row1);
-        collector.collect(row2);
-
-        // THEN
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0)).isEqualTo(row1);
-        assertThat(result.get(1)).isEqualTo(row2);
-    }
-
-    @Test
-    public void shouldCallCloseOnRowDataCollectorWithoutException() throws ConfigurationException {
-        // GIVEN
-        List<RowData> result = new ArrayList<>();
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            options,
-            new GetRequestFactory(
-                new GenericGetQueryCreator(lookupRow),
-                headerPreprocessor,
-                options
-            )
-        );
-
-        Collector<RowData> collector = client.createRowDataCollector(result);
-        collector.collect(GenericRowData.of(StringData.fromString("test")));
-
-        // WHEN - close should not throw any exception
-        collector.close();
-
-        // THEN
-        assertThat(result).hasSize(1);
-    }
-
-    @Test
-    public void shouldHandleEmptyCollectionInRowDataCollector() throws ConfigurationException {
-        // GIVEN
-        List<RowData> result = new ArrayList<>();
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            options,
-            new GetRequestFactory(
-                new GenericGetQueryCreator(lookupRow),
-                headerPreprocessor,
-                options
-            )
-        );
-
-        Collector<RowData> collector = client.createRowDataCollector(result);
-
-        // WHEN - close without collecting anything
-        collector.close();
-
-        // THEN
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    public void shouldDeserializeArrayWithValidObjects() throws Exception {
-        // GIVEN
-        DeserializationSchema<RowData> mockDecoder = new DeserializationSchema<RowData>() {
-            @Override
-            public RowData deserialize(byte[] message) throws IOException {
-                return null;
-            }
-
-            @Override
-            public void deserialize(byte[] message, Collector<RowData> out) throws IOException {
-                String msg = new String(message);
-                if (msg.contains("value1")) {
-                    out.collect(GenericRowData.of(StringData.fromString("row1")));
-                } else if (msg.contains("value2")) {
-                    out.collect(GenericRowData.of(StringData.fromString("row2")));
-                }
-                out.close();
-            }
-
-            @Override
-            public boolean isEndOfStream(RowData nextElement) {
-                return false;
-            }
-
-            @Override
-            public org.apache.flink.api.common.typeinfo.TypeInformation<RowData> getProducedType() {
-                return null;
-            }
-        };
+    public void shouldSetIgnoreStatusCodeCompletionStateForIgnoredStatusCodes() throws Exception {
+        // GIVEN - Configure client with ignored status codes (404, 503)
+        Configuration config = new Configuration();
+        config.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES.key(), "404,503");
+        // Set success codes to 200 to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES.key(), "200");
+        // Set retry codes to empty or different codes to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
 
         Properties properties = new Properties();
-        properties.setProperty(HttpConnectorConfigConstants.RESULT_TYPE, "array");
-
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(BASE_URL)
+            .readableConfig(config)
             .properties(properties)
+            .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
             .build();
 
+        // Mock HTTP response with status code 404 (ignored status)
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(404);
+        when(mockResponse.body()).thenReturn("Not Found");
+        lenient().when(mockResponse.headers()).thenReturn(HttpHeaders.of(
+            Collections.emptyMap(),
+            (name, value) -> true
+        ));
+
+        // Mock HttpClient to return the mocked response
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        when(mockHttpClient.send(any(), any())).thenReturn((HttpResponse) mockResponse);
+
+        DataType lookupPhysicalDataType = row(List.of(
+            DataTypes.FIELD("id", DataTypes.STRING())
+        ));
+
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("id",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        0))
+            );
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            mockDecoder,
+            mockHttpClient,
+            decoder,
             lookupConfig,
             new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
@@ -356,52 +288,64 @@ public class JavaNetHttpPollingClientTest {
             )
         );
 
-        // WHEN
-        String jsonArray = "[{\"key\":\"value1\"},{\"key\":\"value2\"}]";
-        List<RowData> result = client.deserializeArray(jsonArray.getBytes());
+        RowData lookupRowData = GenericRowData.of(StringData.fromString("1"));
 
-        // THEN
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
+        // WHEN - Pull data with a lookup row
+        HttpRowDataWrapper result = client.pull(lookupRowData);
+
+        // THEN - Verify completion state is IGNORE_STATUS_CODE
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.IGNORE_STATUS_CODE);
+        assertThat(result.getData()).isEmpty();
     }
 
     @Test
-    public void shouldHandleNullNodesInArray() throws Exception {
-        // GIVEN
-        DeserializationSchema<RowData> mockDecoder = new DeserializationSchema<RowData>() {
-            @Override
-            public RowData deserialize(byte[] message) throws IOException {
-                return null;
-            }
-
-            @Override
-            public void deserialize(byte[] message, Collector<RowData> out) throws IOException {
-                out.collect(GenericRowData.of(StringData.fromString("valid")));
-                out.close();
-            }
-
-            @Override
-            public boolean isEndOfStream(RowData nextElement) {
-                return false;
-            }
-
-            @Override
-            public org.apache.flink.api.common.typeinfo.TypeInformation<RowData> getProducedType() {
-                return null;
-            }
-        };
+    public void shouldSetIgnoreStatusCodeForMultipleIgnoredCodes() throws Exception {
+        // GIVEN - Configure client with multiple ignored status codes
+        Configuration config = new Configuration();
+        config.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES.key(), "404,503,429");
+        // Set success codes to 200 to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES.key(), "200");
+        // Set retry codes to empty or different codes to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
 
         Properties properties = new Properties();
-        properties.setProperty(HttpConnectorConfigConstants.RESULT_TYPE, "array");
-
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(BASE_URL)
+            .readableConfig(config)
             .properties(properties)
+            .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
             .build();
 
+        // Test with status code 503
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(503);
+        when(mockResponse.body()).thenReturn("Service Unavailable");
+        lenient().when(mockResponse.headers()).thenReturn(HttpHeaders.of(
+            Collections.emptyMap(),
+            (name, value) -> true
+        ));
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        when(mockHttpClient.send(any(), any())).thenReturn((HttpResponse) mockResponse);
+
+        DataType lookupPhysicalDataType = row(List.of(
+            DataTypes.FIELD("id", DataTypes.STRING())
+        ));
+
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("id",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        0))
+            );
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            mockDecoder,
+            mockHttpClient,
+            decoder,
             lookupConfig,
             new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
@@ -410,57 +354,71 @@ public class JavaNetHttpPollingClientTest {
             )
         );
 
-        // WHEN
-        String jsonArray = "[{\"key\":\"value1\"},null,{\"key\":\"value2\"}]";
-        List<RowData> result = client.deserializeArray(jsonArray.getBytes());
+        RowData lookupRowData = GenericRowData.of(StringData.fromString("1"));
 
-        // THEN - null nodes should be skipped
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
+        // WHEN
+        HttpRowDataWrapper result = client.pull(lookupRowData);
+
+        // THEN - Verify 503 is also treated as ignored
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.IGNORE_STATUS_CODE);
+        assertThat(result.getData()).isEmpty();
     }
 
     @Test
-    public void shouldHandleEmptyDeserializationInArray() throws Exception {
-        // GIVEN
-        DeserializationSchema<RowData> mockDecoder = new DeserializationSchema<RowData>() {
-            @Override
-            public RowData deserialize(byte[] message) throws IOException {
-                return null;
-            }
-
-            @Override
-            public void deserialize(byte[] message, Collector<RowData> out) throws IOException {
-                String msg = new String(message);
-                // Only collect for specific messages, return empty for others
-                if (msg.contains("\"status\":\"valid\"")) {
-                    out.collect(GenericRowData.of(StringData.fromString("data")));
-                }
-                // Don't collect anything for other messages
-                out.close();
-            }
-
-            @Override
-            public boolean isEndOfStream(RowData nextElement) {
-                return false;
-            }
-
-            @Override
-            public org.apache.flink.api.common.typeinfo.TypeInformation<RowData> getProducedType() {
-                return null;
-            }
-        };
+    public void shouldNotSetIgnoreStatusCodeForNonIgnoredCodes() throws Exception {
+        // GIVEN - Configure client with ignored status codes (404, 503)
+        Configuration config = new Configuration();
+        config.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES.key(), "404,503");
+        // Set success codes to 200 to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES.key(), "200");
+        // Set retry codes to empty or different codes to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
 
         Properties properties = new Properties();
-        properties.setProperty(HttpConnectorConfigConstants.RESULT_TYPE, "array");
-
         HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
             .url(BASE_URL)
+            .readableConfig(config)
             .properties(properties)
+            .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
             .build();
 
+        // Mock HTTP response with status code 200 (success, not ignored)
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+        when(mockResponse.body()).thenReturn("{\"id\":\"1\",\"name\":\"test\"}");
+        lenient().when(mockResponse.headers()).thenReturn(HttpHeaders.of(
+            Collections.emptyMap(),
+            (name, value) -> true
+        ));
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        when(mockHttpClient.send(any(), any())).thenReturn((HttpResponse) mockResponse);
+
+        // Mock decoder to return a row
+        RowData mockRowData = GenericRowData.of(
+            StringData.fromString("1"),
+            StringData.fromString("test")
+        );
+        when(decoder.deserialize(any(byte[].class))).thenReturn(mockRowData);
+
+        DataType lookupPhysicalDataType = row(List.of(
+            DataTypes.FIELD("id", DataTypes.STRING())
+        ));
+
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("id",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        0))
+            );
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            mockDecoder,
+            mockHttpClient,
+            decoder,
             lookupConfig,
             new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
@@ -469,12 +427,95 @@ public class JavaNetHttpPollingClientTest {
             )
         );
 
-        // WHEN
-        String jsonArray = "[{\"status\":\"invalid\"},{\"status\":\"valid\"},{\"status\":\"invalid\"}]";
-        List<RowData> result = client.deserializeArray(jsonArray.getBytes());
+        RowData lookupRowData = GenericRowData.of(StringData.fromString("1"));
 
-        // THEN - only valid deserialization should be included
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        // WHEN
+        HttpRowDataWrapper result = client.pull(lookupRowData);
+
+        // THEN - Verify completion state is SUCCESS, not IGNORE_STATUS_CODE
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.SUCCESS);
+        assertThat(result.getData()).isNotEmpty();
+    }
+
+    @Test
+    public void shouldReturnMetadataForIgnoredStatusCode() throws Exception {
+        // GIVEN - Configure client with ignored status codes (404)
+        Configuration config = new Configuration();
+        config.setString(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES.key(), "404");
+        // Set success codes to 200 to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_SUCCESS_CODES.key(), "200");
+        // Set retry codes to empty or different codes to avoid conflicts
+        config.setString(HttpLookupConnectorOptions.SOURCE_LOOKUP_HTTP_RETRY_CODES.key(), "");
+
+        Properties properties = new Properties();
+        HttpLookupConfig lookupConfig = HttpLookupConfig.builder()
+            .url(BASE_URL)
+            .readableConfig(config)
+            .properties(properties)
+            .httpPostRequestCallback(new Slf4JHttpLookupPostRequestCallback())
+            .build();
+
+        // Mock HTTP response with status code 404 (ignored status) and metadata
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(404);
+        when(mockResponse.body()).thenReturn("Not Found");
+
+        // Add metadata headers
+        Map<String, List<String>> headersMap = new HashMap<>();
+        headersMap.put("X-Request-Id", List.of("12345"));
+        headersMap.put("X-Custom-Header", List.of("custom-value"));
+        when(mockResponse.headers()).thenReturn(HttpHeaders.of(
+            headersMap,
+            (name, value) -> true
+        ));
+
+        // Mock HttpClient to return the mocked response
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        when(mockHttpClient.send(any(), any())).thenReturn((HttpResponse) mockResponse);
+
+        DataType lookupPhysicalDataType = row(List.of(
+            DataTypes.FIELD("id", DataTypes.STRING())
+        ));
+
+        LookupRow lookupRow = new LookupRow()
+            .addLookupEntry(
+                new RowDataSingleValueLookupSchemaEntry("id",
+                    RowData.createFieldGetter(
+                        DataTypes.STRING().getLogicalType(),
+                        0))
+            );
+        lookupRow.setLookupPhysicalRowDataType(lookupPhysicalDataType);
+
+        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
+            mockHttpClient,
+            decoder,
+            lookupConfig,
+            new GetRequestFactory(
+                new GenericGetQueryCreator(lookupRow),
+                headerPreprocessor,
+                lookupConfig
+            )
+        );
+
+        RowData lookupRowData = GenericRowData.of(StringData.fromString("1"));
+
+        // WHEN - Pull data with a lookup row
+        HttpRowDataWrapper result = client.pull(lookupRowData);
+
+        // THEN - Verify completion state is IGNORE_STATUS_CODE
+        assertThat(result.getHttpCompletionState())
+            .isEqualTo(HttpCompletionState.IGNORE_STATUS_CODE);
+        // Verify data is empty (no body content)
+        assertThat(result.getData()).isEmpty();
+        // Verify metadata is present - status code
+        assertThat(result.getHttpStatusCode()).isEqualTo(404);
+        // Verify metadata is present - headers
+        assertThat(result.getHttpHeadersMap()).isNotNull();
+        assertThat(result.getHttpHeadersMap()).containsKey("X-Request-Id");
+        assertThat(result.getHttpHeadersMap().get("X-Request-Id")).containsExactly("12345");
+        assertThat(result.getHttpHeadersMap()).containsKey("X-Custom-Header");
+        assertThat(result.getHttpHeadersMap().get("X-Custom-Header")).containsExactly("custom-value");
     }
 }
