@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Simplify the implementation of deserialize change added in the last release and add proper testing.
+
 ## [0.25.0] - 2026-01-09
 
 -   Allow config control of log HTTP request, response and header logging content
