@@ -228,12 +228,35 @@ public class JavaNetHttpPollingClientTest {
     }
 
     @Test
-    public void shouldCollectRowDataInCollector() throws ConfigurationException {
+    public void deserializeSingleValueTest() throws ConfigurationException, IOException {
         // GIVEN
-        List<RowData> result = new ArrayList<>();
+        DeserializationSchema<RowData> mockDecoder = new DeserializationSchema<RowData>() {
+            @Override
+            public RowData deserialize(byte[] message) throws IOException {
+                return null;
+            }
+
+            @Override
+            public void deserialize(byte[] message, Collector<RowData> out) throws IOException {
+                String msg = new String(message);
+                out.collect(GenericRowData.of(StringData.fromString(msg)));
+                out.close();
+            }
+
+            @Override
+            public boolean isEndOfStream(RowData nextElement) {
+                return false;
+            }
+
+            @Override
+            public org.apache.flink.api.common.typeinfo.TypeInformation<RowData> getProducedType() {
+                return null;
+            }
+        };
+
         JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
             httpClient,
-            decoder,
+            mockDecoder,
             options,
             new GetRequestFactory(
                 new GenericGetQueryCreator(lookupRow),
@@ -241,69 +264,14 @@ public class JavaNetHttpPollingClientTest {
                 options
             )
         );
-
-        Collector<RowData> collector = client.createRowDataCollector(result);
-
-        RowData row1 = GenericRowData.of(StringData.fromString("test1"));
-        RowData row2 = GenericRowData.of(StringData.fromString("test2"));
 
         // WHEN
-        collector.collect(row1);
-        collector.collect(row2);
-
-        // THEN
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0)).isEqualTo(row1);
-        assertThat(result.get(1)).isEqualTo(row2);
-    }
-
-    @Test
-    public void shouldCallCloseOnRowDataCollectorWithoutException() throws ConfigurationException {
-        // GIVEN
-        List<RowData> result = new ArrayList<>();
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            options,
-            new GetRequestFactory(
-                new GenericGetQueryCreator(lookupRow),
-                headerPreprocessor,
-                options
-            )
-        );
-
-        Collector<RowData> collector = client.createRowDataCollector(result);
-        collector.collect(GenericRowData.of(StringData.fromString("test")));
-
-        // WHEN - close should not throw any exception
-        collector.close();
+        String testString = "Test1";
+        List<RowData> result = client.deserializeSingleValue(testString.getBytes());
 
         // THEN
         assertThat(result).hasSize(1);
-    }
-
-    @Test
-    public void shouldHandleEmptyCollectionInRowDataCollector() throws ConfigurationException {
-        // GIVEN
-        List<RowData> result = new ArrayList<>();
-        JavaNetHttpPollingClient client = new JavaNetHttpPollingClient(
-            httpClient,
-            decoder,
-            options,
-            new GetRequestFactory(
-                new GenericGetQueryCreator(lookupRow),
-                headerPreprocessor,
-                options
-            )
-        );
-
-        Collector<RowData> collector = client.createRowDataCollector(result);
-
-        // WHEN - close without collecting anything
-        collector.close();
-
-        // THEN
-        assertThat(result).isEmpty();
+        assertThat(((StringData) result.get(0).getString(0)).toString()).isEqualTo(testString);
     }
 
     @Test
