@@ -292,7 +292,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
     List<RowData> deserializeSingleValue(byte[] rawBytes) throws IOException {
         List<RowData> result = new ArrayList<>();
         responseBodyDecoder.deserialize(rawBytes, new ListCollector(result));
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @VisibleForTesting
