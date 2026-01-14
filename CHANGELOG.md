@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- Fixed http sink NEP issue when flink job restore from checkpoint.
 
 ## [0.25.0] - 2026-01-09
 
