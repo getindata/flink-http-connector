@@ -13,6 +13,10 @@ import java.util.Map;
  * @param <RequestT> type of the HTTP request wrapper
  */
 public interface HttpPostRequestCallback<RequestT> extends Serializable {
+
+
+    default void open(){}
+
     /**
      * Process HTTP request and the matching response.
      *  @param response HTTP response
@@ -26,4 +30,6 @@ public interface HttpPostRequestCallback<RequestT> extends Serializable {
         String endpointUrl,
         Map<String, String> headerMap
     );
+
+    default void close(){}
 }
