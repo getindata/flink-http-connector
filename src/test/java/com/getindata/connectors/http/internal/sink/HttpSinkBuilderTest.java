@@ -66,6 +66,12 @@ public class HttpSinkBuilderTest {
         MockHttpClient() {}
 
         @Override
+        public void open() {}
+
+        @Override
+        public void close() {}
+
+        @Override
         public CompletableFuture<SinkHttpClientResponse> putRequests(
             List<HttpSinkRequestEntry> requestEntries, String endpointUrl) {
             throw new RuntimeException("Mock implementation of HttpClient");

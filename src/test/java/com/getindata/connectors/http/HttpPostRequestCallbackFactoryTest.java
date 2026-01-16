@@ -3,6 +3,7 @@ package com.getindata.connectors.http;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.getindata.connectors.http.internal.sink.httpclient.HttpRequest;
 import com.getindata.connectors.http.internal.table.lookup.HttpLookupSourceRequestEntry;
 import com.getindata.connectors.http.internal.table.sink.HttpDynamicTableSinkFactory;
+import static com.getindata.connectors.http.TestLifeCyclePostRequestCallbackFactory.TEST_LIFE_CYCLE_POST_REQUEST_CALLBACK_IDENT;
 import static com.getindata.connectors.http.TestLookupPostRequestCallbackFactory.TEST_LOOKUP_POST_REQUEST_CALLBACK_IDENT;
 import static com.getindata.connectors.http.TestPostRequestCallbackFactory.TEST_POST_REQUEST_CALLBACK_IDENT;
 
@@ -91,6 +93,45 @@ public class HttpPostRequestCallbackFactoryTest {
         String actualRequest = requestEntries.get(0).getElements().stream()
             .map(element -> new String(element, StandardCharsets.UTF_8))
             .collect(Collectors.joining());
+
+        Assertions.assertThat(actualRequest).isEqualToIgnoringNewLines(expectedRequest);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"single, {\"id\":1}", "batch, [{\"id\":1}]"})
+    public void httpLifeCyclePostRequestCallbackFactoryTest(String mode, String expectedRequest)
+            throws ExecutionException, InterruptedException {
+        wireMockServer.stubFor(any(urlPathEqualTo("/myendpoint")).willReturn(ok()));
+
+        final String createTable =
+                String.format(
+                        "CREATE TABLE http (\n"
+                                + "  id bigint\n"
+                                + ") with (\n"
+                                + "  'connector' = '%s',\n"
+                                + "  'url' = '%s',\n"
+                                + "  'format' = 'json',\n"
+                                + "  'gid.connector.http.sink.request-callback' = '%s',\n"
+                                + "  'gid.connector.http.sink.writer.request.mode' = '%s',\n"
+                                + "  'gid.connector.http.sink.header.Content-Type' = 'application/json'\n"
+                                + ")",
+                        HttpDynamicTableSinkFactory.IDENTIFIER,
+                        "http://localhost:" + SERVER_PORT + "/myendpoint",
+                        TEST_LIFE_CYCLE_POST_REQUEST_CALLBACK_IDENT,
+                        mode
+                );
+        tEnv.executeSql(createTable);
+
+        int nums = 3;
+        for (int i = 0; i < nums; i++) {
+            final String insert = "INSERT INTO http VALUES (1)";
+            tEnv.executeSql(insert).await();
+        }
+        assertEquals(nums, requestEntries.size());
+
+        String actualRequest = requestEntries.get(0).getElements().stream()
+                .map(element -> new String(element, StandardCharsets.UTF_8))
+                .collect(Collectors.joining());
 
         Assertions.assertThat(actualRequest).isEqualToIgnoringNewLines(expectedRequest);
     }
@@ -167,6 +208,32 @@ public class HttpPostRequestCallbackFactoryTest {
         ) {
             lookupRequestEntries.add(requestEntry);
             responses.add(response);
+        }
+    }
+
+    public static class TestLifeCyclePostRequestCallback implements HttpPostRequestCallback<HttpRequest> {
+
+        private List<HttpRequest> mockDB;
+
+        @Override
+        public void open() {
+            mockDB = new ArrayList<>();
+        }
+
+        @Override
+        public void call(
+                HttpResponse<String> response,
+                HttpRequest requestEntry,
+                String endpointUrl,
+                Map<String, String> headerMap
+        ) {
+            mockDB.add(requestEntry);
+        }
+
+        @Override
+        public void close() {
+            requestEntries.addAll(mockDB);
+            mockDB.clear();
         }
     }
 }

@@ -77,6 +77,8 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                 sinkWriterThreadPollSize,
                 new ExecutorThreadFactory(
                     "http-sink-writer-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER));
+
+        this.sinkHttpClient.open();
     }
 
     // TODO: Reintroduce retries by adding backoff policy
@@ -125,6 +127,7 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
 
     @Override
     public void close() {
+        sinkHttpClient.close();
         sinkWriterThreadPool.shutdownNow();
         super.close();
     }

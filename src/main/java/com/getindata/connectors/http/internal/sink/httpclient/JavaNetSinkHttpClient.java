@@ -76,6 +76,16 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     }
 
     @Override
+    public void open() {
+        this.httpPostRequestCallback.open();
+    }
+
+    @Override
+    public void close() {
+        this.httpPostRequestCallback.close();
+    }
+
+    @Override
     public CompletableFuture<SinkHttpClientResponse> putRequests(
         List<HttpSinkRequestEntry> requestEntries,
         String endpointUrl) {

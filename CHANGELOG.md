@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-  HttpPostRequestCallback adds open and close methods
+
 ## [0.25.0] - 2026-01-09
 
 -   Allow config control of log HTTP request, response and header logging content
