@@ -13,6 +13,8 @@ import com.getindata.connectors.http.internal.sink.HttpSinkWriter;
  */
 public interface SinkHttpClient {
 
+    void open();
+
     /**
      * Sends HTTP requests to an external web service.
      *
@@ -25,4 +27,6 @@ public interface SinkHttpClient {
         List<HttpSinkRequestEntry> requestEntries,
         String endpointUrl
     );
+
+    void close();
 }

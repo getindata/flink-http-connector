@@ -455,6 +455,35 @@ A default implementation that logs those pairs as *INFO* level logs using Slf4j 
 If you would like to log more http content (that maybe contain sensitive information), then you can provide a customized version
 of this callback; for inspiration on how to customize in this way, look back in the git history of this file.
 
+The `HttpPostRequestCallback` interface now includes `open()` and `close()` lifecycle methods that are called when the connector is initialized and closed, respectively. These methods can be overridden to initialize and clean up resources such as database connections, caches, or other stateful components that the callback might require.
+
+Here's an example of how to implement these lifecycle methods:
+
+```java
+public class CustomHttpPostRequestCallback implements HttpPostRequestCallback<HttpRequest> {
+
+    @Override
+    public void open() {
+        // Initialize resources when the callback is opened
+    }
+
+    @Override
+    public void call(
+            HttpResponse<String> response,
+            HttpRequest requestEntry,
+            String endpointUrl,
+            Map<String, String> headerMap) {
+        // Process the HTTP response
+        System.out.println("Processing HTTP response: " + response.statusCode());
+    }
+
+    @Override
+    public void close() {
+        // Clean up resources
+    }
+}
+```
+
 - Http Lookup Source processes responses that it gets from the HTTP endpoint along their respective requests. One can customize the
 behaviour of the additional stage of processing done by Table Function API by implementing
 [HttpPostRequestCallback](src/main/java/com/getindata/connectors/http/HttpPostRequestCallback.java) and
