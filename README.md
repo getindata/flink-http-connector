@@ -91,14 +91,14 @@ The columns and their values used for JOIN `ON` condition will be used as HTTP G
 
 For Example: 
 ``
-http://localhost:8080/client/service?id=1&id=2
+http://localhost:8080/client/service?id=1&id2=2
 ``
 
 Or for REST POST method they will be converted to Json and used as request body. In this case, json request body will look like this:
 ```json
 {
     "id": "1",
-    "id": "2"
+    "id2": "2"
 }
 ```
 
