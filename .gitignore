@@ -1,6 +1,8 @@
 /.idea/
 .idea
 .vscode
+.metals
+.bloop
 .classpath
 .gitignore.swp
 .project

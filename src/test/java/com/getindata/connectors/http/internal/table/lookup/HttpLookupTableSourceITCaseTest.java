@@ -18,7 +18,6 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -1165,7 +1164,7 @@ class HttpLookupTableSourceITCaseTest {
     }
 
     private void setupServerStub(WireMockServer wireMockServer) {
-        StubMapping stubMapping = wireMockServer.stubFor(
+        wireMockServer.stubFor(
             get(urlPathEqualTo(ENDPOINT))
                 .withHeader("Content-Type", equalTo("application/json"))
                 .withQueryParam("id", matching("[0-9]+"))
@@ -1175,12 +1174,10 @@ class HttpLookupTableSourceITCaseTest {
                         .withTransformers(JsonTransform.NAME)
                 )
         );
-
-        wireMockServer.addStubMapping(stubMapping);
     }
 
     private void setupServerStubEmptyResponse(WireMockServer wireMockServer) {
-        StubMapping stubMapping = wireMockServer.stubFor(
+        wireMockServer.stubFor(
             get(urlPathEqualTo(ENDPOINT))
                 .withHeader("Content-Type", equalTo("application/json"))
                 .withQueryParam("id", matching("[0-9]+"))
@@ -1190,8 +1187,6 @@ class HttpLookupTableSourceITCaseTest {
                         .withBody(new byte[0])
                 )
         );
-
-        wireMockServer.addStubMapping(stubMapping);
     }
 
     private void setUpServerBodyStub(
@@ -1262,9 +1257,7 @@ class HttpLookupTableSourceITCaseTest {
                             aResponse().withBody(new byte[0]).withStatus(500));
         }
 
-        StubMapping stubMapping = wireMockServer.stubFor(methodStub);
-
-        wireMockServer.addStubMapping(stubMapping);
+        wireMockServer.stubFor(methodStub);
     }
 
     @ParameterizedTest

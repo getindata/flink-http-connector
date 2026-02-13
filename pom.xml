@@ -70,7 +70,7 @@ under the License.
     <junit.jupiter.version>${junit5.version}</junit.jupiter.version>
     <assertj.core.version>3.21.0</assertj.core.version>
     <mockito.version>4.0.0</mockito.version>
-    <wiremock.version>2.27.2</wiremock.version>
+    <wiremock.version>3.13.2</wiremock.version>
     <jacoco.plugin.version>0.8.12</jacoco.plugin.version>
     <maven.shade.plugin.version>3.1.1</maven.shade.plugin.version>
     <mockito-inline.version>4.6.1</mockito-inline.version>
@@ -269,7 +269,7 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>com.github.tomakehurst</groupId>
+      <groupId>org.wiremock</groupId>
       <artifactId>wiremock</artifactId>
       <version>${wiremock.version}</version>
       <scope>test</scope>
