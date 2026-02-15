@@ -280,6 +280,45 @@ under the License.
       <artifactId>mockito-inline</artifactId>
       <version>${mockito-inline.version}</version>
       <scope>test</scope>
+      <!--Exclusions ported over from the apache version to satisfy convergence -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.minidev</groupId>
+          <artifactId>json-smart</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.ow2.asm</groupId>
+          <artifactId>asm</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.hamcrest</groupId>
+          <artifactId>hamcrest-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.javacrumbs.json-unit</groupId>
+          <artifactId>json-unit-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.networknt</groupId>
+          <artifactId>json-schema-validator</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
