@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
-- Simplify the implementation of deserialize change added in the last release and add proper testing.
- 
-- HttpPostRequestCallback adds open and close methods
+-   Simplify the implementation of deserialize change added in the last release and add proper testing. 
+-   HttpPostRequestCallback adds open and close methods
+-   Upgrade wiremock.
 
 ## [0.25.0] - 2026-01-09
 
