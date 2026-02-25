@@ -70,7 +70,7 @@ under the License.
     <junit.jupiter.version>${junit5.version}</junit.jupiter.version>
     <assertj.core.version>3.21.0</assertj.core.version>
     <mockito.version>4.0.0</mockito.version>
-    <wiremock.version>2.27.2</wiremock.version>
+    <wiremock.version>3.13.2</wiremock.version>
     <jacoco.plugin.version>0.8.12</jacoco.plugin.version>
     <maven.shade.plugin.version>3.1.1</maven.shade.plugin.version>
     <mockito-inline.version>4.6.1</mockito-inline.version>
@@ -269,7 +269,7 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>com.github.tomakehurst</groupId>
+      <groupId>org.wiremock</groupId>
       <artifactId>wiremock</artifactId>
       <version>${wiremock.version}</version>
       <scope>test</scope>
@@ -280,6 +280,45 @@ under the License.
       <artifactId>mockito-inline</artifactId>
       <version>${mockito-inline.version}</version>
       <scope>test</scope>
+      <!--Exclusions ported over from the apache version to satisfy convergence -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.minidev</groupId>
+          <artifactId>json-smart</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.ow2.asm</groupId>
+          <artifactId>asm</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.hamcrest</groupId>
+          <artifactId>hamcrest-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.javacrumbs.json-unit</groupId>
+          <artifactId>json-unit-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.networknt</groupId>
+          <artifactId>json-schema-validator</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
