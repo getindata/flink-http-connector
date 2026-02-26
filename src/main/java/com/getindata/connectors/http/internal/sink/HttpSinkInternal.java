@@ -143,7 +143,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
     private ElementConverter<InputT, HttpSinkRequestEntry> initElementConverterOfSchema(InitContext context) {
         ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = getElementConverter();
         if (elementConverter instanceof SchemaLifecycleAwareElementConverter) {
-            ((SchemaLifecycleAwareElementConverter<?, ?>) elementConverter).open(context);
+            elementConverter.open(context);
         }
         return elementConverter;
     }

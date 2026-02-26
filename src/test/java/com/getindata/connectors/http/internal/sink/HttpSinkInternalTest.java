@@ -5,14 +5,13 @@ import com.getindata.connectors.http.SchemaLifecycleAwareElementConverter;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
 import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
+import java.util.Collections;
+import java.util.Properties;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.groups.OperatorIOMetricGroup;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.junit.jupiter.api.Test;
-
-import java.util.Collections;
-import java.util.Properties;
 
 import static org.mockito.Mockito.*;
 
@@ -27,7 +26,8 @@ public class HttpSinkInternalTest {
         OperatorIOMetricGroup mockIOMetricGroup = mock(OperatorIOMetricGroup.class);
         when(mockMetricGroup.getIOMetricGroup()).thenReturn(mockIOMetricGroup);
 
-        HttpSinkInternal<Object> httpSink = createTestSink((ElementConverter<Object, HttpSinkRequestEntry>) mockConverter);
+        HttpSinkInternal<Object> httpSink = createTestSink(
+                (ElementConverter<Object, HttpSinkRequestEntry>) mockConverter);
         httpSink.createWriter(mockContext);
         // com.getindata.connectors.http.internal.sink.HttpSinkInternal.initElementConverterOfSchema
         // org.apache.flink.connector.base.sink.writer.AsyncSinkWriter
@@ -42,7 +42,8 @@ public class HttpSinkInternalTest {
         SinkWriterMetricGroup mockMetricGroup = mock(SinkWriterMetricGroup.class);
         when(mockContext.metricGroup()).thenReturn(mockMetricGroup);
         when(mockMetricGroup.getIOMetricGroup()).thenReturn(mock(OperatorIOMetricGroup.class));
-        HttpSinkInternal<Object> httpSink = createTestSink((ElementConverter<Object, HttpSinkRequestEntry>) mockConverter);
+        HttpSinkInternal<Object> httpSink = createTestSink(
+                (ElementConverter<Object, HttpSinkRequestEntry>) mockConverter);
 
         httpSink.restoreWriter(mockContext, Collections.emptyList());
         // com.getindata.connectors.http.internal.sink.HttpSinkInternal.initElementConverterOfSchema
@@ -58,7 +59,8 @@ public class HttpSinkInternalTest {
 
         return new HttpSinkInternal<>(
                 converter,
-                10, 1, 20, 1024L, 1000L, 1024L,
+                10, 1, 20,
+                1024L, 1000L, 1024L,
                 "http://test-endpoint.com",
                 mock(HttpPostRequestCallback.class),
                 mock(HeaderPreprocessor.class),
