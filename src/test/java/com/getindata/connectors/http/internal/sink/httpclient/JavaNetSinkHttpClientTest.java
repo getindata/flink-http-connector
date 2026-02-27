@@ -1,12 +1,16 @@
 package com.getindata.connectors.http.internal.sink.httpclient;
 
 import java.net.http.HttpClient;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -19,7 +23,10 @@ import static org.mockito.Mockito.*;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
+import com.getindata.connectors.http.internal.SinkHttpClientResponse;
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
+import com.getindata.connectors.http.internal.config.ResponseItemStatus;
+import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
 import com.getindata.connectors.http.internal.table.sink.Slf4jHttpPostRequestCallback;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 import static com.getindata.connectors.http.TestHelper.assertPropertyArray;
@@ -52,9 +59,9 @@ class JavaNetSinkHttpClientTest {
         postRequestCallback = new Slf4jHttpPostRequestCallback();
         headerPreprocessor = HttpHeaderUtils.createBasicAuthorizationHeaderPreprocessor();
         httpClientStaticMock.when(HttpClient::newBuilder).thenReturn(httpClientBuilder);
-        when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
-        when(httpClientBuilder.sslContext(any())).thenReturn(httpClientBuilder);
-        when(httpClientBuilder.executor(any())).thenReturn(httpClientBuilder);
+        lenient().when(httpClientBuilder.followRedirects(any())).thenReturn(httpClientBuilder);
+        lenient().when(httpClientBuilder.sslContext(any())).thenReturn(httpClientBuilder);
+        lenient().when(httpClientBuilder.executor(any())).thenReturn(httpClientBuilder);
     }
 
     private static Stream<Arguments> provideSubmitterFactory() {
@@ -117,6 +124,57 @@ class JavaNetSinkHttpClientTest {
             "Cache-Control", "no-cache, no-store, max-age=0, must-revalidate"
         );
         assertPropertyArray(headersAndValues, "Access-Control-Allow-Origin", "*");
+    }
+
+    @Test
+    public void shouldHandleEmptyResponse() throws Exception {
+        // GIVEN
+        HttpSinkRequestEntry requestEntry = new HttpSinkRequestEntry("POST", "test data".getBytes());
+        List<HttpSinkRequestEntry> requestEntries = Collections.singletonList(requestEntry);
+
+        // Create an HttpRequest (which wraps java.net.http.HttpRequest)
+        java.net.http.HttpRequest javaHttpRequest = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://test.com/endpoint"))
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(requestEntry.element))
+            .build();
+        HttpRequest httpRequest = new HttpRequest(
+            javaHttpRequest,
+            List.of(requestEntry.element),
+            requestEntry.method
+        );
+
+        // Create a response wrapper with an empty response (null)
+        JavaNetHttpResponseWrapper responseWrapper = new JavaNetHttpResponseWrapper(httpRequest, null);
+
+        // Mock RequestSubmitterFactory to return a mock RequestSubmitter
+        RequestSubmitterFactory mockFactory = mock(RequestSubmitterFactory.class);
+        RequestSubmitter mockSubmitter = mock(RequestSubmitter.class);
+        when(mockFactory.createSubmitter(any(Properties.class), any(String[].class)))
+            .thenReturn(mockSubmitter);
+
+        // Mock the submit method to return a completed future with the empty response
+        CompletableFuture<JavaNetHttpResponseWrapper> responseFuture =
+            CompletableFuture.completedFuture(responseWrapper);
+        when(mockSubmitter.submit(anyString(), eq(requestEntries)))
+            .thenReturn(Collections.singletonList(responseFuture));
+
+        // WHEN
+        JavaNetSinkHttpClient client = new JavaNetSinkHttpClient(
+            new Properties(),
+            postRequestCallback,
+            headerPreprocessor,
+            mockFactory
+        );
+
+        SinkHttpClientResponse response = client.putRequests(requestEntries, "http://test.com/endpoint").get();
+
+        // THEN
+        assertThat(response.getRequests()).hasSize(1);
+        assertThat(response.getRequests().get(0).getStatus()).isEqualTo(ResponseItemStatus.TEMPORAL);
+        assertThat(response.getTemporalRequests()).hasSize(1);
+        assertThat(response.getSuccessfulRequests()).isEmpty();
+        assertThat(response.getFailedRequests()).isEmpty();
+        assertThat(response.getIgnoredRequests()).isEmpty();
     }
 
 }

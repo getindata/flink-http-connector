@@ -504,16 +504,21 @@ is provided.
 ## HTTP status code handler
 ### Sink table
 You can configure a list of HTTP status codes that should be treated as errors for HTTP sink table.
-By default all 400 and 500 response codes will be interpreted as error code.
+By default all 400 and 500 response codes will be interpreted as error code.  500, 503, and 504 response codes will be interpreted as retry.
 
-This behavior can be changed by using below properties in table definition (DDL) or passing it via `setProperty' method from Sink's builder. The property name are:
-- `gid.connector.http.sink.error.code` used to defined HTTP status code value that should be treated as error for example 404.
-Many status codes can be defined in one value, where each code should be separated with comma, for example:
-`401, 402, 403`. User can use this property also to define a type code mask. In that case, all codes from given HTTP response type will be treated as errors.
-An example of such a mask would be `3XX, 4XX, 5XX`. In this case, all 300s, 400s and 500s status codes will be treated as errors.
-- `gid.connector.http.sink.error.code.exclude` used to exclude a HTTP code from error list.
-   Many status codes can be defined in one value, where each code should be separated with comma, for example:
-  `401, 402, 403`. In this example, codes 401, 402 and 403 would not be interpreted as error codes.
+The sink categorizes HTTP responses into groups:
+- Success codes (`gid.connector.http.sink.success-codes`): Expected successful responses.  `1XX, 2XX, 3XX` are defaults
+- Retry codes (`gid.connector.http.sink.retry-codes`): Transient errors that trigger automatic retries when using `at-least-once` delivery guarantee. `500, 503, 504` are defaults
+- Ignored responses (`gid.connector.http.sink.ignored-response-codes`): Responses whose content is ignored but treated as successful.
+- Error codes: Any response code not classified in the above groups.
+
+Parameters support whitelisting and blacklisting: `2XX,404,!203` means all codes from 200-299, plus 404, except 203.
+
+#### Legacy error code configuration
+For backward compatibility, you can use the legacy properties:
+- `gid.connector.http.sink.error.code` - HTTP status codes treated as errors (supports masks like `3XX, 4XX, 5XX`).
+- `gid.connector.http.sink.error.code.exclude` - HTTP codes to exclude from the error list.
+
 
 ### Source table
 The source table categorizes HTTP responses into three groups based on status codes:
@@ -692,8 +697,11 @@ Notes:
 | sink.flush-buffer.size                                  | optional | The maximum size of a batch of entries that may be sent to the HTTP endpoint measured in bytes.                                                                                                                                                  |
 | sink.flush-buffer.timeout                               | optional | Threshold time in milliseconds for an element to be in a buffer before being flushed.                                                                                                                                                            |
 | gid.connector.http.sink.request-callback                | optional | Specify which `HttpPostRequestCallback` implementation to use. By default, it is set to `slf4j-logger` corresponding to `Slf4jHttpPostRequestCallback`.                                                                                          |
-| gid.connector.http.sink.error.code                      | optional | List of HTTP status codes that should be treated as errors by HTTP Sink, separated with comma.                                                                                                                                                   |
-| gid.connector.http.sink.error.code.exclude              | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.sink.error.code` list, separated with comma.                                                                                                                      |
+| gid.connector.http.sink.error.code `DEPRECATED`         | optional | List of HTTP status codes that should be treated as errors by HTTP Sink, separated with comma.                                                                                                                                                   |
+| gid.connector.http.sink.error.code.exclude `DEPRECATED` | optional | List of HTTP status codes that should be excluded from the `gid.connector.http.sink.error.code` list, separated with comma.                                                                                                                      |
+| gid.connector.http.sink.success-codes                   | optional | Comma separated http codes considered as success response. Use [1-5]XX for groups and '!' character for excluding. Defaults are `1XX,2XX,3XX`                                                                                                    |
+| gid.connector.http.sink.retry-codes                     | optional | Comma separated http codes considered as transient errors that will trigger retries. Use [1-5]XX for groups and '!' character for excluding. Only used when `sink.delivery-guarantee` is set to `at-least-once`. Defaults are `500,503,504`      |
+| gid.connector.http.sink.ignored-response-codes          | optional | Comma separated http codes. Content for these responses will be ignored. Use [1-5]XX for groups and '!' character for excluding.                                                                                                                 |
 | gid.connector.http.security.cert.server                 | optional | Path to trusted HTTP server certificate that should be add to connectors key store. More than one path can be specified using `,` as path delimiter.                                                                                             |
 | gid.connector.http.security.cert.client                 | optional | Path to trusted certificate that should be used by connector's HTTP client for mTLS communication.                                                                                                                                               |
 | gid.connector.http.security.key.client                  | optional | Path to trusted private key that should be used by connector's HTTP client for mTLS communication.                                                                                                                                               |
