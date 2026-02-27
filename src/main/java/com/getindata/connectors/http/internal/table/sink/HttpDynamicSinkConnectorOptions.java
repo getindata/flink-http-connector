@@ -2,6 +2,7 @@ package com.getindata.connectors.http.internal.table.sink;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 
 import static com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants.SINK_REQUEST_CALLBACK_IDENTIFIER;
 
@@ -24,4 +25,12 @@ public class HttpDynamicSinkConnectorOptions {
         ConfigOptions.key(SINK_REQUEST_CALLBACK_IDENTIFIER)
             .stringType()
             .defaultValue(Slf4jHttpPostRequestCallbackFactory.IDENTIFIER);
+
+    public static final ConfigOption<DeliveryGuarantee> DELIVERY_GUARANTEE =
+        ConfigOptions.key("sink.delivery-guarantee")
+            .enumType(DeliveryGuarantee.class)
+            .defaultValue(DeliveryGuarantee.AT_LEAST_ONCE)
+            .withDescription("Defines the delivery semantic for the HTTP sink. " +
+                    "Accepted enumerations are 'at-least-once', and 'none'. " +
+                    "'exactly-once' semantic is not supported.");
 }

@@ -13,16 +13,28 @@ public class HttpResponseChecker {
 
     private final Set<Integer> successCodes;
     private final Set<Integer> temporalErrorCodes;
+    private final Set<Integer> ignoreCodes;
 
-    HttpResponseChecker(@NonNull String successCodeExpr, @NonNull String temporalErrorCodeExpr)
-            throws ConfigurationException {
-        this(HttpCodesParser.parse(successCodeExpr), HttpCodesParser.parse(temporalErrorCodeExpr));
+    public HttpResponseChecker(
+            @NonNull String successCodeExpr,
+            @NonNull String temporalErrorCodeExpr,
+            @NonNull String ignoreCodeExpr
+    ) throws ConfigurationException {
+        this(
+            HttpCodesParser.parse(successCodeExpr),
+            HttpCodesParser.parse(temporalErrorCodeExpr),
+            HttpCodesParser.parse(ignoreCodeExpr)
+        );
     }
 
-    public HttpResponseChecker(@NonNull Set<Integer> successCodes, @NonNull Set<Integer> temporalErrorCodes)
-            throws ConfigurationException {
+    public HttpResponseChecker(
+            @NonNull Set<Integer> successCodes,
+            @NonNull Set<Integer> temporalErrorCodes,
+            @NonNull Set<Integer> ignoreCodes
+    ) throws ConfigurationException {
         this.successCodes = successCodes;
         this.temporalErrorCodes = temporalErrorCodes;
+        this.ignoreCodes = ignoreCodes;
         validate();
     }
 
@@ -31,7 +43,7 @@ public class HttpResponseChecker {
     }
 
     public boolean isSuccessful(int httpStatusCode) {
-        return successCodes.contains(httpStatusCode);
+        return successCodes.contains(httpStatusCode) || ignoreCodes.contains(httpStatusCode);
     }
 
     public boolean isTemporalError(HttpResponse<?> response) {
@@ -42,12 +54,33 @@ public class HttpResponseChecker {
         return temporalErrorCodes.contains(httpStatusCode);
     }
 
+    public boolean isIgnoreCode(HttpResponse<?> response) {
+        return isIgnoreCode(response.statusCode());
+    }
+
+    public boolean isIgnoreCode(int httpStatusCode) {
+        return ignoreCodes.contains(httpStatusCode);
+    }
+
+    public boolean isErrorCode(HttpResponse<?> response) {
+        return isErrorCode(response.statusCode());
+    }
+
+    public boolean isErrorCode(int httpStatusCode) {
+        return !isTemporalError(httpStatusCode) && !isSuccessful(httpStatusCode);
+    }
+
     private void validate() throws ConfigurationException {
-        if (successCodes.isEmpty()) {
-            throw new ConfigurationException("Success code list can not be empty");
+        if (successCodes.isEmpty() && ignoreCodes.isEmpty()) {
+            throw new ConfigurationException("Success and ignore code lists can not be empty");
         }
-        var intersection = new HashSet<>(successCodes);
-        intersection.retainAll(temporalErrorCodes);
+        HashSet<Integer> intersection = new HashSet<>(temporalErrorCodes);
+
+        HashSet<Integer> combinedSuccessIgnoreCodes = new HashSet<>();
+        combinedSuccessIgnoreCodes.addAll(successCodes);
+        combinedSuccessIgnoreCodes.addAll(ignoreCodes);
+
+        intersection.retainAll(combinedSuccessIgnoreCodes);
         if (!intersection.isEmpty()) {
             throw new ConfigurationException("Http codes " + intersection +
                     " can not be used as both success and retry codes");
