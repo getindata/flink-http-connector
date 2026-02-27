@@ -106,8 +106,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     private SinkHttpClientResponse prepareSinkHttpClientResponse(
         List<JavaNetHttpResponseWrapper> responses,
         String endpointUrl) {
-        var successfulResponses = new ArrayList<HttpRequest>();
-        var failedResponses = new ArrayList<HttpRequest>();
+        var responseItems = new ArrayList<SinkHttpClientResponse.ResponseItem>();
 
         for (var response : responses) {
             var sinkRequestEntry = response.getHttpRequest();
@@ -115,16 +114,12 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             HttpLogger.getHttpLogger(properties).logResponse(response.getResponse().get());
             httpPostRequestCallback.call(
                 optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
-            // TODO Add response processor here and orchestrate it with statusCodeChecker.
-            if (optResponse.isEmpty() ||
-                statusCodeChecker.isErrorCode(optResponse.get().statusCode())) {
-                failedResponses.add(sinkRequestEntry);
-            } else {
-                successfulResponses.add(sinkRequestEntry);
-            }
+            boolean isFailed = optResponse.isEmpty() ||
+                    statusCodeChecker.isErrorCode(optResponse.get().statusCode());
+            responseItems.add(new SinkHttpClientResponse.ResponseItem(sinkRequestEntry, !isFailed));
         }
 
-        return new SinkHttpClientResponse(successfulResponses, failedResponses);
+        return new SinkHttpClientResponse(responseItems);
     }
 
     @VisibleForTesting

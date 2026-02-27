@@ -91,4 +91,44 @@ public class HttpDynamicTableSinkFactoryTest {
         assertThrows(ValidationException.class,
             () -> tEnv.executeSql("INSERT INTO http VALUES (1)").await());
     }
+
+    @Test
+    public void invalidSinkDeliveryGuaranteeOptionTests() {
+        final String invalidOptionCreateSql =
+            String.format(
+                "CREATE TABLE http (\n"
+                    + "  id bigint\n"
+                    + ") with (\n"
+                    + "  'connector' = '%s',\n"
+                    + "  'url' = '%s',\n"
+                    + "  'format' = 'json',\n"
+                    + "  'sink.delivery-guarantee' = 'invalid'\n"
+                    + ")",
+                HttpDynamicTableSinkFactory.IDENTIFIER,
+                "http://localhost/"
+            );
+        tEnv.executeSql(invalidOptionCreateSql);
+        assertThrows(ValidationException.class,
+            () -> tEnv.executeSql("INSERT INTO http VALUES (1)").await());
+    }
+
+    @Test
+    public void exactlyOnceDeliveryGuaranteeNotSupported() {
+        final String exactlyOnceCreateSql =
+            String.format(
+                "CREATE TABLE http (\n"
+                    + "  id bigint\n"
+                    + ") with (\n"
+                    + "  'connector' = '%s',\n"
+                    + "  'url' = '%s',\n"
+                    + "  'format' = 'json',\n"
+                    + "  'sink.delivery-guarantee' = 'exactly-once'\n"
+                    + ")",
+                HttpDynamicTableSinkFactory.IDENTIFIER,
+                "http://localhost/"
+            );
+        tEnv.executeSql(exactlyOnceCreateSql);
+        assertThrows(ValidationException.class,
+            () -> tEnv.executeSql("INSERT INTO http VALUES (1)").await());
+    }
 }
