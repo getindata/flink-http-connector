@@ -166,7 +166,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
         for (var response : responses) {
             var sinkRequestEntry = response.getHttpRequest();
             var optResponse = response.getResponse();
-            HttpLogger.getHttpLogger(properties).logResponse(response.getResponse().get());
+            optResponse.ifPresent(r -> HttpLogger.getHttpLogger(properties).logResponse(r));
             httpPostRequestCallback.call(optResponse.orElse(null), sinkRequestEntry, endpointUrl, headerMap);
 
             final ResponseItemStatus status;
