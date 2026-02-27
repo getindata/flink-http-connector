@@ -1,19 +1,24 @@
 package com.getindata.connectors.http.internal.sink;
 
-import com.getindata.connectors.http.HttpPostRequestCallback;
-import com.getindata.connectors.http.SchemaLifecycleAwareElementConverter;
-import com.getindata.connectors.http.internal.HeaderPreprocessor;
-import com.getindata.connectors.http.internal.SinkHttpClient;
-import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 import java.util.Collections;
 import java.util.Properties;
+
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.groups.OperatorIOMetricGroup;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import static org.mockito.Mockito.*;
+import com.getindata.connectors.http.HttpPostRequestCallback;
+import com.getindata.connectors.http.SchemaLifecycleAwareElementConverter;
+import com.getindata.connectors.http.internal.HeaderPreprocessor;
+import com.getindata.connectors.http.internal.SinkHttpClient;
+import com.getindata.connectors.http.internal.SinkHttpClientBuilder;
 
 public class HttpSinkInternalTest {
 
