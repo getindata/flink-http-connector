@@ -117,11 +117,7 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> createWriter(
             InitContext context) throws IOException {
 
-        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = getElementConverter();
-        if (elementConverter instanceof SchemaLifecycleAwareElementConverter) {
-            // This cast is needed for Flink 1.15.3 build
-            ((SchemaLifecycleAwareElementConverter<?, ?>) elementConverter).open(context);
-        }
+        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = initElementConverterOfSchema(context);
 
         return new HttpSinkWriter<>(
             elementConverter,
@@ -144,11 +140,21 @@ public class HttpSinkInternal<InputT> extends AsyncSinkBase<InputT, HttpSinkRequ
         );
     }
 
+    private ElementConverter<InputT, HttpSinkRequestEntry> initElementConverterOfSchema(InitContext context) {
+        ElementConverter<InputT, HttpSinkRequestEntry> elementConverter = getElementConverter();
+        if (elementConverter instanceof SchemaLifecycleAwareElementConverter) {
+            elementConverter.open(context);
+        }
+        return elementConverter;
+    }
+
     @Override
     public StatefulSinkWriter<InputT, BufferedRequestState<HttpSinkRequestEntry>> restoreWriter(
                 InitContext context,
                 Collection<BufferedRequestState<HttpSinkRequestEntry>> recoveredState)
             throws IOException {
+
+        initElementConverterOfSchema(context);
 
         return new HttpSinkWriter<>(
             getElementConverter(),

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- Fixed http sink NEP issue when flink job restore from checkpoint.
 
 -   Simplify the implementation of deserialize change added in the last release and add proper testing. 
 -   HttpPostRequestCallback adds open and close methods
