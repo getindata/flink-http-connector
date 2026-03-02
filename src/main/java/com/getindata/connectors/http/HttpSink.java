@@ -3,6 +3,7 @@ package com.getindata.connectors.http;
 import java.util.Properties;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
@@ -41,6 +42,7 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             long maxBatchSizeInBytes,
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
+            DeliveryGuarantee deliveryGuarantee,
             String endpointUrl,
             HttpPostRequestCallback<HttpRequest> httpPostRequestCallback,
             HeaderPreprocessor headerPreprocessor,
@@ -54,6 +56,7 @@ public class HttpSink<InputT> extends HttpSinkInternal<InputT> {
             maxBatchSizeInBytes,
             maxTimeInBufferMS,
             maxRecordSizeInBytes,
+            deliveryGuarantee,
             endpointUrl,
             httpPostRequestCallback,
             headerPreprocessor,

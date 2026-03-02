@@ -3,6 +3,7 @@
 ## [Unreleased]
 ### Fixed
 - Fixed http sink NEP issue when flink job restore from checkpoint.
+- Added HTTP Sink request retries with delivery guarantee support (`sink.delivery-guarantee`).
 
 -   Simplify the implementation of deserialize change added in the last release and add proper testing. 
 -   HttpPostRequestCallback adds open and close methods
