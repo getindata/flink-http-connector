@@ -118,7 +118,7 @@ public class HttpResponseChecker {
         String retryCodeExpr = properties.getProperty(
                 HttpConnectorConfigConstants.SINK_RETRY_CODES, "500,503,504");
         String successCodeExpr = properties.getProperty(
-                HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "1XX,2XX,3XX");
+                HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX");
         return new HttpResponseChecker(successCodeExpr, retryCodeExpr, ignoreCodeExpr);
     }
 
