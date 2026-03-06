@@ -130,7 +130,10 @@ class HttpSinkWriterTest {
         // FAILURE items trigger getFatalExceptionCons() which terminates the callback before
         // requestResult is called, so synchronize on the error counter instead
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(inv -> { latch.countDown(); return null; }).when(errorCounter).inc(anyLong());
+        doAnswer(inv -> {
+            latch.countDown();
+            return null;
+        }).when(errorCounter).inc(anyLong());
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
@@ -312,7 +315,10 @@ class HttpSinkWriterTest {
         // FAILURE items trigger getFatalExceptionCons() which terminates the callback before
         // requestResult is called, so synchronize on the error counter instead
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(inv -> { latch.countDown(); return null; }).when(errorCounter).inc(anyLong());
+        doAnswer(inv -> {
+            latch.countDown();
+            return null;
+        }).when(errorCounter).inc(anyLong());
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
@@ -337,7 +343,10 @@ class HttpSinkWriterTest {
 
         // EXACTLY_ONCE throws before calling requestResult, so synchronize on the error counter
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(inv -> { latch.countDown(); return null; }).when(errorCounter).inc(anyLong());
+        doAnswer(inv -> {
+            latch.countDown();
+            return null;
+        }).when(errorCounter).inc(anyLong());
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());

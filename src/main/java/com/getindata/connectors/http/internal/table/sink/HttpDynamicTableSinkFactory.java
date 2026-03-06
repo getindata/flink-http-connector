@@ -58,7 +58,8 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         // mirroring how the source reads from ReadableConfig in JavaNetHttpPollingClient.
         httpConnectorProperties.put(SINK_HTTP_SUCCESS_CODES.key(), tableOptions.get(SINK_HTTP_SUCCESS_CODES));
         httpConnectorProperties.put(SINK_HTTP_RETRY_CODES.key(), tableOptions.get(SINK_HTTP_RETRY_CODES));
-        httpConnectorProperties.put(SINK_HTTP_IGNORED_RESPONSE_CODES.key(), tableOptions.get(SINK_HTTP_IGNORED_RESPONSE_CODES));
+        httpConnectorProperties.put(
+            SINK_HTTP_IGNORED_RESPONSE_CODES.key(), tableOptions.get(SINK_HTTP_IGNORED_RESPONSE_CODES));
 
         HttpDynamicSink.HttpDynamicTableSinkBuilder builder =
             new HttpDynamicSink.HttpDynamicTableSinkBuilder()

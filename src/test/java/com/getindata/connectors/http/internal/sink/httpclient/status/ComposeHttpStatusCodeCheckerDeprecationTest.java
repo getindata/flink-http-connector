@@ -49,12 +49,18 @@ class ComposeHttpStatusCodeCheckerDeprecationTest {
             HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST, "404");
 
         return Stream.of(
-            Arguments.of(withProperty(withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX")),
-            Arguments.of(withProperty(withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_RETRY_CODES, "503")),
-            Arguments.of(withProperty(withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "404")),
-            Arguments.of(withProperty(withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX")),
-            Arguments.of(withProperty(withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_RETRY_CODES, "503")),
-            Arguments.of(withProperty(withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "404"))
+            Arguments.of(withProperty(
+                withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX")),
+            Arguments.of(withProperty(
+                withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_RETRY_CODES, "503")),
+            Arguments.of(withProperty(
+                withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "404")),
+            Arguments.of(withProperty(
+                withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX")),
+            Arguments.of(withProperty(
+                withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_RETRY_CODES, "503")),
+            Arguments.of(withProperty(
+                withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "404"))
         );
     }
 
