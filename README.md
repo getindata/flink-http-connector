@@ -510,6 +510,18 @@ HTTP Sink supports automatic retries when `sink.delivery-guarantee` is set to `a
 - When `sink.delivery-guarantee` is `at-least-once` (default): Failed requests are retried automatically.
 - When `sink.delivery-guarantee` is `none`: Failed requests are logged but not retried.
 
+##### Performance implications
+Choosing between `at-least-once` and `none` has a direct impact on throughput and memory usage:
+
+- **`at-least-once`**: Batches containing retry-code responses are held in the sink's internal buffer and re-queued until
+  they succeed. Under sustained endpoint failures this buffer fills up, causing backpressure to propagate upstream and
+  reducing overall throughput. Memory usage grows proportionally to the number of in-flight and buffered batches waiting
+  to be retried. Use this mode when data loss is unacceptable and the endpoint is expected to recover.
+
+- **`none`**: Retry-code responses are dropped immediately. No memory is held for retries and the pipeline continues
+  without backpressure, giving higher and more predictable throughput. Use this mode when occasional data loss on
+  transient failures is acceptable and throughput is the priority.
+
 The sink categorizes HTTP responses into groups:
 - Success codes (`gid.connector.http.sink.success-codes`): Expected successful responses.
 - Retry codes (`gid.connector.http.sink.retry-codes`): Transient errors that trigger automatic retries when using `at-least-once` delivery guarantee.
