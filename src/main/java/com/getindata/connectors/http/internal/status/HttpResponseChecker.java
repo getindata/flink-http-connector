@@ -84,11 +84,27 @@ public class HttpResponseChecker {
             String deprecatedErrorExpr = properties.getProperty(
                     HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, "");
 
-            if (deprecatedIgnoreExpr.replace(',', ' ').trim().isEmpty()
-                    && deprecatedErrorExpr.replace(',', ' ').trim().isEmpty()) {
-                return fromSinkPropertiesWithDefaults(properties);
-            } else {
+            boolean hasDeprecatedConfig = !deprecatedIgnoreExpr.replace(',', ' ').trim().isEmpty()
+                    || !deprecatedErrorExpr.replace(',', ' ').trim().isEmpty();
+            boolean hasNewConfig = properties.containsKey(HttpConnectorConfigConstants.SINK_SUCCESS_CODES)
+                    || properties.containsKey(HttpConnectorConfigConstants.SINK_RETRY_CODES)
+                    || properties.containsKey(HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES);
+
+            if (hasDeprecatedConfig && hasNewConfig) {
+                throw new IllegalArgumentException(
+                    "Cannot use deprecated sink error code options ("
+                        + HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST + ", "
+                        + HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST
+                        + ") together with new options ("
+                        + HttpConnectorConfigConstants.SINK_SUCCESS_CODES + ", "
+                        + HttpConnectorConfigConstants.SINK_RETRY_CODES + ", "
+                        + HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES + ").");
+            }
+
+            if (hasDeprecatedConfig) {
                 return fromSinkPropertiesBackwardsCompatible(properties);
+            } else {
+                return fromSinkPropertiesWithDefaults(properties);
             }
         } catch (ConfigurationException e) {
             throw new IllegalStateException(e);

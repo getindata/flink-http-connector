@@ -39,6 +39,41 @@ class ComposeHttpStatusCodeCheckerDeprecationTest {
         assertThat(CODES).isNotEmpty();
     }
 
+    private static Stream<Arguments> mixedDeprecatedAndNewConfigArguments() {
+        Properties withDeprecatedErrorCodes = new Properties();
+        withDeprecatedErrorCodes.setProperty(
+            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, "4XX,5XX");
+
+        Properties withDeprecatedWhiteList = new Properties();
+        withDeprecatedWhiteList.setProperty(
+            HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST, "404");
+
+        return Stream.of(
+            Arguments.of(withProperty(withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX")),
+            Arguments.of(withProperty(withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_RETRY_CODES, "503")),
+            Arguments.of(withProperty(withDeprecatedErrorCodes, HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "404")),
+            Arguments.of(withProperty(withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "2XX")),
+            Arguments.of(withProperty(withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_RETRY_CODES, "503")),
+            Arguments.of(withProperty(withDeprecatedWhiteList, HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "404"))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("mixedDeprecatedAndNewConfigArguments")
+    public void shouldThrowWhenBothDeprecatedAndNewConfigArePresent(Properties properties) {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> prepareCheckerConfig(properties)
+        );
+    }
+
+    private static Properties withProperty(Properties base, String key, String value) {
+        Properties copy = new Properties();
+        copy.putAll(base);
+        copy.setProperty(key, value);
+        return copy;
+    }
+
     private static Stream<Arguments> propertiesArguments() {
         return Stream.of(
             Arguments.of(new Properties()),
