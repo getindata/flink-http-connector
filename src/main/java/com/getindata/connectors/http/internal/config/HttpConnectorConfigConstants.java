@@ -19,6 +19,7 @@ public final class HttpConnectorConfigConstants {
      */
     public static final String GID_CONNECTOR_HTTP = "gid.connector.http.";
     private static final String SOURCE_LOOKUP_PREFIX = GID_CONNECTOR_HTTP + "source.lookup.";
+    private static final String SINK_PREFIX = GID_CONNECTOR_HTTP + "sink.";
 
     /**
      * A property prefix for http connector header properties
@@ -45,9 +46,14 @@ public final class HttpConnectorConfigConstants {
     public static final String RESULT_TYPE = SOURCE_LOOKUP_PREFIX + "result-type";
 
     // --------- Error code handling configuration ---------
-    public static final String HTTP_ERROR_SINK_CODE_WHITE_LIST = GID_CONNECTOR_HTTP + "sink.error.code.exclude";
 
-    public static final String HTTP_ERROR_SINK_CODES_LIST = GID_CONNECTOR_HTTP + "sink.error.code";
+    public static final String HTTP_ERROR_SINK_CODE_WHITE_LIST = SINK_PREFIX + "error.code.exclude";
+    public static final String HTTP_ERROR_SINK_CODES_LIST = SINK_PREFIX + "error.code";
+
+    public static final String SINK_SUCCESS_CODES = SINK_PREFIX + "success-codes";
+    public static final String SINK_RETRY_CODES = SINK_PREFIX + "retry-codes";
+    public static final String SINK_IGNORE_RESPONSE_CODES = SINK_PREFIX + "ignored-response-codes";
+
     // -----------------------------------------------------
 
     public static final String SOURCE_LOOKUP_REQUEST_CALLBACK_IDENTIFIER =

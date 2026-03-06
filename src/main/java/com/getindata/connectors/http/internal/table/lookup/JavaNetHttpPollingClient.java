@@ -9,11 +9,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -63,7 +61,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
     private final ObjectMapper objectMapper;
     private final HttpPostRequestCallback<HttpLookupSourceRequestEntry> httpPostRequestCallback;
     private final HttpLookupConfig options;
-    private final Set<Integer> ignoredErrorCodes;
+    private final HttpResponseChecker responseChecker;
     private final boolean continueOnError;
     private final HttpLogger httpLogger;
 
@@ -80,17 +78,16 @@ public class JavaNetHttpPollingClient implements PollingClient {
         this.options = options;
         var config = options.getReadableConfig();
 
-        this.ignoredErrorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES));
+        var ignoreCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_IGNORED_RESPONSE_CODES));
         var errorCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_RETRY_CODES));
-        var successCodes = new HashSet<Integer>();
-        successCodes.addAll(HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_SUCCESS_CODES)));
-        successCodes.addAll(ignoredErrorCodes);
+        var successCodes = HttpCodesParser.parse(config.get(SOURCE_LOOKUP_HTTP_SUCCESS_CODES));
         this.continueOnError = config.get(SOURCE_LOOKUP_CONTINUE_ON_ERROR);
+        this.responseChecker = new HttpResponseChecker(successCodes, errorCodes, ignoreCodes);
 
         this.httpClient = HttpClientWithRetry.builder()
                 .httpClient(httpClient)
                 .retryConfig(RetryConfigProvider.create(config))
-                .responseChecker(new HttpResponseChecker(successCodes, errorCodes))
+                .responseChecker(responseChecker)
                 .build();
         this.httpLogger = HttpLogger.getHttpLogger(options.getProperties());
     }
@@ -230,7 +227,7 @@ public class JavaNetHttpPollingClient implements PollingClient {
         this.httpLogger.logResponse(response);
         var responseBody = response.body();
         log.debug("Received status code [{}] for RestTableSource request", response.statusCode());
-        final boolean ignoreStatusCode = ignoreResponse(response);
+        final boolean ignoreStatusCode = responseChecker.isIgnoreCode(response);
         if (!isError && (StringUtils.isNullOrWhitespaceOnly(responseBody) || ignoreStatusCode)) {
             return HttpRowDataWrapper.builder()
                     .data(Collections.emptyList())
@@ -312,9 +309,5 @@ public class JavaNetHttpPollingClient implements PollingClient {
             }
         }
         return result;
-    }
-
-    private boolean ignoreResponse(HttpResponse<?> response) {
-        return ignoredErrorCodes.contains(response.statusCode());
     }
 }

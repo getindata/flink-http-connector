@@ -93,7 +93,7 @@ public class BatchRequestSubmitter extends AbstractRequestSubmitter {
                 HttpResponse.BodyHandlers.ofString())
             .exceptionally(ex -> {
                 // TODO This will be executed on a ForkJoinPool Thread... refactor this someday.
-                log.error("Request fatally failed because of an exception", ex);
+                log.error("Request failed due to an exception, classifying as transient error", ex);
                 return null;
             })
             .thenApplyAsync(

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.groups.OperatorIOMetricGroup;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
@@ -66,6 +67,7 @@ public class HttpSinkInternalTest {
                 converter,
                 10, 1, 20,
                 1024L, 1000L, 1024L,
+                DeliveryGuarantee.NONE,
                 "http://test-endpoint.com",
                 mock(HttpPostRequestCallback.class),
                 mock(HeaderPreprocessor.class),

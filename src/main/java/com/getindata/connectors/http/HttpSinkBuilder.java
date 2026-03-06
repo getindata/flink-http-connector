@@ -4,8 +4,10 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.util.Preconditions;
 
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
 import com.getindata.connectors.http.internal.SinkHttpClient;
@@ -71,6 +73,8 @@ public class HttpSinkBuilder<InputT> extends
 
     private final Properties properties = new Properties();
 
+    private DeliveryGuarantee deliveryGuarantee;
+
     // Mandatory field
     private String endpointUrl;
 
@@ -90,6 +94,17 @@ public class HttpSinkBuilder<InputT> extends
         this.sinkHttpClientBuilder = DEFAULT_CLIENT_BUILDER;
         this.httpPostRequestCallback = DEFAULT_POST_REQUEST_CALLBACK;
         this.headerPreprocessor = DEFAULT_HEADER_PREPROCESSOR;
+    }
+
+    /**
+     * @param deliveryGuarantee HTTP Sink delivery guarantee
+     * @return {@link HttpSinkBuilder} itself
+     */
+    public HttpSinkBuilder<InputT> setDeliveryGuarantee(DeliveryGuarantee deliveryGuarantee) {
+        Preconditions.checkArgument(deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE,
+                "Only at-least-once and none delivery guarantees are supported.");
+        this.deliveryGuarantee = deliveryGuarantee;
+        return this;
     }
 
     /**
@@ -181,6 +196,7 @@ public class HttpSinkBuilder<InputT> extends
             Optional.ofNullable(getMaxBatchSizeInBytes()).orElse(DEFAULT_MAX_BATCH_SIZE_IN_B),
             Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
             Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
+            Optional.ofNullable(deliveryGuarantee).orElse(DeliveryGuarantee.AT_LEAST_ONCE),
             endpointUrl,
             httpPostRequestCallback,
             headerPreprocessor,
