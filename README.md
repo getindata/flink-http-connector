@@ -813,6 +813,24 @@ Implementation of an HTTP Sink is based on Flink's `AsyncSinkBase` introduced in
 The mapping from Http Json Response to SQL table schema is done via Flink's Json Format [5].
 
 ## Breaking changes
+- [Unreleased]
+  - **HTTP Sink response code configuration** — The legacy sink properties `gid.connector.http.sink.error.code` and
+    `gid.connector.http.sink.error.code.exclude` are deprecated. They cannot be used alongside the new
+    `gid.connector.http.sink.success-codes`, `gid.connector.http.sink.retry-codes`, or
+    `gid.connector.http.sink.ignored-response-codes` properties — doing so will throw an error at startup.
+
+    To migrate, replace your legacy configuration with the new equivalents. For example, if you previously used:
+    ```
+    gid.connector.http.sink.error.code = 4XX,5XX
+    gid.connector.http.sink.error.code.exclude = 404
+    ```
+    The equivalent new configuration is:
+    ```
+    gid.connector.http.sink.success-codes = 1XX,2XX,3XX,404
+    gid.connector.http.sink.retry-codes = 500,503,504
+    ```
+    Any response code not listed in `success-codes`, `retry-codes`, or `ignored-response-codes` is treated as a fatal error.
+
 - Version 0.10
   - Http Sink submission mode changed from single to batch. From now, body of HTTP POUT/POST request will contain a Json array.
   - Changed API for public HttpSink builder. The `setHttpPostRequestCallback` expects a `PostRequestCallback`
