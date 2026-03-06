@@ -510,6 +510,16 @@ HTTP Sink supports automatic retries when `sink.delivery-guarantee` is set to `a
 - When `sink.delivery-guarantee` is `at-least-once` (default): Failed requests are retried automatically.
 - When `sink.delivery-guarantee` is `none`: Failed requests are logged but not retried.
 
+##### Network errors (IOException)
+Network-level failures (e.g. connection timeouts, connection refused) are treated as transient errors by the sink,
+equivalent to receiving a retry-code HTTP response:
+- With `at-least-once`: the affected request is re-queued and retried automatically.
+- With `none`: the request is dropped and the error is logged, consistent with how other transient errors are handled
+  under `none` delivery guarantee.
+
+Note that this differs from the lookup source, which uses resilience4j to retry IOExceptions synchronously at the HTTP
+call level before returning, regardless of any delivery guarantee setting.
+
 ##### Performance implications
 Choosing between `at-least-once` and `none` has a direct impact on throughput and memory usage:
 
