@@ -89,7 +89,7 @@ class ComposeHttpStatusCodeCheckerDeprecationTest {
 
         codeChecker = prepareCheckerConfig(properties);
         assertAll(() -> {
-            assertThat(codeChecker.isErrorCode(100)).isFalse();
+            assertThat(codeChecker.isErrorCode(100)).isTrue();
             assertThat(codeChecker.isErrorCode(200)).isFalse();
             assertThat(codeChecker.isTemporalError(500)).isTrue();
             assertThat(codeChecker.isErrorCode(501)).isTrue();

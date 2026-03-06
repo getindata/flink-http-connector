@@ -54,6 +54,12 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         Properties httpConnectorProperties =
             ConfigUtils.getHttpConnectorProperties(context.getCatalogTable().getOptions());
 
+        // Apply response code config options with defaults from ConfigOption,
+        // mirroring how the source reads from ReadableConfig in JavaNetHttpPollingClient.
+        httpConnectorProperties.put(SINK_HTTP_SUCCESS_CODES.key(), tableOptions.get(SINK_HTTP_SUCCESS_CODES));
+        httpConnectorProperties.put(SINK_HTTP_RETRY_CODES.key(), tableOptions.get(SINK_HTTP_RETRY_CODES));
+        httpConnectorProperties.put(SINK_HTTP_IGNORED_RESPONSE_CODES.key(), tableOptions.get(SINK_HTTP_IGNORED_RESPONSE_CODES));
+
         HttpDynamicSink.HttpDynamicTableSinkBuilder builder =
             new HttpDynamicSink.HttpDynamicTableSinkBuilder()
                 .setTableOptions(tableOptions)
@@ -84,6 +90,9 @@ public class HttpDynamicTableSinkFactory extends AsyncDynamicTableSinkFactory {
         options.add(INSERT_METHOD);
         options.add(REQUEST_CALLBACK_IDENTIFIER);
         options.add(DELIVERY_GUARANTEE);
+        options.add(SINK_HTTP_SUCCESS_CODES);
+        options.add(SINK_HTTP_RETRY_CODES);
+        options.add(SINK_HTTP_IGNORED_RESPONSE_CODES);
         return options;
     }
 
