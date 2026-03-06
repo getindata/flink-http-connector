@@ -3,7 +3,6 @@ package com.getindata.connectors.http.internal.sink.httpclient;
 import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -12,7 +11,6 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.util.ConfigurationException;
 
 import com.getindata.connectors.http.HttpPostRequestCallback;
 import com.getindata.connectors.http.internal.HeaderPreprocessor;
@@ -23,7 +21,6 @@ import com.getindata.connectors.http.internal.SinkHttpClientResponse.ResponseIte
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.config.ResponseItemStatus;
 import com.getindata.connectors.http.internal.sink.HttpSinkRequestEntry;
-import com.getindata.connectors.http.internal.status.HttpCodesParser;
 import com.getindata.connectors.http.internal.status.HttpResponseChecker;
 import com.getindata.connectors.http.internal.utils.HttpHeaderUtils;
 
@@ -59,7 +56,7 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
             headerPreprocessor
         );
 
-        this.responseChecker = createHttpResponseChecker(properties);
+        this.responseChecker = HttpResponseChecker.fromSinkProperties(properties);
         this.headersAndValues = HttpHeaderUtils.toHeaderAndValueArray(this.headerMap);
         this.requestSubmitter = requestSubmitterFactory.createSubmitter(
             properties,
@@ -76,68 +73,6 @@ public class JavaNetSinkHttpClient implements SinkHttpClient {
     @Override
     public void close() {
         this.httpPostRequestCallback.close();
-    }
-
-    public static HttpResponseChecker createHttpResponseChecker(Properties properties) {
-        try {
-            String deprecatedIgnoreExpr = properties.getProperty(
-                    HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST,
-                    ""
-            );
-            String deprecatedErrorExpr = properties.getProperty(
-                    HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST,
-                    ""
-            );
-
-            if (deprecatedIgnoreExpr.replace(',',' ').trim().isEmpty()
-                    && deprecatedErrorExpr.replace(',',' ').trim().isEmpty()) {
-                return createHttpResponseCheckerWithDefaults(properties);
-            } else {
-                return createBackwardsCompatibleResponseChecker(properties);
-            }
-        } catch (ConfigurationException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static HttpResponseChecker createHttpResponseCheckerWithDefaults(Properties properties)
-            throws ConfigurationException {
-        String ignoreCodeExpr = properties.getProperty(
-                HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES,
-                ""
-        );
-        String retryCodeExpr = properties.getProperty(
-                HttpConnectorConfigConstants.SINK_RETRY_CODES,
-                "500,503,504"
-        );
-        String successCodeExpr = properties.getProperty(
-                HttpConnectorConfigConstants.SINK_SUCCESS_CODES,
-                "1XX,2XX,3XX"
-        );
-
-        return new HttpResponseChecker(successCodeExpr, retryCodeExpr, ignoreCodeExpr);
-    }
-
-    private static HttpResponseChecker createBackwardsCompatibleResponseChecker(Properties properties)
-            throws ConfigurationException {
-        String ignoreCodeExpr = properties.getProperty(
-                HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST,
-                ""
-        );
-        String errorCodeExpr = properties.getProperty(
-                HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST,
-                "4XX,5XX"
-        );
-
-        //backwards compatibility
-        var ignoreErrorCodes = HttpCodesParser.parse(ignoreCodeExpr);
-        var errorCodes = HttpCodesParser.parse(errorCodeExpr);
-        var retryCodes = HttpCodesParser.parse("500,503,504");
-
-        var successCodes = new HashSet<>(HttpCodesParser.parse("1XX,2XX,3XX,4XX,5XX"));
-        successCodes.removeAll(retryCodes);
-        successCodes.removeAll(errorCodes);
-        return new HttpResponseChecker(successCodes, retryCodes, ignoreErrorCodes);
     }
 
     @Override

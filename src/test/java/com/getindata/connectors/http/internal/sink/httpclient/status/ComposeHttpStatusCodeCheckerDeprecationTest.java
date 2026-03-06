@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 import com.getindata.connectors.http.internal.status.HttpResponseChecker;
-import static com.getindata.connectors.http.internal.sink.httpclient.JavaNetSinkHttpClient.createHttpResponseChecker;
 
 class ComposeHttpStatusCodeCheckerDeprecationTest {
 
@@ -151,6 +150,6 @@ class ComposeHttpStatusCodeCheckerDeprecationTest {
     }
 
     private HttpResponseChecker prepareCheckerConfig(Properties properties) {
-        return createHttpResponseChecker(properties);
+        return HttpResponseChecker.fromSinkProperties(properties);
     }
 }

@@ -2,11 +2,14 @@ package com.getindata.connectors.http.internal.status;
 
 import java.net.http.HttpResponse;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import lombok.Getter;
 import lombok.NonNull;
 import org.apache.flink.util.ConfigurationException;
+
+import com.getindata.connectors.http.internal.config.HttpConnectorConfigConstants;
 
 @Getter
 public class HttpResponseChecker {
@@ -68,6 +71,56 @@ public class HttpResponseChecker {
 
     public boolean isErrorCode(int httpStatusCode) {
         return !isTemporalError(httpStatusCode) && !isSuccessful(httpStatusCode);
+    }
+
+    /**
+     * Creates an {@link HttpResponseChecker} from sink {@link Properties}, handling backwards
+     * compatibility with deprecated error code configuration keys.
+     */
+    public static HttpResponseChecker fromSinkProperties(Properties properties) {
+        try {
+            String deprecatedIgnoreExpr = properties.getProperty(
+                    HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST, "");
+            String deprecatedErrorExpr = properties.getProperty(
+                    HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, "");
+
+            if (deprecatedIgnoreExpr.replace(',', ' ').trim().isEmpty()
+                    && deprecatedErrorExpr.replace(',', ' ').trim().isEmpty()) {
+                return fromSinkPropertiesWithDefaults(properties);
+            } else {
+                return fromSinkPropertiesBackwardsCompatible(properties);
+            }
+        } catch (ConfigurationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static HttpResponseChecker fromSinkPropertiesWithDefaults(Properties properties)
+            throws ConfigurationException {
+        String ignoreCodeExpr = properties.getProperty(
+                HttpConnectorConfigConstants.SINK_IGNORE_RESPONSE_CODES, "");
+        String retryCodeExpr = properties.getProperty(
+                HttpConnectorConfigConstants.SINK_RETRY_CODES, "500,503,504");
+        String successCodeExpr = properties.getProperty(
+                HttpConnectorConfigConstants.SINK_SUCCESS_CODES, "1XX,2XX,3XX");
+        return new HttpResponseChecker(successCodeExpr, retryCodeExpr, ignoreCodeExpr);
+    }
+
+    private static HttpResponseChecker fromSinkPropertiesBackwardsCompatible(Properties properties)
+            throws ConfigurationException {
+        String ignoreCodeExpr = properties.getProperty(
+                HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODE_WHITE_LIST, "");
+        String errorCodeExpr = properties.getProperty(
+                HttpConnectorConfigConstants.HTTP_ERROR_SINK_CODES_LIST, "4XX,5XX");
+
+        // backwards compatibility
+        var ignoreErrorCodes = HttpCodesParser.parse(ignoreCodeExpr);
+        var errorCodes = HttpCodesParser.parse(errorCodeExpr);
+        var retryCodes = HttpCodesParser.parse("500,503,504");
+        var successCodes = new HashSet<>(HttpCodesParser.parse("1XX,2XX,3XX,4XX,5XX"));
+        successCodes.removeAll(retryCodes);
+        successCodes.removeAll(errorCodes);
+        return new HttpResponseChecker(successCodes, retryCodes, ignoreErrorCodes);
     }
 
     private void validate() throws ConfigurationException {
