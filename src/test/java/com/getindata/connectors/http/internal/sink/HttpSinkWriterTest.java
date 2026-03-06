@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +24,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,14 +99,16 @@ class HttpSinkWriterTest {
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
-        Consumer<List<HttpSinkRequestEntry>> requestResult =
-            httpSinkRequestEntries -> log.info(String.valueOf(httpSinkRequestEntries));
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entries -> {
+            log.info(String.valueOf(entries));
+            latch.countDown();
+        };
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(2);
     }
 
@@ -120,18 +127,22 @@ class HttpSinkWriterTest {
 
         when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
 
+        // FAILURE items trigger getFatalExceptionCons() which terminates the callback before
+        // requestResult is called, so synchronize on the error counter instead
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(inv -> { latch.countDown(); return null; }).when(errorCounter).inc(anyLong());
+
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
         HttpSinkRequestEntry request3 = new HttpSinkRequestEntry("PUT", "lorem".getBytes());
         HttpSinkRequestEntry request4 = new HttpSinkRequestEntry("PUT", "ipsum".getBytes());
         Consumer<List<HttpSinkRequestEntry>> requestResult =
-            httpSinkRequestEntries -> log.info(String.valueOf(httpSinkRequestEntries));
+            entries -> log.info(String.valueOf(entries));
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2, request3, request4);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(1);
     }
 
@@ -148,13 +159,16 @@ class HttpSinkWriterTest {
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
-        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entries -> {
+            entriesToRetry.addAll(entries);
+            latch.countDown();
+        };
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(2);
         assertEquals(2, entriesToRetry.size());
     }
@@ -177,13 +191,16 @@ class HttpSinkWriterTest {
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
-        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entries -> {
+            entriesToRetry.addAll(entries);
+            latch.countDown();
+        };
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(1);
         assertEquals(1, entriesToRetry.size());
     }
@@ -205,13 +222,16 @@ class HttpSinkWriterTest {
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
-        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entries -> {
+            entriesToRetry.addAll(entries);
+            latch.countDown();
+        };
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(1);
         assertEquals(0, entriesToRetry.size());
     }
@@ -233,13 +253,16 @@ class HttpSinkWriterTest {
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
-        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entries -> {
+            entriesToRetry.addAll(entries);
+            latch.countDown();
+        };
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         assertEquals(0, entriesToRetry.size());
     }
 
@@ -260,13 +283,16 @@ class HttpSinkWriterTest {
 
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
-        Consumer<List<HttpSinkRequestEntry>> requestResult = entriesToRetry::addAll;
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<List<HttpSinkRequestEntry>> requestResult = entries -> {
+            entriesToRetry.addAll(entries);
+            latch.countDown();
+        };
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         assertEquals(0, entriesToRetry.size());
     }
 
@@ -283,16 +309,20 @@ class HttpSinkWriterTest {
 
         when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
 
+        // FAILURE items trigger getFatalExceptionCons() which terminates the callback before
+        // requestResult is called, so synchronize on the error counter instead
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(inv -> { latch.countDown(); return null; }).when(errorCounter).inc(anyLong());
+
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
         Consumer<List<HttpSinkRequestEntry>> requestResult =
-            httpSinkRequestEntries -> log.info(String.valueOf(httpSinkRequestEntries));
+            entries -> log.info(String.valueOf(entries));
 
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(1);
     }
 
@@ -305,6 +335,10 @@ class HttpSinkWriterTest {
 
         when(httpClient.putRequests(anyList(), anyString())).thenReturn(future);
 
+        // EXACTLY_ONCE throws before calling requestResult, so synchronize on the error counter
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(inv -> { latch.countDown(); return null; }).when(errorCounter).inc(anyLong());
+
         HttpSinkRequestEntry request1 = new HttpSinkRequestEntry("PUT", "hello".getBytes());
         HttpSinkRequestEntry request2 = new HttpSinkRequestEntry("PUT", "world".getBytes());
         Consumer<List<HttpSinkRequestEntry>> requestResult =
@@ -313,8 +347,7 @@ class HttpSinkWriterTest {
         List<HttpSinkRequestEntry> requestEntries = Arrays.asList(request1, request2);
         this.httpSinkWriter.submitRequestEntries(requestEntries, requestResult);
 
-        // would be good to use Countdown Latch instead sleep...
-        Thread.sleep(2000);
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for request completion");
         verify(errorCounter).inc(2);
     }
 }
