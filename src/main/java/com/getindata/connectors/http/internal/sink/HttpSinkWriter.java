@@ -16,9 +16,6 @@ import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.connector.base.sink.writer.config.AsyncSinkWriterConfiguration;
-import org.apache.flink.connector.base.sink.writer.strategy.AIMDScalingStrategy;
-import org.apache.flink.connector.base.sink.writer.strategy.CongestionControlRateLimitingStrategy;
-import org.apache.flink.connector.base.sink.writer.strategy.RateLimitingStrategy;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 
@@ -41,9 +38,6 @@ import com.getindata.connectors.http.internal.utils.ThreadUtils;
  */
 @Slf4j
 public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequestEntry> {
-
-    private static final int AIMD_RATE_LIMITING_STRATEGY_INCREASE_RATE = 10;
-    private static final double AIMD_RATE_LIMITING_STRATEGY_DECREASE_FACTOR = 0.99D;
 
     private static final String HTTP_SINK_WRITER_THREAD_POOL_SIZE = "4";
 
@@ -84,8 +78,6 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                 .setMaxBufferedRequests(maxBufferedRequests)
                 .setMaxTimeInBufferMS(maxTimeInBufferMS)
                 .setMaxRecordSizeInBytes(maxRecordSizeInBytes)
-                .setRateLimitingStrategy(
-                    buildRateLimitingStrategy(maxInFlightRequests, maxBatchSize))
                 .build(),
             bufferedRequestStates);
         this.deliveryGuarantee = deliveryGuarantee;
@@ -107,19 +99,6 @@ public class HttpSinkWriter<InputT> extends AsyncSinkWriter<InputT, HttpSinkRequ
                     "http-sink-writer-worker", ThreadUtils.LOGGING_EXCEPTION_HANDLER));
 
         this.sinkHttpClient.open();
-    }
-
-    private static RateLimitingStrategy buildRateLimitingStrategy(
-            int maxInFlightRequests, int maxBatchSize) {
-        return CongestionControlRateLimitingStrategy.builder()
-            .setMaxInFlightRequests(maxInFlightRequests)
-            .setInitialMaxInFlightMessages(maxBatchSize)
-            .setScalingStrategy(
-                AIMDScalingStrategy.builder(maxBatchSize * maxInFlightRequests)
-                    .setIncreaseRate(AIMD_RATE_LIMITING_STRATEGY_INCREASE_RATE)
-                    .setDecreaseFactor(AIMD_RATE_LIMITING_STRATEGY_DECREASE_FACTOR)
-                    .build())
-            .build();
     }
 
     @Override

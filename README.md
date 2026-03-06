@@ -507,7 +507,7 @@ You can configure HTTP status code handling for HTTP sink table and enable autom
 
 #### Retries and delivery guarantee
 HTTP Sink supports automatic retries when `sink.delivery-guarantee` is set to `at-least-once`. Retryable requests will be automatically retried based on the configured status codes.
-- When `sink.delivery-guarantee` is `at-least-once` (default): Failed requests are retried automatically using AIMD (Additive Increase Multiplicative Decrease) rate limiting strategy.
+- When `sink.delivery-guarantee` is `at-least-once` (default): Failed requests are retried automatically.
 - When `sink.delivery-guarantee` is `none`: Failed requests are logged but not retried.
 
 The sink categorizes HTTP responses into groups:
